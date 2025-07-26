@@ -18,7 +18,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/dashboard', function () {
         return view('admin.dashboard'); // Nanti kita buat view ini
     })->name('dashboard');
-    
+
     Route::resource('berita', BeritaController::class);
     Route::resource('potensi', PotensiController::class);
     Route::get('profil', [ProfilController::class, 'edit'])->name('profil.edit');
