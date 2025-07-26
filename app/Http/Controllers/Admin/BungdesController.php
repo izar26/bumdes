@@ -1,63 +1,130 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Bungdes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon; // Untuk menangani tanggal jika diperlukan
 
 class BungdesController extends Controller
 {
+    /**
+     * Display a listing of the Bungdes.
+     */
     public function index()
     {
-        $bungdeses = Bungdes::latest()->get();
-        return view('bungdes.index', compact('bungdeses'));
+        $bungdeses = Bungdes::all(); // Tidak perlu eager load user lagi
+        return response()->json([
+            'message' => 'Daftar BUMDes berhasil diambil',
+            'data' => $bungdeses
+        ], 200);
     }
 
-    public function create()
-    {
-        return view('bungdes.create');
-    }
-
+    /**
+     * Store a newly created Bungdes in storage.
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_bungdes' => 'required|string|max:255',
-            'alamat' => 'nullable|string',
-            'desa_id' => 'nullable|integer',
+        $validator = Validator::make($request->all(), [
+            'nama_bumdes' => 'required|string|max:255',
+            'alamat' => 'required|string|max:500',
             'tanggal_berdiri' => 'nullable|date',
             'deskripsi' => 'nullable|string',
             'telepon' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'user_id' => 'nullable|exists:users,user_id',
+            'struktur_organisasi' => 'nullable|string|max:500',
+            'logo' => 'nullable|string|max:255', // Pertimbangkan penanganan upload file untuk produksi
+            'aset_usaha' => 'nullable|string|max:500',
+            'email' => 'nullable|string|email|max:255|unique:bungdeses,email',
+            // 'user_id' dihapus dari validasi
         ]);
 
-        Bungdes::create($request->all());
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Kesalahan Validasi',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        return redirect()->route('bungdes.index')->with('success', 'Data BUMDes berhasil ditambahkan!');
+        $bungdes = Bungdes::create($request->all());
+
+        return response()->json([
+            'message' => 'BUMDes berhasil dibuat',
+            'data' => $bungdes
+        ], 201);
     }
 
-    public function edit(Bungdes $bungdes)
+    /**
+     * Display the specified Bungdes.
+     */
+    public function show(string $id)
     {
-        return view('bungdes.edit', compact('bungdes'));
+        $bungdes = Bungdes::find($id); // Tidak perlu eager load user lagi
+
+        if (!$bungdes) {
+            return response()->json(['message' => 'BUMDes tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'message' => 'BUMDes berhasil diambil',
+            'data' => $bungdes
+        ], 200);
     }
 
-    public function update(Request $request, Bungdes $bungdes)
+    /**
+     * Update the specified Bungdes in storage.
+     */
+    public function update(Request $request, string $id)
     {
-        $request->validate([
-            'nama_bungdes' => 'required|string|max:255',
-            'alamat' => 'nullable|string',
-            'desa_id' => 'nullable|integer',
+        $bungdes = Bungdes::find($id);
 
+        if (!$bungdes) {
+            return response()->json(['message' => 'BUMDes tidak ditemukan'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nama_bumdes' => 'required|string|max:255',
+            'alamat' => 'required|string|max:500',
+            'tanggal_berdiri' => 'nullable|date',
+            'deskripsi' => 'nullable|string',
+            'telepon' => 'nullable|string|max:50',
+            'struktur_organisasi' => 'nullable|string|max:500',
+            'logo' => 'nullable|string|max:255',
+            'aset_usaha' => 'nullable|string|max:500',
+            'email' => 'nullable|string|email|max:255|unique:bungdeses,email,' . $bungdes->bungdes_id . ',bungdes_id',
+            // 'user_id' dihapus dari validasi
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Kesalahan Validasi',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $bungdes->update($request->all());
 
-        return redirect()->route('bungdes.index')->with('success', 'Data BUMDes berhasil diperbarui!');
+        return response()->json([
+            'message' => 'BUMDes berhasil diperbarui',
+            'data' => $bungdes
+        ], 200);
     }
 
-    public function destroy(Bungdes $bungdes)
+    /**
+     * Remove the specified Bungdes from storage.
+     */
+    public function destroy(string $id)
     {
+        $bungdes = Bungdes::find($id);
+
+        if (!$bungdes) {
+            return response()->json(['message' => 'BUMDes tidak ditemukan'], 404);
+        }
+
         $bungdes->delete();
 
-        return redirect()->route('bungdes.index')->with('success', 'Data BUMDes berhasil dihapus!');
+        return response()->json([
+            'message' => 'BUMDes berhasil dihapus'
+        ], 200);
     }
 }

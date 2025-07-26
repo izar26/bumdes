@@ -15,7 +15,7 @@ return new class extends Migration
     $table->id('user_id');
     $table->string('username', 100)->unique();
     $table->string('password', 255);
-    $table->string('peran', 50);
+    $table->string('role', 50);
     $table->boolean('is_active');
     $table->dateTime('last_login')->nullable();
     $table->timestamps();

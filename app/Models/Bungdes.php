@@ -1,35 +1,68 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Bungdes extends Model
 {
     use HasFactory;
 
-    protected $table = 'bungdeses';
-    protected $primaryKey = 'bungdes_id'; // pastikan di migration kamu pakai id('bungdes_id')
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'bungdeses'; // Secara eksplisit definisikan nama tabel
 
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'bungdes_id';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * The "type" of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'integer'; // Atau 'bigInteger' jika sesuai dengan migrasi Anda
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        'nama_bungdes',
+        'nama_bumdes',
         'alamat',
         'tanggal_berdiri',
         'deskripsi',
         'telepon',
+        'struktur_organisasi',
+        'logo',
+        'aset_usaha',
         'email',
-        'user_id',
+        // 'user_id' dihilangkan dari fillable
     ];
 
-    // Relasi ke unit usaha
-    public function unitUsahas()
-    {
-        return $this->hasMany(UnitUsaha::class, 'bungdes_id', 'bungdes_id');
-    }
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'tanggal_berdiri' => 'date',
+    ];
 
-    // (Opsional) Jika Bungdes dimiliki oleh user tertentu
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
+    // Metode relasi user() telah dihapus
 }
