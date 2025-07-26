@@ -16,11 +16,10 @@ return new class extends Migration
             $table->integer('tahun_anggaran');
             $table->integer('bulan_anggaran')->nullable();
             $table->decimal('jumlah_anggaran', 18, 2);
-            $table->unsignedBigInteger('akun_id');
             $table->unsignedBigInteger('bungdes_id'); // Changed from bumdes_id
             $table->timestamps();
-
-            $table->foreign('akun_id')->references('akun_id')->on('akuns')->onDelete('cascade');
+$table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
             $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade'); // Changed reference
         });
     }

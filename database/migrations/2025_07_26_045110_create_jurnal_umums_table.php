@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id('jurnal_id');
             $table->date('tanggal_transaksi');
             $table->text('deskripsi')->nullable();
+            $table->decimal('debit', 18, 2)->default(0);
+            $table->decimal('kredit', 18, 2)->default(0);
             $table->decimal('total_debit', 18, 2);
             $table->decimal('total_kredit', 18, 2);
-            $table->unsignedBigInteger('user_id'); // Changed from pengguna_id
+            $table->unsignedBigInteger('user_id');
+            $table->string('metode_transaksi')->nullable();
             $table->unsignedBigInteger('bungdes_id'); // Changed from bumdes_id
             $table->timestamps();
 

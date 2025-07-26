@@ -20,8 +20,10 @@ return new class extends Migration
             $table->date('tanggal_daftar');
             $table->unsignedBigInteger('unit_usaha_id');
             $table->string('status_anggota', 50);
-            $table->timestamps();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
 
+            $table->timestamps();
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('cascade');
         });
     }

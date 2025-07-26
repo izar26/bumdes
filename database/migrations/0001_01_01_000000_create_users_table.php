@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-    $table->id('user_id'); // pakai unsignedunsignedBigInteger by default
-    $table->string('nama_lengkap', 255);
+    $table->id('user_id');
     $table->string('username', 100)->unique();
-    $table->string('password_hash', 255);
+    $table->string('password', 255);
     $table->string('peran', 50);
     $table->boolean('is_active');
     $table->dateTime('last_login')->nullable();

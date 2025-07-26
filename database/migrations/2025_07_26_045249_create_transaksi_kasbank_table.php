@@ -13,18 +13,17 @@ return new class extends Migration
     {
         Schema::create('transaksi_kas_banks', function (Blueprint $table) {
             $table->id('transaksi_kas_bank_id');
+            $table->unsignedBigInteger('detail_jurnal_id')->nullable();
             $table->unsignedBigInteger('kas_bank_id');
-            $table->unsignedBigInteger('jurnal_id')->nullable();
             $table->dateTime('tanggal_transaksi');
-            $table->string('jenis_transaksi', 50);
-            $table->decimal('jumlah', 18, 2);
+            $table->string('metode_transaksi', 50);
+            $table->decimal('jumlah_debit', 18, 2);
+            $table->decimal('jumlah_kredit', 18, 2);
             $table->text('deskripsi')->nullable();
-            $table->string('nomor_referensi', 100)->nullable();
-            $table->unsignedBigInteger('user_id'); // Changed from pengguna_id
+            $table->unsignedBigInteger('user_id');
             $table->timestamps();
-
             $table->foreign('kas_bank_id')->references('kas_bank_id')->on('kas_banks')->onDelete('cascade');
-            $table->foreign('jurnal_id')->references('jurnal_id')->on('jurnal_umums')->onDelete('set null');
+            $table->foreign('detail_jurnal_id')->references('detail_jurnal_id')->on('detail_jurnals')->onDelete('set null');
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade'); // Changed reference
         });
     }

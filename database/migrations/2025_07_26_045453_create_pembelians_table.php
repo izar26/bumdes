@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('pemasok_id');
             $table->string('no_faktur', 100)->nullable();
             $table->date('tanggal_pembelian');
-            $table->decimal('total_pembelian', 18, 2);
+            $table->decimal('nominal_pembelian', 18, 2);
             $table->unsignedBigInteger('jurnal_id');
             $table->unsignedBigInteger('unit_usaha_id');
             $table->string('status_pembelian', 50);

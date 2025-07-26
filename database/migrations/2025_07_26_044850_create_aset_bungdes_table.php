@@ -19,11 +19,11 @@ return new class extends Migration
             $table->date('tanggal_perolehan');
             $table->string('kondisi', 100);
             $table->string('lokasi', 255)->nullable();
-            $table->unsignedBigInteger('bungdes_id'); // Changed from bumdes_id
+            $table->unsignedBigInteger('bungdes_id');
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
-            $table->string('nomor_inventaris', 100)->nullable();
+            $table->unsignedBigInteger('penanggung_jawab')->nullable();
             $table->timestamps();
-
+            $table->foreign('penanggung_jawab')->references('user_id')->on('users')->onDelete('set null');
             $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade'); // Changed reference
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('set null');
         });

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ProfilController;
 use App\Http\Controllers\Admin\HomepageSettingController;
 use App\Http\Controllers\Admin\SocialLinkController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\BungdesController;
 
 
 Route::get('/', [HomeController::class, 'index']);
@@ -18,7 +19,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/dashboard', function () {
         return view('admin.dashboard'); // Nanti kita buat view ini
     })->name('dashboard');
-    
+
     Route::resource('berita', BeritaController::class);
     Route::resource('potensi', PotensiController::class);
     Route::get('profil', [ProfilController::class, 'edit'])->name('profil.edit');
@@ -26,4 +27,5 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('pengaturan-halaman', [HomepageSettingController::class, 'edit'])->name('homepage_setting.edit');
 Route::put('pengaturan-halaman', [HomepageSettingController::class, 'update'])->name('homepage_setting.update');
  Route::resource('social_link', SocialLinkController::class)->except(['show'])->parameters(['social_link' => 'socialLink']);
+   Route::resource('bungdes', BungdesController::class);
 });

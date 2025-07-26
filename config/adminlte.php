@@ -340,7 +340,36 @@ return [
     'url'  => 'admin/social_link',
     'icon' => 'fas fa-fw fa-share-alt',
 ],
+
+    [
+        'text' => 'Kelola BUMDes',
+        'icon' => 'fas fa-fw fa-briefcase',
+        'submenu' => [
+            [
+                'text' => 'Data BUMDes',
+                'url'  => 'admin/bungdes',
+            ],
+            [
+                'text' => 'Unit Usaha',
+                'url'  => 'admin/unit-usaha',
+            ],
+            [
+                'text' => 'Laporan Keuangan',
+                'url'  => 'admin/laporan-keuangan',
+            ],
+        ],
+    ],
 ],
+//     [
+//         'text' => 'Kelola Unit Usaha',
+//         'url'  => 'admin/unit_usaha',
+//         'icon' => 'fas fa-fw fa-industry',
+//     ],
+//     [
+//         'text' => 'Kelola Produk',
+//         'url'  => 'admin/produk',
+//         'icon' => 'fas fa-fw fa-box',
+// ],
     /*
     |--------------------------------------------------------------------------
     | Menu Filters

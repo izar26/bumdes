@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('tanggal_mulai_operasi')->nullable();
             $table->string('status_operasi', 50);
             $table->timestamps();
-            $table->unsignedBigInteger('user_id')->nullable(); // penanggung jawab unit usaha
+            $table->unsignedBigInteger('user_id')->nullable(); 
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
             $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade'); // Changed reference
         });
