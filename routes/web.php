@@ -11,6 +11,18 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\BungdesController;
 
 
+// Keuangan
+use App\Http\Controllers\Keuangan\KasBankController;
+use App\Http\Controllers\Keuangan\TransaksiKasBankController;
+use App\Http\Controllers\Keuangan\JurnalUmumController;
+
+//laporan
+use App\Http\Controllers\Laporan\BukuBesarController;
+
+//usaha
+use App\Http\Controllers\Usaha\ProdukController;
+use App\Http\Controllers\Usaha\PenjualanController;
+
 Route::get('/', [HomeController::class, 'index']);
 
 Auth::routes();
@@ -31,3 +43,18 @@ Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index'
 Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
 
 });
+
+Route::prefix('keuangan')->group(function () {
+    Route::resource('kas-bank', KasBankController::class);
+    Route::post('transaksi-kas-bank', [TransaksiKasBankController::class, 'store'])->name('transaksi.store'); 
+     Route::get('jurnal-umum', [JurnalUmumController::class, 'index'])->name('jurnal-umum.index');
+});
+
+Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+    });
+Route::prefix('usaha')->name('usaha')->group(function () {
+});
+Route::resource('produk', ProdukController::class);
+Route::resource('penjualan', PenjualanController::class);

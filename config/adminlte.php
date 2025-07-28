@@ -359,6 +359,50 @@ return [
             ],
         ],
     ],
+    [
+        'text'    => 'Keuangan',
+        'icon'    => 'fas fa-fw fa-wallet',
+        'submenu' => [
+            [
+                'text' => 'Kas & Bank',
+                'route'  => 'kas-bank.index',
+                'icon' => 'fas fa-fw fa-money-bill-wave',
+            ],
+            [
+                'text' => 'Jurnal Umum',
+                'route'  => 'jurnal-umum.index',
+                'icon' => 'fas fa-fw fa-book',
+            ],
+        ],
+    ],
+    [
+        'text'    => 'Laporan',
+        'icon'    => 'fas fa-fw fa-file-alt',
+        'submenu' => [
+            [
+                'text' => 'Buku Besar',
+                'route'  => 'laporan.buku-besar.index',
+                'icon' => 'fas fa-fw fa-book-open',
+            ],
+            // Nanti bisa ditambahkan laporan lain di sini
+        ],
+    ],
+    [
+        'text'    => 'Manajemen Usaha',
+        'icon'    => 'fas fa-fw fa-store',
+        'submenu' => [
+            [
+                'text' => 'Transaksi Penjualan',
+                'route'  => 'penjualan.index', // atau penjualan.create
+                'icon' => 'fas fa-fw fa-cash-register',
+            ],
+            [
+                'text' => 'Manajemen Produk',
+                'route'  => 'produk.index',
+                'icon' => 'fas fa-fw fa-boxes',
+            ],
+        ],
+    ],
 ],
 //     [
 //         'text' => 'Kelola Unit Usaha',

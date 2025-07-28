@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             ProfilSeeder::class,
             HomepageSettingSeeder::class,
             BungdesSeeder::class,
+            AkunSeeder::class,
+            UnitUsahaSeeder::class,
         ]);
     }
 }
