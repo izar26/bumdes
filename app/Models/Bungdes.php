@@ -52,7 +52,6 @@ class Bungdes extends Model
         'logo',
         'aset_usaha',
         'email',
-        // 'user_id' dihilangkan dari fillable
     ];
 
     /**

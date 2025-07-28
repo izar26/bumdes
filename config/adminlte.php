@@ -342,11 +342,11 @@ return [
 ],
 
     [
-        'text' => 'Kelola BUMDes',
+        'text' => 'Manajemen Data',
         'icon' => 'fas fa-fw fa-briefcase',
         'submenu' => [
             [
-                'text' => 'Data BUMDes',
+                'text' => 'Data Bugdes',
                 'url'  => 'admin/bungdes',
             ],
             [

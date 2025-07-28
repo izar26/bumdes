@@ -27,5 +27,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('pengaturan-halaman', [HomepageSettingController::class, 'edit'])->name('homepage_setting.edit');
 Route::put('pengaturan-halaman', [HomepageSettingController::class, 'update'])->name('homepage_setting.update');
  Route::resource('social_link', SocialLinkController::class)->except(['show'])->parameters(['social_link' => 'socialLink']);
-   Route::resource('bungdes', BungdesController::class);
+Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
+Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
+
 });
