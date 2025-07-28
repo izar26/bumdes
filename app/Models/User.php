@@ -2,59 +2,85 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail; // Uncomment if you use email verification
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $primaryKey = 'user_id';
 
-    public $incrementing = true;
-
-    protected $keyType = 'int'; // Or 'bigInteger' if your 'user_id' in migration is bigIncrements()
-
-    protected $table = 'users';
-
-    /**
-     * The attributes that are mass assignable.
-     * Ensure all columns you expect to set are here.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'username', // <--- Your custom login field
+        'name',
+        'username',
+        'email',
         'password',
-        'role', // <--- Your custom role field
-        'is_active', // <--- Your custom field
-        'last_login', // <--- Your custom field
+        'role',
+        'is_active', // Make sure this is still here for the deactivate feature
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Get a list of available roles for selection.
      */
-    protected function casts(): array
+    public static function getRolesOptions()
     {
         return [
-            'password' => 'hashed', // Keep this for password hashing
-            'is_active' => 'boolean', // <--- Cast for your custom field
-            'last_login' => 'datetime', // <--- Cast for your custom field
+            'admin_bumdes' => 'Admin BUMDes',
+            'manajer_unit_usaha' => 'Manajer Unit Usaha',
+            'staf' => 'Staf',
         ];
     }
 
+    // Add the hasMany relationship for UnitUsaha
+    /**
+     * Get the unit usahas that the user is responsible for.
+     */
+    public function unitUsahas()
+    {
+        return $this->hasMany(UnitUsaha::class, 'user_id', 'user_id');
+        // UnitUsaha::class: The related model
+        // 'user_id': The foreign key on the UnitUsaha table (this is correct)
+        // 'user_id': The local key on the User table (this is your primary key for User, correct)
+    }
+
+    // Helper methods for role checking (keep these)
+    public function isAdminBumdes()
+    {
+        return $this->role === 'admin_bumdes';
+    }
+
+    public function isManajerUnitUsaha()
+    {
+        return $this->role === 'manajer_unit_usaha';
+    }
+
+    public function isStaf()
+    {
+        return $this->role === 'staf';
+    }
+
+    // Scopes for active/inactive users (keep these)
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
 }

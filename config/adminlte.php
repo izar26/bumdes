@@ -318,27 +318,30 @@ return [
     'icon' => 'fas fa-fw fa-building',
 ],
 
-    // Header untuk pengelompokan menu
-    ['header' => 'PENGELOLAAN KONTEN'],
-    [
-        'text' => 'Kelola Berita',
-        'url'  => 'admin/berita', // Sesuaikan dengan route kita
-        'icon' => 'far fa-fw fa-newspaper',
-    ],
-    [ // <-- TAMBAHKAN BLOK INI
-        'text' => 'Kelola Potensi',
-        'url'  => 'admin/potensi',
-        'icon' => 'fas fa-fw fa-leaf',
-    ],
-    [
-    'text' => 'Pengaturan Halaman',
-    'url'  => 'admin/pengaturan-halaman',
-    'icon' => 'fas fa-fw fa-desktop',
-],
+    // ['header' => 'PENGELOLAAN KONTEN'],
+
 [
+'text'=> 'Kelola Profil Desa',
+'icon' => 'fas fa-fw fa-user',
+'submenu' => [
+    [
+ 'text' => 'Kelola Berita',
+        'url'  => 'admin/berita', // Sesuaikan dengan route kita
+    ],
+    [
+ 'text' => 'Kelola Potensi',
+        'url'  => 'admin/potensi',
+    ],
+    [
+ 'text' => 'Pengaturan Halaman',
+    'url'  => 'admin/pengaturan-halaman',
+    ],
+    [
+
     'text' => 'Link Media Sosial',
     'url'  => 'admin/social_link',
-    'icon' => 'fas fa-fw fa-share-alt',
+    ]
+]
 ],
 
     [
@@ -351,11 +354,15 @@ return [
             ],
             [
                 'text' => 'Unit Usaha',
-                'url'  => 'admin/unit-usaha',
+                'url'  => 'admin/unit_usaha',
             ],
             [
-                'text' => 'Laporan Keuangan',
-                'url'  => 'admin/laporan-keuangan',
+            'text' => 'Akun Keuangan',
+                'url'  => 'admin/akun',
+            ],
+            [
+                'text' => 'User Management',
+                'url'  => 'admin/user',
             ],
         ],
     ],
