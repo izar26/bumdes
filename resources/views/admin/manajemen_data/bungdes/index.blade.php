@@ -4,14 +4,12 @@
 
 @section('content')
 <section class="py-5 px-3 bg-white position-relative" style="overflow: hidden;">
-    <div class="position-absolute top-0 end-0 bg-green-100 rounded-circle" style="width: 16rem; height: 16rem; filter: blur(100px); opacity: 0.4;"></div>
     <div class="position-absolute bottom-0 start-0 bg-green-50 rounded-circle" style="width: 20rem; height: 20rem; filter: blur(100px); opacity: 0.4;"></div>
 
     <div class="position-relative container" style="max-width: 1000px;">
         <div class="card shadow-sm border border-green-100">
-            <div class="card-header bg-gradient bg-success text-white">
+            <div class="card-header bg-gradient bg-secondary text-white">
                 <h2 class="card-title h5 m-0">
-                    <i class="fas fa-building me-2"></i>
                     Formulir Profil BUMDes
                 </h2>
             </div>
@@ -25,7 +23,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="nama_bumdes" class="form-label">
-                                <i class="fas fa-building me-2 text-success"></i>
                                 Nama BUMDes <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -44,7 +41,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="alamat" class="form-label">
-                                <i class="fas fa-map-marker-alt me-2 text-success"></i>
                                 Alamat <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -63,7 +59,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="tanggal_berdiri" class="form-label">
-                                <i class="fas fa-calendar-alt me-2 text-success"></i>
                                 Tanggal Berdiri
                             </label>
                             <div class="input-group">
@@ -81,7 +76,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="aset_usaha" class="form-label">
-                                <i class="fas fa-wallet me-2 text-success"></i>
                                 Aset Usaha
                             </label>
                             <div class="input-group">
@@ -100,11 +94,10 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="email" class="form-label">
-                                <i class="fas fa-envelope me-2 text-success"></i>
                                 Email
                             </label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-envelope text-secondary"></i></span>
+                                <span class="input-group-text"></span>
                                 <input type="email" name="email" id="email" class="form-control"
                                     value="{{ old('email', $bungdeses->email) }}"
                                     placeholder="email@bumdes.example">
@@ -119,7 +112,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="telepon" class="form-label">
-                                <i class="fas fa-phone me-2 text-success"></i>
                                 Telepon
                             </label>
                             <div class="input-group">
@@ -138,7 +130,6 @@
                     <div class="col-12">
                         <div class="form-group">
                             <label for="deskripsi" class="form-label">
-                                <i class="fas fa-info-circle me-2 text-success"></i>
                                 Deskripsi BUMDes
                             </label>
                             <textarea name="deskripsi" id="deskripsi" rows="5" class="form-control"
@@ -153,7 +144,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-image me-2 text-success"></i>
                                 Logo BUMDes
                             </label>
                             <div class="d-flex align-items-center gap-3">
@@ -178,7 +168,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-sitemap me-2 text-success"></i>
                                 Struktur Organisasi
                             </label>
                             <div class="d-flex align-items-center gap-3">

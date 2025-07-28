@@ -29,7 +29,7 @@ class BungdesController extends Controller
             'telepon' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
-            'struktur_organisasi' => 'nullable|string',
+            'struktur_organisasi' => 'nullable|mimes:jpeg,png,jpg,|max:2048',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'aset_usaha' => 'nullable|string|max:255',
         ]);
@@ -44,6 +44,11 @@ class BungdesController extends Controller
             $bungdeses->logo = $logoPath;
         }
 
+        if ($request->hasFIle('struktur_organisasi')){
+            $struktur_organisasi_path = $request->file('struktur_organisasi')->store('struktur_organisasi', 'public');
+            $bungdeses->struktur_organisasi = $struktur_organisasi_path;
+        }
+
         // Update data
         $bungdeses->update([
             'nama_bumdes' => $request->nama_bumdes,
@@ -53,14 +58,16 @@ class BungdesController extends Controller
             'telepon' => $request->telepon,
             'email' => $request->email,
             'website' => $request->website,
-            'struktur_organisasi' => $request->struktur_organisasi,
             'aset_usaha' => $request->aset_usaha,
         ]);
 
         if ($request->hasFile('logo')) {
             $bungdeses->save();
         }
+        if ($request->hasFile('struktur_organisasi')){
+            $bungdeses->save();
+        }
 
-        return redirect()->route('admin.manajemen_data.bungdes.index')->with('success', 'Profil BUMDes berhasil diperbarui.');
+        return redirect()->route('admin.bungdes.index')->with('success', 'Profil BUMDes berhasil diperbarui.');
     }
 }
