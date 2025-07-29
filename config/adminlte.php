@@ -350,19 +350,19 @@ return [
         'submenu' => [
             [
                 'text' => 'Data Bugdes',
-                'url'  => 'admin/bungdes',
+                'url'  => 'admin/manajemen-data/bungdes',
             ],
             [
                 'text' => 'Unit Usaha',
-                'url'  => 'admin/unit_usaha',
+                'url'  => 'admin/manajemen-data/unit_usaha',
             ],
             [
             'text' => 'Akun Keuangan',
-                'url'  => 'admin/akun',
+                'url'  => 'admin/manajemen-data/akun',
             ],
             [
                 'text' => 'User Management',
-                'url'  => 'admin/user',
+                'url'  => 'admin/manajemen-data/user',
             ],
         ],
     ],

@@ -41,15 +41,14 @@ class Akun extends Model
     {
         return static::whereNull('parent_id')->orderBy('kode_akun')->get();
     }
-
-    public static function getTipeAkunOptions()
+ public static function getTipeAkunOptions()
     {
         return [
-            'Harta' => 'Harta (Assets)',
-            'Kewajiban' => 'Kewajiban (Liabilities)',
-            'Modal' => 'Modal (Equity)',
-            'Pendapatan' => 'Pendapatan (Revenue)',
-            'Beban' => 'Beban (Expenses)',
+            'assets' => 'Aset',
+            'liabilities' => 'Liabilitas',
+            'equity' => 'Ekuitas',
+            'revenue' => 'Pendapatan',
+            'expenses' => 'Beban',
         ];
     }
 }

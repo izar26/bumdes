@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Manajemen Unit Usaha</h3>
             <div class="card-tools">
-                <a href="{{ route('admin.unit_usaha.create') }}" class="btn btn-primary btn-sm">Tambah Unit Usaha</a>
+                <a href="{{ route('admin.manajemen-data.unit_usaha.create') }}" class="btn btn-primary btn-sm">Tambah Unit Usaha</a>
             </div>
         </div>
         <div class="card-body">
@@ -61,9 +61,9 @@
                             <td>{{ optional($unitUsaha->tanggal_mulai_operasi)->format('d-m-Y') }}</td>
                             <td>{{ $unitUsaha->status_operasi }}</td>
                             <td>
-                                <a href="{{ route('admin.unit_usaha.show', $unitUsaha->unit_usaha_id) }}" class="btn btn-info btn-xs">Detail</a>
-                                <a href="{{ route('admin.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning btn-xs">Edit</a>
-                                <form action="{{ route('admin.unit_usaha.destroy', $unitUsaha->unit_usaha_id) }}" method="POST" style="display:inline;">
+                                <a href="{{ route('admin.manajemen-data.unit_usaha.show', $unitUsaha->unit_usaha_id) }}" class="btn btn-info btn-xs">Detail</a>
+                                <a href="{{ route('admin.manajemen-data.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning btn-xs">Edit</a>
+                                <form action="{{ route('admin.manajemen-data.unit_usaha.destroy', $unitUsaha->unit_usaha_id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Apakah Anda yakin ingin menghapus unit usaha ini?')">Hapus</button>

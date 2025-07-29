@@ -27,6 +27,7 @@ use App\Http\Controllers\Laporan\NeracaController;
 //usaha
 use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
+use App\Http\Controllers\Usaha\StokController;
 use App\Http\Controllers\Usaha\PemasokController;
 use App\Http\Controllers\Usaha\PembelianController;
 
@@ -47,16 +48,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('pengaturan-halaman', [HomepageSettingController::class, 'edit'])->name('homepage_setting.edit');
     Route::put('pengaturan-halaman', [HomepageSettingController::class, 'update'])->name('homepage_setting.update');
     Route::resource('social_link', SocialLinkController::class)->except(['show'])->parameters(['social_link' => 'socialLink']);
-    Route::prefix('manajemen-data')->name('manajemen-data.')->group(function () {
 
+    Route::prefix('manajemen-data')->name('manajemen-data.')->group (function () {
+        Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
+        Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
+        Route::resource('unit_usaha', UnitUsahaController::class);
+        Route::resource('akun', AkunController::class);
+        Route::resource('user', UserController::class);
+        Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
     });
-    Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
-    Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
-    Route::resource('unit_usaha', UnitUsahaController::class);
-    Route::resource('akun', AkunController::class);
-    Route::resource('user', UserController::class);
-    Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
-
 });
 
    // PENTING: Pindahkan rute spesifik ini di atas Route::resource
@@ -75,7 +75,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
 Route::prefix('keuangan')->group(function () {
     Route::resource('kas-bank', KasBankController::class);
-    Route::post('transaksi-kas-bank', [TransaksiKasBankController::class, 'store'])->name('transaksi.store'); 
+    Route::post('transaksi-kas-bank', [TransaksiKasBankController::class, 'store'])->name('transaksi.store');
      Route::get('jurnal-umum', [JurnalUmumController::class, 'index'])->name('jurnal-umum.index');
 });
 
@@ -94,4 +94,7 @@ Route::prefix('usaha')->name('usaha')->group(function () {
 Route::resource('produk', ProdukController::class);
 Route::resource('penjualan', PenjualanController::class);
 Route::resource('pemasok', PemasokController::class);
+<<<<<<< HEAD
 Route::resource('pembelian', PembelianController::class);
+=======
+>>>>>>> cc8fb74dfe169ccfeae20d8d82f239253e9447cc

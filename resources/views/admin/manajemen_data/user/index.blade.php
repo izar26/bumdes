@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Manajemen Pengguna Sistem</h3>
             <div class="card-tools">
-                <a href="{{ route('admin.user.create') }}" class="btn btn-primary btn-sm">Tambah Pengguna Baru</a>
+                <a href="{{ route('admin.manajemen-data.user.create') }}" class="btn btn-primary btn-sm">Tambah Pengguna Baru</a>
             </div>
         </div>
         <div class="card-body">
@@ -87,11 +87,11 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.user.show', $user->user_id) }}" class="btn btn-info btn-xs">Detail</a>
-                                <a href="{{ route('admin.user.edit', $user->user_id) }}" class="btn btn-warning btn-xs">Edit</a>
+                                <a href="{{ route('admin.manajemen-data.user.show', $user->user_id) }}" class="btn btn-info btn-xs">Detail</a>
+                                <a href="{{ route('admin.manajemen-data.user.edit', $user->user_id) }}" class="btn btn-warning btn-xs">Edit</a>
 
                                 {{-- NEW: Toggle Active/Inactive Form instead of Delete --}}
-                                <form action="{{ route('admin.user.toggleActive', $user->user_id) }}" method="POST" style="display:inline;">
+                                <form action="{{ route('admin.manajemen-data.user.toggleActive', $user->user_id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('PUT')
                                     <button type="submit"

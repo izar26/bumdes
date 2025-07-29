@@ -68,6 +68,6 @@ class BungdesController extends Controller
             $bungdeses->save();
         }
 
-        return redirect()->route('admin.bungdes.index')->with('success', 'Profil BUMDes berhasil diperbarui.');
+        return redirect()->route('admin.manajemen-data.bungdes.index')->with('success', 'Profil BUMDes berhasil diperbarui.');
     }
 }

@@ -32,7 +32,12 @@
                     <th>Unit Usaha</th>
                     <th>Harga Jual</th>
                     <th>Satuan</th>
+<<<<<<< HEAD
                     <th>Stok</th>
+=======
+                    <th>Deskripsi</th>
+                    <th>Kategori</th>
+>>>>>>> cc8fb74dfe169ccfeae20d8d82f239253e9447cc
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -43,6 +48,8 @@
                         <td>{{ $produk->nama_produk }}</td>
                         <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
                         <td>{{ 'Rp ' . number_format($produk->harga_jual, 0, ',', '.') }}</td>
+                        <td>{{ $produk->deskripsi_produk ?? 'Tidak ada deskripsi' }}</td>
+                        <td>{{ $produk->kategori ?? 'Umum' }}</td>
                         <td>{{ $produk->satuan_unit }}</td>
                         <td>{{ $produk->stok->jumlah_stok ?? 0 }} {{ $produk->satuan_unit }}</td>
                         <td>

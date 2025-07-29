@@ -23,8 +23,8 @@
             <p><strong>Diperbarui Pada:</strong> {{ $unitUsaha->updated_at->format('d F Y H:i') }}</p>
         </div>
         <div class="card-footer">
-            <a href="{{ route('admin.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning">Edit</a>
-            <a href="{{ route('admin.unit_usaha.index') }}" class="btn btn-secondary">Kembali ke Daftar</a>
+            <a href="{{ route('admin.manajemen-data.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning">Edit</a>
+            <a href="{{ route('admin.manajemen-data.unit_usaha.index') }}" class="btn btn-secondary">Kembali ke Daftar</a>
         </div>
     </div>
 @stop
