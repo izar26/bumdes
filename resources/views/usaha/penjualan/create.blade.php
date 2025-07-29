@@ -115,7 +115,6 @@ $(document).ready(function() {
         let produkSelect = $('#produk-list');
         let produkId = produkSelect.val();
         
-        // Cek apakah produk sudah ditambahkan
         if ($('#detail-penjualan').find('input[value="' + produkId + '"]').length > 0) {
             alert('Produk sudah ada di dalam daftar.');
             return;
@@ -123,8 +122,9 @@ $(document).ready(function() {
 
         if (produkId) {
             let produkNama = produkSelect.find('option:selected').text();
-            let produkHarga = produkSelect.find('option:selected').data('harga');
+            let produkHarga = produkSelect.find('option:selected').data('harga'); // Variabel didefinisikan sebagai produkHarga (k kecil)
 
+            // Di bawah ini adalah bagian yang diperbaiki
             let newRow = `
                 <tr>
                     <td>
@@ -132,8 +132,8 @@ $(document).ready(function() {
                         ${produkNama}
                     </td>
                     <td><input type="number" name="jumlah[]" class="form-control jumlah" value="1" min="1"></td>
-                    <td><input type="text" name="harga_unit[]" class="form-control harga-unit" value="${produHarga}" readonly></td>
-                    <td><span class="subtotal-text">Rp ${parseInt(produHarga).toLocaleString('id-ID')}</span></td>
+                    <td><input type="text" name="harga_unit[]" class="form-control harga-unit" value="${produkHarga}" readonly></td>
+                    <td><span class="subtotal-text">Rp ${parseInt(produkHarga).toLocaleString('id-ID')}</span></td>
                     <td><button type="button" class="btn btn-danger btn-sm hapus-produk">Hapus</button></td>
                 </tr>
             `;

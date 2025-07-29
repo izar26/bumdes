@@ -21,11 +21,16 @@ use App\Http\Controllers\Keuangan\JurnalUmumController;
 
 //laporan
 use App\Http\Controllers\Laporan\BukuBesarController;
+use App\Http\Controllers\Laporan\LabaRugiController;
+use App\Http\Controllers\Laporan\NeracaController;
 
 //usaha
 use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
 use App\Http\Controllers\Usaha\StokController;
+use App\Http\Controllers\Usaha\PemasokController;
+
+use App\Http\Controllers\Admin\Aset\AsetBUMDesController;
 
 Route::get('/', [HomeController::class, 'index']);
 
@@ -53,6 +58,19 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 });
 
+   // PENTING: Pindahkan rute spesifik ini di atas Route::resource
+    Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
+    Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
+
+    Route::resource('bumdes/aset', AsetBUMDesController::class)->names([
+        'index' => 'bumdes.aset.index',
+        'create' => 'bumdes.aset.create',
+        'store' => 'bumdes.aset.store',
+        'show' => 'bumdes.aset.show',
+        'edit' => 'bumdes.aset.edit',
+        'update' => 'bumdes.aset.update',
+        'destroy' => 'bumdes.aset.destroy',
+    ]);
 
 Route::prefix('keuangan')->group(function () {
     Route::resource('kas-bank', KasBankController::class);
@@ -61,14 +79,17 @@ Route::prefix('keuangan')->group(function () {
 });
 
 Route::prefix('laporan')->name('laporan.')->group(function () {
-        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
-        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
-    });
+    Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+    Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+
+    Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
+    Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
+
+    Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
+    Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
+});
 Route::prefix('usaha')->name('usaha')->group(function () {
 });
 Route::resource('produk', ProdukController::class);
 Route::resource('penjualan', PenjualanController::class);
-
-    Route::get('stok', [StokController::class, 'index'])->name('stok.index');
-    Route::get('stok/penyesuaian', [StokController::class, 'create'])->name('stok.create_adjustment');
-    Route::post('stok/penyesuaian', [StokController::class, 'store'])->name('stok.store_adjustment');
+Route::resource('pemasok', PemasokController::class);
