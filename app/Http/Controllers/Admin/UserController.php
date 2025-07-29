@@ -4,42 +4,38 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User; // Import model User
-use App\Models\UnitUsaha; // Import model UnitUsaha
-use Illuminate\Support\Facades\Hash; // Untuk hashing password
+use App\Models\User;
+use App\Models\UnitUsaha;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule; // Untuk Rule::unique
-use Illuminate\Support\Facades\Auth; // Untuk cek user yang login
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // Import DB facade untuk transaksi
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Menampilkan daftar pengguna.
      */
     public function index()
     {
-        // Eager load the 'unitUsahas' relationship to display which units a manager oversees
         $users = User::with('unitUsahas')->get();
-        $rolesOptions = User::getRolesOptions(); // Untuk menampilkan label peran
+        $rolesOptions = User::getRolesOptions();
         return view('admin.manajemen_data.user.index', compact('users', 'rolesOptions'));
     }
 
     /**
      * Show the form for creating a new resource.
-     * Menampilkan form untuk menambah pengguna baru.
      */
     public function create()
     {
         $rolesOptions = User::getRolesOptions();
-        // Get all unit usahas for the assignment dropdown
         $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
-        return view('admin.user.create', compact('rolesOptions', 'unitUsahas'));
+        return view('admin.manajemen_data.user.create', compact('rolesOptions', 'unitUsahas'));
     }
 
     /**
      * Store a newly created resource in storage.
-     * Menyimpan pengguna baru ke database.
      */
     public function store(Request $request)
     {
@@ -47,80 +43,9 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'username' => 'nullable|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed', // 'confirmed' will look for password_confirmation
+            'password' => 'required|string|min:8|confirmed',
             'role' => ['required', 'string', Rule::in(array_keys(User::getRolesOptions()))],
-            'unit_usaha_ids' => 'array', // Expects an array of Unit Usaha IDs
-            'unit_usaha_ids.*' => 'exists:unit_usahas,unit_usaha_id', // Validate each ID exists
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_active' => true, // New users are active by default
-        ]);
-
-        // If the user's role is 'manajer_unit_usaha', assign the selected units
-        if ($user->role === 'manajer_unit_usaha' && $request->has('unit_usaha_ids')) {
-            // First, ensure any units previously managed by this user (if this was an re-assignment scenario) are cleared.
-            // (Though for 'create', this user won't have previous assignments yet, it's good practice for 'update' consistency).
-            UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
-
-            // Assign the new units to this user
-            UnitUsaha::whereIn('unit_usaha_id', $request->unit_usaha_ids)->update(['user_id' => $user->user_id]);
-        }
-
-
-        return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil ditambahkan!');
-    }
-
-    /**
-     * Display the specified resource.
-     * Menampilkan detail pengguna (opsional).
-     */
-    public function show(User $user)
-    {
-        $rolesOptions = User::getRolesOptions();
-        // Eager load unit usahas to display which units this manager oversees
-        $user->load('unitUsahas');
-        return view('admin.manajemen_data.user.show', compact('user', 'rolesOptions'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     * Menampilkan form untuk mengedit pengguna.
-     */
-    public function edit(User $user)
-    {
-        $rolesOptions = User::getRolesOptions();
-        // Get all unit usahas for the assignment dropdown
-        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
-        // Get the IDs of units currently managed by this user
-        $assignedUnitUsahaIds = $user->unitUsahas->pluck('unit_usaha_id')->toArray();
-
-        return view('admin.manajemen_data.user.edit', compact('user', 'rolesOptions', 'unitUsahas', 'assignedUnitUsahaIds'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     * Memperbarui pengguna di database.
-     */
-    public function update(Request $request, User $user)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->user_id, 'user_id')],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->user_id, 'user_id')],
-            'password' => 'nullable|string|min:8|confirmed', // Password opsional saat update
-            'role' => ['required', 'string', Rule::in(array_keys(User::getRolesOptions()))],
-            'is_active' => 'boolean', // Validation for the new 'is_active' field
-            'unit_usaha_ids' => 'array', // For selected unit usahas
+            'unit_usaha_ids' => 'array',
             'unit_usaha_ids.*' => 'exists:unit_usahas,unit_usaha_id',
         ]);
 
@@ -128,42 +53,146 @@ class UserController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $userData = [
-            'name' => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'role' => $request->role,
-            'is_active' => $request->has('is_active') ? true : false, // Update status based on checkbox
-        ];
+        DB::beginTransaction(); // Mulai transaksi database
 
-        // Only update password if it's filled
-        if ($request->filled('password')) {
-            $userData['password'] = Hash::make($request->password);
-        }
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->role,
+                'is_active' => true,
+            ]);
 
-        $user->update($userData);
+            // Jika peran adalah manajer_unit_usaha, update relasi unit_usahas
+            if ($user->role === 'manajer_unit_usaha') {
+                $selectedUnitUsahaIds = $request->input('unit_usaha_ids', []);
 
-        // Update unit usaha assignments based on the new role
-        if ($user->role === 'manajer_unit_usaha') {
-            // First, remove this user as manager from any units they previously managed
-            // This prevents a unit from being managed by multiple people if the user_id column in unit_usahas is unique
-            UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
+                // Hapus user_id dari unit usaha yang tidak dipilih lagi atau sebelumnya dikelola user lain
+                // Kemudian set user_id untuk unit usaha yang baru dipilih ke user ini.
+                // Ini setara dengan sync() untuk relasi Many-to-Many, tapi diterapkan pada One-to-Many
+                // Pastikan bahwa user_id di unit_usahas adalah nullable atau Anda ingin menimpa.
+                // Pendekatan ini akan mengosongkan user_id dari semua unit usaha, lalu mengisinya kembali.
+                // Perhatikan: ini akan 'mengambil alih' unit usaha dari manajer lain jika unit_usaha_id tersebut sudah punya user_id.
 
-            // Then, assign this user as manager to the selected units
-            if ($request->has('unit_usaha_ids')) {
-                UnitUsaha::whereIn('unit_usaha_id', $request->unit_usaha_ids)->update(['user_id' => $user->user_id]);
+                // Melepaskan semua unit usaha dari user yang akan dibuat ini (tidak relevan untuk CREATE, tapi bagus untuk UPDATE)
+                // UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
+
+                // Menugaskan user_id ini ke unit usaha yang dipilih
+                UnitUsaha::whereIn('unit_usaha_id', $selectedUnitUsahaIds)
+                            ->update(['user_id' => $user->user_id]);
+
+                // Mengosongkan user_id dari unit usaha yang sebelumnya dikelola oleh user_id yang sama,
+                // tetapi sekarang tidak lagi dipilih dalam list.
+                // Ini penting jika seorang manajer unit usaha di-update, dan beberapa unit usahanya dicabut.
+                UnitUsaha::where('user_id', $user->user_id)
+                         ->whereNotIn('unit_usaha_id', $selectedUnitUsahaIds)
+                         ->update(['user_id' => null]);
+            } else {
+                // Jika peran bukan manajer_unit_usaha, pastikan dia tidak mengelola unit usaha apapun
+                UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
             }
-        } else {
-            // If the user's role is no longer 'manajer_unit_usaha', clear any existing assignments
-            UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
-        }
 
-        return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil diperbarui!');
+            DB::commit(); // Commit transaksi jika semua berhasil
+
+            return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil ditambahkan!');
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback transaksi jika terjadi error
+            return redirect()->back()->with('error', 'Gagal menambahkan pengguna: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
+     * Display the specified resource.
      */
-    public function toggleActive(User $user)
+    public function show(User $user)
+    {
+        $rolesOptions = User::getRolesOptions();
+        $user->load('unitUsahas');
+        return view('admin.manajemen_data.user.show', compact('user', 'rolesOptions'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(User $user)
+    {
+        $rolesOptions = User::getRolesOptions();
+        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        $assignedUnitUsahaIds = $user->unitUsahas->pluck('unit_usaha_id')->toArray();
+
+        return view('admin.manajemen_data.user.edit', compact('user', 'rolesOptions', 'unitUsahas', 'assignedUnitUsahaIds'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, User $user)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->user_id, 'user_id')],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->user_id, 'user_id')],
+            'password' => 'nullable|string|min:8|confirmed',
+            'role' => ['required', 'string', Rule::in(array_keys(User::getRolesOptions()))],
+            'is_active' => 'boolean',
+            'unit_usaha_ids' => 'array',
+            'unit_usaha_ids.*' => 'exists:unit_usahas,unit_usaha_id',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        DB::beginTransaction(); // Mulai transaksi
+
+        try {
+            $userData = [
+                'name' => $request->name,
+                'username' => $request->username,
+                'email' => $request->email,
+                'role' => $request->role,
+                'is_active' => $request->has('is_active') ? true : false,
+            ];
+
+            if ($request->filled('password')) {
+                $userData['password'] = Hash::make($request->password);
+            }
+
+            $user->update($userData);
+
+            // Update unit usaha assignments based on the new role
+            if ($user->role === 'manajer_unit_usaha') {
+                $selectedUnitUsahaIds = $request->input('unit_usaha_ids', []);
+
+                // Menugaskan user_id ini ke unit usaha yang dipilih
+                UnitUsaha::whereIn('unit_usaha_id', $selectedUnitUsahaIds)
+                            ->update(['user_id' => $user->user_id]);
+
+                // Mengosongkan user_id dari unit usaha yang sebelumnya dikelola oleh user ini,
+                // tetapi sekarang tidak lagi dipilih dalam list `selectedUnitUsahaIds`.
+                UnitUsaha::where('user_id', $user->user_id)
+                         ->whereNotIn('unit_usaha_id', $selectedUnitUsahaIds)
+                         ->update(['user_id' => null]);
+
+            } else {
+                // Jika peran bukan manajer_unit_usaha, pastikan dia tidak mengelola unit usaha apapun
+                // Hapus user_id dari semua unit usaha yang sebelumnya dikelola oleh user ini
+                UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
+            }
+
+            DB::commit(); // Commit transaksi
+
+            return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback transaksi
+            return redirect()->back()->with('error', 'Gagal memperbarui pengguna: ' . $e->getMessage())->withInput();
+        }
+    }
+public function toggleActive(User $user)
     {
         // Prevent admin from deactivating themselves
         if (Auth::id() === $user->user_id) {
@@ -186,9 +215,6 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Anda tidak bisa menghapus akun Anda sendiri!');
         }
 
-        // Optional: Implement checks if the user has critical related data
-        // For example, if user is tied to transactions and you want to prevent deletion
-        // if ($user->transactions()->count() > 0) {
         //     return redirect()->back()->with('error', 'Pengguna ini tidak bisa dihapus karena masih memiliki transaksi terkait.');
         // }
 

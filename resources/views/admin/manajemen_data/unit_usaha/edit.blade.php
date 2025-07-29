@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Edit Unit Usaha</h3>
         </div>
-        <form action="{{ route('admin.unit_usaha.update', $unitUsaha->unit_usaha_id) }}" method="POST">
+        <form action="{{ route('admin.manajemen-data.unit_usaha.update', $unitUsaha->unit_usaha_id) }}" method="POST">
             @csrf
             @method('PUT') {{-- Penting untuk metode UPDATE --}}
             <div class="card-body">

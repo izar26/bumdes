@@ -14,7 +14,7 @@
                 </h2>
             </div>
 
-            <form action="{{ route('admin.bungdes.update') }}" method="POST" enctype="multipart/form-data" class="card-body">
+            <form action="{{ route('admin.manajemen-data.bungdes.update') }}" method="POST" enctype="multipart/form-data" class="card-body">
                 @csrf
                 @method('PUT')
 
@@ -191,7 +191,7 @@
 
                 <!-- Tombol -->
                 <div class="mt-5 d-flex flex-column flex-sm-row justify-content-end gap-3">
-                    <a href="{{ route('admin.bungdes.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('admin.manajemen-data.bungdes.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-success bg-gradient">

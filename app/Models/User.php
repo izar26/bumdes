@@ -20,7 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'is_active', // Make sure this is still here for the deactivate feature
+        'is_active', 
     ];
 
     protected $hidden = [
@@ -39,7 +39,7 @@ class User extends Authenticatable
     public static function getRolesOptions()
     {
         return [
-            'admin_bumdes' => 'Admin BUMDes',
+            'admin' => 'Admin BUMDes',
             'manajer_unit_usaha' => 'Manajer Unit Usaha',
             'staf' => 'Staf',
         ];
@@ -60,7 +60,7 @@ class User extends Authenticatable
     // Helper methods for role checking (keep these)
     public function isAdminBumdes()
     {
-        return $this->role === 'admin_bumdes';
+        return $this->role === 'admin';
     }
 
     public function isManajerUnitUsaha()

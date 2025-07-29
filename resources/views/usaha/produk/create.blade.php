@@ -29,10 +29,14 @@
                 <label for="nama_produk">Nama Produk</label>
                 <input type="text" name="nama_produk" class="form-control" id="nama_produk" placeholder="Masukkan nama produk" value="{{ old('nama_produk') }}" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="deskripsi_produk">Deskripsi (Opsional)</label>
                 <textarea name="deskripsi_produk" class="form-control" id="deskripsi_produk" rows="3">{{ old('deskripsi_produk') }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="deskripsi_produk">Kategori</label>
+                <textarea name="deskripsi_produk" class="form-control" id="deskripsi_produk" rows="3">{{ old('kategori') }}</textarea>
             </div>
 
             <div class="form-group">

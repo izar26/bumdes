@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Tambah Akun</h3>
         </div>
-        <form action="{{ route('admin.akun.store') }}" method="POST">
+        <form action="{{ route('admin.manajemen-data.akun.store') }}" method="POST">
             @csrf
             <div class="card-body">
                 @if ($errors->any())

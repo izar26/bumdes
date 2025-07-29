@@ -32,6 +32,8 @@
                     <th>Unit Usaha</th>
                     <th>Harga Jual</th>
                     <th>Satuan</th>
+                    <th>Deskripsi</th>
+                    <th>Kategori</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -42,6 +44,8 @@
                         <td>{{ $produk->nama_produk }}</td>
                         <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
                         <td>{{ 'Rp ' . number_format($produk->harga_jual, 0, ',', '.') }}</td>
+                        <td>{{ $produk->deskripsi_produk ?? 'Tidak ada deskripsi' }}</td>
+                        <td>{{ $produk->kategori ?? 'Umum' }}</td>
                         <td>{{ $produk->satuan_unit }}</td>
                         <td>
                             <a href="{{ route('produk.edit', $produk->produk_id) }}" class="btn btn-info btn-xs">Edit</a>

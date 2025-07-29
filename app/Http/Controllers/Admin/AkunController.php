@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Akun;
+use App\Models\Akun; // Make sure Akun model is imported
 
 use Illuminate\Support\Facades\Validator;
 
@@ -15,15 +15,13 @@ class AkunController extends Controller
      */
     public function index()
     {
-        // Ambil semua akun, diurutkan berdasarkan kode akun
-        // Bisa juga ambil hanya top-level dan load children secara rekursif jika ingin hierarki kompleks
         $akuns = Akun::orderBy('kode_akun')->get();
-
-        // Untuk menampilkan hierarki di view, kita bisa ambil akun top-level
-        // dan kemudian menggunakan relasi children di blade
         $topLevelAkuns = Akun::whereNull('parent_id')->orderBy('kode_akun')->get();
 
-        return view('admin.manajemen_data.akun.index', compact('akuns', 'topLevelAkuns'));
+        // Add this line to get tipeAkunOptions from your Akun model
+        $tipeAkunOptions = Akun::getTipeAkunOptions(); // Assuming this static method exists in your Akun model
+
+        return view('admin.manajemen_data.akun.index', compact('akuns', 'topLevelAkuns', 'tipeAkunOptions'));
     }
 
     /**
@@ -57,7 +55,7 @@ class AkunController extends Controller
 
         Akun::create($request->all());
 
-        return redirect()->route('admin.akun.index')->with('success', 'Akun keuangan berhasil ditambahkan!');
+        return redirect()->route('admin.manajemen-data.akun.index')->with('success', 'Akun keuangan berhasil ditambahkan!');
     }
 
     /**
@@ -124,19 +122,16 @@ class AkunController extends Controller
 
 
     /**
-     * Remove the specified resource from storage.
      * Menghapus akun dari database.
      */
     public function destroy(Akun $akun)
     {
-        // Pencegahan: Jangan hapus akun jika ada transaksi yang terhubung
-        // atau jika memiliki child accounts
         if ($akun->children()->count() > 0) {
             return redirect()->back()->with('error', 'Akun ini tidak bisa dihapus karena memiliki sub-akun.');
         }
         // Tambahkan cek transaksi jika sudah ada modul transaksi
 
         $akun->delete();
-        return redirect()->route('admin.akun.index')->with('success', 'Akun keuangan berhasil dihapus!');
+        return redirect()->route('admin.manajemen-data.akun.index')->with('success', 'Akun keuangan berhasil dihapus!');
     }
 }

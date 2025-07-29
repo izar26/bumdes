@@ -28,6 +28,9 @@ class ProdukController extends Controller
             'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|gte:harga_beli',
             'satuan_unit' => 'required|string|max:50',
+            'deskripsi_produk' => 'nullable|string|max:1000',
+            'kategori' => 'nullable|string|max:100',
+            'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
         ]);
 
@@ -55,6 +58,9 @@ class ProdukController extends Controller
             'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|gte:harga_beli',
             'satuan_unit' => 'required|string|max:50',
+            'deskripsi_produk' => 'nullable|string|max:1000',
+            'kategori' => 'nullable|string|max:100',
+            'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
         ]);
 
