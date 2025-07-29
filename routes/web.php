@@ -94,7 +94,4 @@ Route::prefix('usaha')->name('usaha')->group(function () {
 Route::resource('produk', ProdukController::class);
 Route::resource('penjualan', PenjualanController::class);
 Route::resource('pemasok', PemasokController::class);
-<<<<<<< HEAD
 Route::resource('pembelian', PembelianController::class);
-=======
->>>>>>> cc8fb74dfe169ccfeae20d8d82f239253e9447cc
