@@ -29,6 +29,8 @@ use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
 use App\Http\Controllers\Usaha\StokController;
 use App\Http\Controllers\Usaha\PemasokController;
+use App\Http\Controllers\Usaha\PembelianController;
+
 use App\Http\Controllers\Admin\Aset\AsetBUMDesController;
 use App\Http\Controllers\Usaha\KategoriController;
 
@@ -89,6 +91,18 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
         Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
         Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
 
+    Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
+    Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
+});
+Route::prefix('usaha')->name('usaha')->group(function () {
+});
+Route::resource('produk', ProdukController::class);
+Route::resource('penjualan', PenjualanController::class);
+Route::resource('pemasok', PemasokController::class);
+<<<<<<< HEAD
+Route::resource('pembelian', PembelianController::class);
+=======
+>>>>>>> cc8fb74dfe169ccfeae20d8d82f239253e9447cc
         Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
         Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
     });

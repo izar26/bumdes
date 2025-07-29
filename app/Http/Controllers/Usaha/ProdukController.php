@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Usaha; // Assuming ProdukController is in Usaha namespace
+namespace App\Http\Controllers\Usaha;
 
 use App\Http\Controllers\Controller;
+use App\Models\Produk;
+use App\Models\UnitUsaha;
+use App\Models\Stok; // <-- Pastikan ini ada
 use Illuminate\Http\Request;
-use App\Models\Produk; // Make sure to import your Produk model
-use App\Models\UnitUsaha; // Assuming you need this for the form
-use App\Models\Kategori; // Assuming you need this for the form
-use Illuminate\Support\Facades\Validator; // For validation
+use Illuminate\Support\Facades\DB; // <-- Pastikan ini ada
 
 class ProdukController extends Controller
 {
@@ -16,7 +16,8 @@ class ProdukController extends Controller
      */
     public function index()
     {
-        $produks = Produk::with('unitUsaha', 'kategori')->orderBy('nama_produk')->get();
+        // Tambahkan relasi 'stok' untuk ditampilkan di tabel
+        $produks = Produk::with('unitUsaha', 'stok')->latest()->get();
         return view('usaha.produk.index', compact('produks'));
     }
 
@@ -35,26 +36,41 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Tambahkan validasi untuk stok_awal
+        $request->validate([
             'nama_produk' => 'required|string|max:255',
-            'deskripsi_produk' => 'nullable|string',
             'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0|gt:harga_beli', // jual must be greater than beli
+            'harga_jual' => 'required|numeric|gte:harga_beli',
             'satuan_unit' => 'required|string|max:50',
-            'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id', // Assuming 'id' for UnitUsaha primary key
-            'stok_minimum' => 'required|integer|min:0',
-            'kategori_id' => 'nullable|exists:kategoris,id', // Assuming 'id' for Kategori primary key
+            'deskripsi_produk' => 'nullable|string|max:1000',
+            'kategori' => 'nullable|string|max:100',
+            'stok_minimum' => 'nullable|integer|min:0',
+            'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
+            'stok_awal' => 'required|numeric|min:0', // <-- Validasi baru
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
         try {
-            Produk::create($request->all());
-            return redirect()->route('usaha.produk.index')->with('success', 'Produk berhasil ditambahkan!');
+            DB::beginTransaction();
+
+            // 1. Simpan Produk
+            $produk = Produk::create($request->all());
+
+            // 2. Buat Stok Awal untuk produk baru
+            Stok::create([
+                'produk_id' => $produk->produk_id,
+                'unit_usaha_id' => $request->unit_usaha_id,
+                'jumlah_stok' => $request->stok_awal,
+                'tanggal_perbarui' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('produk.index')
+                             ->with('success', 'Produk baru berhasil ditambahkan beserta stok awalnya.');
+
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menambahkan produk: ' . $e->getMessage())->withInput();
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan produk: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -104,13 +120,20 @@ class ProdukController extends Controller
         }
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(Produk $produk)
     {
-        try {
+        // Menggunakan transaction untuk keamanan jika ada proses lain nantinya
+        DB::transaction(function () use ($produk) {
+            // Hapus stok terkait terlebih dahulu jika tidak ada onDelete Cascade di level DB
+            // Namun, karena skema DB kita sudah punya onDelete cascade,
+            // Stok akan terhapus otomatis saat produk dihapus.
             $produk->delete();
-            return redirect()->route('usaha.produk.index')->with('success', 'Produk berhasil dihapus!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus produk: ' . $e->getMessage());
-        }
+        });
+
+        return redirect()->route('produk.index')
+                         ->with('success', 'Data produk berhasil dihapus.');
     }
 }

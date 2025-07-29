@@ -40,6 +40,10 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="form-group col-md-2">
+                    <label for="stok_awal">Stok Awal</label>
+                    <input type="number" name="stok_awal" class="form-control" id="stok_awal" placeholder="0" value="{{ old('stok_awal', 0) }}" required>
+                </div>
             </div>
 
             <div class="row">
