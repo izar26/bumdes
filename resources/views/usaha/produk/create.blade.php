@@ -60,6 +60,10 @@
                     <label for="satuan_unit">Satuan Unit</label>
                     <input type="text" name="satuan_unit" class="form-control" id="satuan_unit" placeholder="Contoh: Pcs, Kg, Liter" value="{{ old('satuan_unit') }}" required>
                 </div>
+                <div class="form-group col-md-2">
+                    <label for="stok_awal">Stok Awal</label>
+                    <input type="number" name="stok_awal" class="form-control" id="stok_awal" placeholder="0" value="{{ old('stok_awal', 0) }}" required>
+                </div>
             </div>
 
         </div>

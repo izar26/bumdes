@@ -23,4 +23,9 @@ class Produk extends Model
     {
         return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
     }
+
+     public function stok()
+    {
+        return $this->hasOne(Stok::class, 'produk_id', 'produk_id');
+    }
 }

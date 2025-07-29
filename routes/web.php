@@ -28,6 +28,7 @@ use App\Http\Controllers\Laporan\NeracaController;
 use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
 use App\Http\Controllers\Usaha\PemasokController;
+use App\Http\Controllers\Usaha\PembelianController;
 
 use App\Http\Controllers\Admin\Aset\AsetBUMDesController;
 
@@ -93,3 +94,4 @@ Route::prefix('usaha')->name('usaha')->group(function () {
 Route::resource('produk', ProdukController::class);
 Route::resource('penjualan', PenjualanController::class);
 Route::resource('pemasok', PemasokController::class);
+Route::resource('pembelian', PembelianController::class);

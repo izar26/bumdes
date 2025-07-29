@@ -417,6 +417,16 @@ return [
                 'route'  => 'produk.index',
                 'icon' => 'fas fa-fw fa-boxes',
             ],
+            [
+                'text' => 'Manajemen Pemasok',
+                'route'  => 'pemasok.index',
+                'icon' => 'fas fa-fw fa-truck',
+            ],
+            [
+                'text' => 'Transaksi Pembelian',
+                'route'  => 'pembelian.index',
+                'icon' => 'fas fa-fw fa-shopping-cart',
+            ],
         ],
     ],
        [

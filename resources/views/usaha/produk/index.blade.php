@@ -32,6 +32,7 @@
                     <th>Unit Usaha</th>
                     <th>Harga Jual</th>
                     <th>Satuan</th>
+                    <th>Stok</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -43,6 +44,7 @@
                         <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
                         <td>{{ 'Rp ' . number_format($produk->harga_jual, 0, ',', '.') }}</td>
                         <td>{{ $produk->satuan_unit }}</td>
+                        <td>{{ $produk->stok->jumlah_stok ?? 0 }} {{ $produk->satuan_unit }}</td>
                         <td>
                             <a href="{{ route('produk.edit', $produk->produk_id) }}" class="btn btn-info btn-xs">Edit</a>
                             <form action="{{ route('produk.destroy', $produk->produk_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">
