@@ -98,11 +98,11 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
     Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
     // All 'usaha' routes should also require authentication
     Route::prefix('usaha')->name('usaha.')->group(function () {
-    Route::resource('stok', StokController::class);
-    // Removed redundant stok routes
-    Route::resource('produk', ProdukController::class);
-    Route::resource('penjualan', PenjualanController::class);
-    Route::resource('pemasok', PemasokController::class);
-    Route::resource('kategori', KategoriController::class)->except(['show']);
-});
+        Route::resource('stok', StokController::class);
+        // Removed redundant stok routes
+        Route::resource('produk', ProdukController::class);
+        Route::resource('penjualan', PenjualanController::class);
+        Route::resource('pemasok', PemasokController::class);
+        Route::resource('kategori', KategoriController::class)->except(['show']);
+    });
 });
