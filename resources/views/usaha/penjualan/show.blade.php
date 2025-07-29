@@ -35,7 +35,7 @@
         <div class="col-sm-4 invoice-col">
             <b>Invoice #{{ $penjualan->no_invoice }}</b><br>
             <br>
-            <b>Status:</b> 
+            <b>Status:</b>
             @if($penjualan->status_penjualan == 'Lunas')
                 <span class="badge badge-success">Lunas</span>
             @else
@@ -88,7 +88,7 @@
     <div class="row no-print">
         <div class="col-12">
             <a href="#" onclick="window.print();" class="btn btn-default"><i class="fas fa-print"></i> Cetak</a>
-            <a href="{{ route('penjualan.index') }}" class="btn btn-secondary float-right">
+            <a href="{{ route('usaha.penjualan.index') }}" class="btn btn-secondary float-right">
                 <i class="fas fa-arrow-left"></i> Kembali ke Daftar
             </a>
         </div>

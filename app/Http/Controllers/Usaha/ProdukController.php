@@ -26,8 +26,9 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
-        return view('usaha.produk.create', compact('unitUsahas'));
+        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        return view('usaha.produk.create', compact('unitUsahas', 'kategoris'));
     }
 
     /**
@@ -86,8 +87,9 @@ class ProdukController extends Controller
      */
     public function edit(Produk $produk)
     {
-        $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
-        return view('usaha.produk.edit', compact('produk', 'unitUsahas'));
+        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        return view('usaha.produk.edit', compact('produk', 'unitUsahas', 'kategoris'));
     }
 
     /**
@@ -95,21 +97,27 @@ class ProdukController extends Controller
      */
     public function update(Request $request, Produk $produk)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nama_produk' => 'required|string|max:255',
+            'deskripsi_produk' => 'nullable|string',
             'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|gte:harga_beli',
+            'harga_jual' => 'required|numeric|min:0|gt:harga_beli',
             'satuan_unit' => 'required|string|max:50',
-            'deskripsi_produk' => 'nullable|string|max:1000',
-            'kategori' => 'nullable|string|max:100',
-            'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
+            'stok_minimum' => 'required|integer|min:0',
+            'kategori_id' => 'nullable|exists:kategoris,id',
         ]);
 
-        $produk->update($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
-        return redirect()->route('produk.index')
-                         ->with('success', 'Data produk berhasil diperbarui.');
+        try {
+            $produk->update($request->all());
+            return redirect()->route('usaha.produk.index')->with('success', 'Produk berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memperbarui produk: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**

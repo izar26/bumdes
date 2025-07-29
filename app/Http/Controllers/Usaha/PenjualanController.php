@@ -94,7 +94,7 @@ class PenjualanController extends Controller
                 'debit' => 0,
                 'kredit' => $totalPenjualan,
             ]);
-            
+
             // 4. Buat record Penjualan utama
             $penjualan = Penjualan::create([
                 'no_invoice' => 'INV-' . time(), // Buat nomor invoice sementara
@@ -105,14 +105,14 @@ class PenjualanController extends Controller
                 'nama_pelanggan' => $request->nama_pelanggan,
                 'status_penjualan' => $request->status_penjualan,
             ]);
-            
+
             // 5. Simpan detail penjualan
             $penjualan->detailPenjualans()->createMany($detailData);
 
             // Jika semua berhasil, konfirmasi transaksi
             DB::commit();
 
-            return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan.');
+            return redirect()->route('usaha.penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan.');
 
         } catch (\Exception $e) {
             // Jika ada error, batalkan semua proses
@@ -151,12 +151,12 @@ class PenjualanController extends Controller
 
             DB::commit();
 
-            return redirect()->route('penjualan.index')
+            return redirect()->route('usaha.penjualan.index')
                              ->with('success', 'Transaksi penjualan berhasil dibatalkan dan dihapus.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('penjualan.index')
+            return redirect()->route('usaha.penjualan.index')
                              ->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
         }
     }

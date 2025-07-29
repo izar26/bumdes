@@ -9,27 +9,27 @@ class Produk extends Model
 {
     use HasFactory;
 
-    protected $table = 'produks'; // Pastikan nama tabelnya 'produks'
-
-    protected $primaryKey = 'produk_id'; // Sesuai dengan primary key di migrasi
-    public $incrementing = true;
-    protected $keyType = 'int';
+    protected $primaryKey = 'produk_id'; // Keep this as produk_id for the Produk model
 
     protected $fillable = [
-        'nama_produk',        // <-- Perubahan: nama_produk
-        'deskripsi_produk',   // <-- Kolom baru
-        'harga_beli',         // <-- Kolom baru
-        'harga_jual',         // <-- Perubahan: harga_jual
-        'satuan_unit',        // <-- Kolom baru
-        'unit_usaha_id',      // Konsisten
-        'stok_minimum',       // Konsisten
-        'kategori',           // <-- Kolom baru
+        'nama_produk',
+        'deskripsi_produk',
+        'harga_beli',
+        'harga_jual',
+        'satuan_unit',
+        'unit_usaha_id',
+        'stok_minimum',
+        'kategori_id', // Add this to fillable
     ];
 
-    // Relasi ke UnitUsaha
     public function unitUsaha()
     {
         return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
+    }
+
+    public function kategori()
+    {
+        return $this->belongsTo(Kategori::class);
     }
 
     public function stok()
@@ -37,13 +37,8 @@ class Produk extends Model
         return $this->hasOne(Stok::class, 'produk_id', 'produk_id');
     }
 
-    public function detailPembelian()
+    public function getCurrentStockAttribute()
     {
-        return $this->hasMany(DetailPembelian::class, 'produk_id', 'produk_id');
-    }
-
-    public function detailPenjualan()
-    {
-        return $this->hasMany(DetailPenjualan::class, 'produk_id', 'produk_id');
+        return $this->stok ? $this->stok->jumlah_stok : 0;
     }
 }

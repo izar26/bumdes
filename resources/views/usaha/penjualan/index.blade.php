@@ -11,7 +11,7 @@
     <div class="card-header">
         <h3 class="card-title">Riwayat Penjualan</h3>
         <div class="card-tools">
-            <a href="{{ route('penjualan.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('usaha.penjualan.create') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> Buat Transaksi Baru
             </a>
         </div>
@@ -53,7 +53,7 @@
                 </td>
                 <td>
                     <a href="{{ route('penjualan.show', $penjualan->penjualan_id) }}" class="btn btn-info btn-xs">Detail</a>
-                    
+
                     {{-- ================== TAMBAHKAN FORM INI ================== --}}
                     <form action="{{ route('penjualan.destroy', $penjualan->penjualan_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin membatalkan dan menghapus transaksi ini? Aksi ini tidak bisa dikembalikan.');">
                         @csrf

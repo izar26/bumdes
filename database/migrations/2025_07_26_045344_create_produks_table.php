@@ -20,8 +20,12 @@ return new class extends Migration
             $table->string('satuan_unit', 50);
             $table->unsignedBigInteger('unit_usaha_id');
             $table->integer('stok_minimum')->default(0);
-            $table->string('kategori', 100)->nullable();
+
+
+            $table->foreignId('kategori_id')->nullable()->constrained('kategoris')->onDelete('set null');
+
             $table->timestamps();
+
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('cascade');
         });
     }

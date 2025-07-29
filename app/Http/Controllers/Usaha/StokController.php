@@ -26,7 +26,6 @@ class StokController extends Controller
             $query->whereIn('unit_usaha_id', $managedUnitUsahaIds); // <-- Pastikan ini 'unit_usaha_id'
         }
 
-        // Filter opsional berdasarkan unit_usaha_id dari request (untuk admin BUMDes)
         if ($user->isAdminBumdes() && $request->filled('unit_usaha_id')) {
             $query->where('unit_usaha_id', $request->unit_usaha_id); // <-- Pastikan ini 'unit_usaha_id'
         }
@@ -37,9 +36,6 @@ class StokController extends Controller
         return view('usaha.stok.index', compact('produks', 'unitUsahas'));
     }
 
-    /**
-     * Show the form for creating a new stock adjustment.
-     */
     public function create()
     {
         $user = Auth::user();
@@ -56,9 +52,6 @@ class StokController extends Controller
         return view('usaha.stok.create_adjustment', compact('produks', 'unitUsahas'));
     }
 
-    /**
-     * Store a newly created stock adjustment.
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

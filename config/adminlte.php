@@ -409,12 +409,12 @@ return [
         'submenu' => [
             [
                 'text' => 'Transaksi Penjualan',
-                'route'  => 'penjualan.index', // atau penjualan.create
+                'route'  => 'usaha.penjualan.index', // atau penjualan.create
                 'icon' => 'fas fa-fw fa-cash-register',
             ],
             [
                 'text' => 'Manajemen Produk',
-                'route'  => 'produk.index',
+                'route'  => 'usaha.produk.index',
                 'icon' => 'fas fa-fw fa-boxes',
             ],
             [
@@ -427,6 +427,21 @@ return [
                 'route'  => 'pembelian.index',
                 'icon' => 'fas fa-fw fa-shopping-cart',
             ],
+            [
+                'text' => 'Stok Produk',
+                'route'  => 'usaha.stok.index',
+                'icon' => 'fas fa-fw fa-warehouse',
+            ],
+            [
+                'text' => 'Pemasok',
+                'route'  => 'usaha.pemasok.index',
+                'icon' => 'fas fa-fw fa-truck',
+            ],
+            [
+                'text' => 'Kategori Produk',
+                'route'  => 'usaha.kategori.index',
+                'icon' => 'fas fa-fw fa-tags',
+            ]
         ],
     ],
        [
