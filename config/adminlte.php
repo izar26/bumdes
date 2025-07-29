@@ -391,7 +391,16 @@ return [
                 'route'  => 'laporan.buku-besar.index',
                 'icon' => 'fas fa-fw fa-book-open',
             ],
-            // Nanti bisa ditambahkan laporan lain di sini
+            [
+                'text' => 'Laba Rugi',
+                'route'  => 'laporan.laba-rugi.index',
+                'icon' => 'fas fa-fw fa-chart-line',
+            ],
+            [
+                'text' => 'Neraca',
+                'route'  => 'laporan.neraca.index',
+                'icon' => 'fas fa-fw fa-balance-scale',
+            ],
         ],
     ],
     [

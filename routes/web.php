@@ -21,10 +21,13 @@ use App\Http\Controllers\Keuangan\JurnalUmumController;
 
 //laporan
 use App\Http\Controllers\Laporan\BukuBesarController;
+use App\Http\Controllers\Laporan\LabaRugiController;
+use App\Http\Controllers\Laporan\NeracaController;
 
 //usaha
 use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
+use App\Http\Controllers\Usaha\PemasokController;
 
 Route::get('/', [HomeController::class, 'index']);
 
@@ -60,10 +63,17 @@ Route::prefix('keuangan')->group(function () {
 });
 
 Route::prefix('laporan')->name('laporan.')->group(function () {
-        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
-        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
-    });
+    Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+    Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+
+    Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
+    Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
+
+    Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
+    Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
+});
 Route::prefix('usaha')->name('usaha')->group(function () {
 });
 Route::resource('produk', ProdukController::class);
 Route::resource('penjualan', PenjualanController::class);
+Route::resource('pemasok', PemasokController::class);
