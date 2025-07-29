@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Penyesuaian Stok Produk</h3>
         </div>
-        <form action="{{ route('stok.store_adjustment') }}" method="POST">
+        <form action="{{ route('usaha.stok.store') }}" method="POST">
             @csrf
             <div class="card-body">
                 @if (session('success'))
@@ -126,7 +126,7 @@
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-primary">Simpan Penyesuaian</button>
-                <a href="{{ route('stok.index') }}" class="btn btn-secondary">Batal</a>
+                <a href="{{ route('usaha.stok.index') }}" class="btn btn-secondary">Batal</a>
             </div>
         </form>
     </div>

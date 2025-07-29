@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-<form action="{{ route('penjualan.store') }}" method="POST">
+<form action="{{ route('usaha.penjualan.store') }}" method="POST">
     @csrf
     <div class="row">
         <div class="col-md-12">
@@ -114,7 +114,7 @@ $(document).ready(function() {
     $('#tambah-produk').on('click', function() {
         let produkSelect = $('#produk-list');
         let produkId = produkSelect.val();
-        
+
         if ($('#detail-penjualan').find('input[value="' + produkId + '"]').length > 0) {
             alert('Produk sudah ada di dalam daftar.');
             return;

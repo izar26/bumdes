@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Manajemen Inventaris Produk</h3>
             <div class="card-tools">
-                <a href="{{ route('stok.create_adjustment') }}" class="btn btn-primary btn-sm">
+                <a href="{{ route('usaha.stok.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Buat Penyesuaian Stok
                 </a>
             </div>
@@ -47,22 +47,7 @@
                 </div>
             @endif
 
-            {{-- Filter Section (only for Admin BUMDes) --}}
-            @if (Auth::user()->isAdminBumdes())
-                <form action="{{ route('admin.stok.index') }}" method="GET" class="form-inline mb-3">
-                    <label for="unit_usaha_id" class="mr-2">Filter Unit Usaha:</label>
-                    <select name="unit_usaha_id" id="unit_usaha_id" class="form-control mr-2">
-                        <option value="">Semua Unit Usaha</option>
-                        @foreach ($unitUsahas as $unitUsaha)
-                            <option value="{{ $unitUsaha->unit_usaha_id }}" {{ request('unit_usaha_id') == $unitUsaha->unit_usaha_id ? 'selected' : '' }}>
-                                {{ $unitUsaha->nama_unit }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <button type="submit" class="btn btn-info">Filter</button>
-                </form>
-            @endif
-
+            
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
