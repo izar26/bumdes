@@ -7,33 +7,38 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Jalankan migrasi.
      */
     public function up(): void
     {
-        Schema::create('aset_bungdeses', function (Blueprint $table) { // Changed table name
-            $table->id('aset_id');
+        Schema::create('asets', function (Blueprint $table) {
+            $table->id('id');
             $table->string('nama_aset', 255);
             $table->string('jenis_aset', 100);
             $table->decimal('nilai_perolehan', 18, 2);
             $table->date('tanggal_perolehan');
             $table->string('kondisi', 100);
-            $table->string('lokasi', 255)->nullable();
+            $table->string('lokasi', 255)->nullable(); // Diubah: lokasi menjadi nullable
             $table->unsignedBigInteger('bungdes_id');
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
-            $table->unsignedBigInteger('penanggung_jawab')->nullable();
+            $table->unsignedBigInteger('penanggung_jawab')->nullable(); // Ditambahkan: kolom penanggung_jawab
             $table->timestamps();
+
+            // Ditambahkan: Foreign key constraints
+            // PENTING: Pastikan tabel 'users' memiliki primary key 'user_id'
             $table->foreign('penanggung_jawab')->references('user_id')->on('users')->onDelete('set null');
-            $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade'); // Changed reference
+            // PENTING: Pastikan tabel 'bungdeses' memiliki primary key 'bungdes_id'
+            $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade');
+            // PENTING: Pastikan tabel 'unit_usahas' memiliki primary key 'unit_usaha_id'
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('set null');
         });
     }
 
     /**
-     * Reverse the migrations.
+     * Balikkan migrasi.
      */
     public function down(): void
     {
-        Schema::dropIfExists('aset_bungdes'); // Changed table name
+        Schema::dropIfExists('asets'); // Diubah: nama tabel konsisten dengan up()
     }
 };

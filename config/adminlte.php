@@ -110,7 +110,7 @@ return [
     */
 
     'preloader' => [
-        'enabled' => true,
+        'enabled' => false,
         'mode' => 'fullscreen',
         'img' => [
             'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
@@ -419,6 +419,27 @@ return [
             ],
         ],
     ],
+       [
+            'text' => 'Manajemen Aset',
+            'icon' => 'fas fa-fw fa-boxes',
+            'submenu' => [
+                [
+                    'text' => 'Pencatatan Aset',
+                    'url'  => 'bumdes/aset',
+                    'icon' => 'fas fa-fw fa-clipboard-list',
+                ],
+                [
+                    'text' => 'Penyusutan Aset',
+                    'url'  => 'bumdes/aset/penyusutan',
+                    'icon' => 'fas fa-fw fa-percent',
+                ],
+                [
+                    'text' => 'Pemeliharaan Aset',
+                    'url'  => 'bumdes/aset/pemeliharaan',
+                    'icon' => 'fas fa-fw fa-tools',
+                ],
+            ],
+        ],
 ],
 //     [
 //         'text' => 'Kelola Unit Usaha',

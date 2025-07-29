@@ -29,6 +29,8 @@ use App\Http\Controllers\Usaha\ProdukController;
 use App\Http\Controllers\Usaha\PenjualanController;
 use App\Http\Controllers\Usaha\PemasokController;
 
+use App\Http\Controllers\Admin\Aset\AsetBUMDesController;
+
 Route::get('/', [HomeController::class, 'index']);
 
 Auth::routes();
@@ -55,6 +57,20 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
 
 });
+
+   // PENTING: Pindahkan rute spesifik ini di atas Route::resource
+    Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
+    Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
+
+    Route::resource('bumdes/aset', AsetBUMDesController::class)->names([
+        'index' => 'bumdes.aset.index',
+        'create' => 'bumdes.aset.create',
+        'store' => 'bumdes.aset.store',
+        'show' => 'bumdes.aset.show',
+        'edit' => 'bumdes.aset.edit',
+        'update' => 'bumdes.aset.update',
+        'destroy' => 'bumdes.aset.destroy',
+    ]);
 
 Route::prefix('keuangan')->group(function () {
     Route::resource('kas-bank', KasBankController::class);
