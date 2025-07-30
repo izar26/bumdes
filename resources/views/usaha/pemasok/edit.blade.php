@@ -8,7 +8,7 @@
     <div class="card-header">
         <h3 class="card-title">Formulir Edit Pemasok</h3>
     </div>
-    <form action="{{ route('pemasok.update', $pemasok->pemasok_id) }}" method="POST">
+    <form action="{{ route('usaha.pemasok.update', $pemasok->pemasok_id) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="card-body">
@@ -51,7 +51,7 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">Update</button>
-            <a href="{{ route('pemasok.index') }}" class="btn btn-secondary">Batal</a>
+            <a href="{{ route('usaha.pemasok.index') }}" class="btn btn-secondary">Batal</a>
         </div>
     </form>
 </div>

@@ -48,7 +48,6 @@ class KasBankController extends Controller
             'akun_id' => $request->akun_id,
             'nomor_rekening' => $request->nomor_rekening,
             'saldo_saat_ini' => $request->saldo_saat_ini,
-            'bungdes_id' => 1, // Asumsi BUMDes ID 1, sesuaikan jika perlu
             'user_id' => auth()->id(),
         ]);
 

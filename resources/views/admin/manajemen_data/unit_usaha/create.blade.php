@@ -44,20 +44,7 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="bungdes_id">Pilih BUMDes</label>
-                    <select name="bungdes_id" id="bungdes_id" class="form-control @error('bungdes_id') is-invalid @enderror" required>
-                        <option value="">-- Pilih BUMDes --</option>
-                        @foreach ($bungdeses as $bungdes)
-                            <option value="{{ $bungdes->bungdes_id }}" {{ old('bungdes_id') == $bungdes->bungdes_id ? 'selected' : '' }}>
-                                {{ $bungdes->nama_bumdes }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('bungdes_id')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
+                
 
                 <div class="form-group">
                     <label for="user_id">Penanggung Jawab</label>

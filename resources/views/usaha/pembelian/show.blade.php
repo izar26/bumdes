@@ -32,7 +32,7 @@
         </div>
         <div class="col-sm-4 invoice-col">
             <b>No. Faktur #{{ $pembelian->no_faktur ?? '-' }}</b><br>
-            <b>Status:</b> 
+            <b>Status:</b>
             @if($pembelian->status_pembelian == 'Lunas')
                 <span class="badge badge-success">Lunas</span>
             @else
@@ -84,7 +84,7 @@
     <div class="row no-print">
         <div class="col-12">
             <button onclick="window.print();" class="btn btn-default"><i class="fas fa-print"></i> Cetak</button>
-            <a href="{{ route('pembelian.index') }}" class="btn btn-secondary float-right">
+            <a href="{{ route('usaha.pembelian.index') }}" class="btn btn-secondary float-right">
                 <i class="fas fa-arrow-left"></i> Kembali ke Daftar
             </a>
         </div>

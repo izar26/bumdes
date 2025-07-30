@@ -8,7 +8,7 @@
     <div class="card-header">
         <h3 class="card-title">Riwayat Pembelian</h3>
         <div class="card-tools">
-            <a href="{{ route('pembelian.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('usaha.pembelian.create') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> Buat Transaksi Baru
             </a>
         </div>
@@ -48,8 +48,8 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('pembelian.show', $pembelian->pembelian_id) }}" class="btn btn-info btn-xs">Detail</a>
-                            <form action="{{ route('pembelian.destroy', $pembelian->pembelian_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin menghapus transaksi ini?');">
+                            <a href="{{ route('usaha.pembelian.show', $pembelian->pembelian_id) }}" class="btn btn-info btn-xs">Detail</a>
+                            <form action="{{ route('usaha.pembelian.destroy', $pembelian->pembelian_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin menghapus transaksi ini?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-xs">Hapus</button>

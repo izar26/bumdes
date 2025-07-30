@@ -19,7 +19,6 @@ class AsetBUMDes extends Model
         'tanggal_perolehan',
         'kondisi',
         'lokasi',
-        'bungdes_id',
         'unit_usaha_id',
         'penanggung_jawab',
     ];
@@ -29,10 +28,6 @@ class AsetBUMDes extends Model
         'nilai_perolehan' => 'decimal:2',
     ];
 
-    public function bungdes()
-    {
-        return $this->belongsTo(Bungdes::class, 'bungdes_id', 'bungdes_id');
-    }
 
     public function unitUsaha()
     {

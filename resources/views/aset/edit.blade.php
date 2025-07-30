@@ -62,13 +62,7 @@
                         <span class="invalid-feedback">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="form-group">
-                    <label for="bungdes_id">ID BUMDes</label>
-                    <input type="number" name="bungdes_id" class="form-control @error('bungdes_id') is-invalid @enderror" id="bungdes_id" value="{{ old('bungdes_id', $aset->bungdes_id) }}" placeholder="ID BUMDes" required>
-                    @error('bungdes_id')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
+               
                 <div class="form-group">
                     <label for="unit_usaha_id">ID Unit Usaha (Opsional)</label>
                     <input type="number" name="unit_usaha_id" class="form-control @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" value="{{ old('unit_usaha_id', $aset->unit_usaha_id) }}" placeholder="ID Unit Usaha (opsional)">

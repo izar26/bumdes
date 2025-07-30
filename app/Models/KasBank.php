@@ -23,7 +23,6 @@ class KasBank extends Model
         'nomor_rekening',
         'saldo_saat_ini',
         'akun_id',
-        'bungdes_id',
         'user_id'
     ];
 

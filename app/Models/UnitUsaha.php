@@ -16,7 +16,6 @@ class UnitUsaha extends Model
     protected $fillable = [
         'nama_unit',
         'jenis_usaha',
-        'bungdes_id',
         'tanggal_mulai_operasi',
         'status_operasi',
         'user_id', // Untuk penanggung jawab (foreign key ke users)
@@ -26,17 +25,6 @@ class UnitUsaha extends Model
         'tanggal_mulai_operasi' => 'date',
     ];
 
-    /**
-     * Get the Bungdes that owns the UnitUsaha.
-     */
-    public function bungdes()
-    {
-        return $this->belongsTo(Bungdes::class, 'bungdes_id', 'bungdes_id');
-    }
-
-    /**
-     * Get the User (Penanggung Jawab) for the UnitUsaha.
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');

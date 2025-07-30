@@ -19,17 +19,11 @@ return new class extends Migration
             $table->date('tanggal_perolehan');
             $table->string('kondisi', 100);
             $table->string('lokasi', 255)->nullable(); // Diubah: lokasi menjadi nullable
-            $table->unsignedBigInteger('bungdes_id');
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
             $table->unsignedBigInteger('penanggung_jawab')->nullable(); // Ditambahkan: kolom penanggung_jawab
             $table->timestamps();
 
-            // Ditambahkan: Foreign key constraints
-            // PENTING: Pastikan tabel 'users' memiliki primary key 'user_id'
             $table->foreign('penanggung_jawab')->references('user_id')->on('users')->onDelete('set null');
-            // PENTING: Pastikan tabel 'bungdeses' memiliki primary key 'bungdes_id'
-            $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade');
-            // PENTING: Pastikan tabel 'unit_usahas' memiliki primary key 'unit_usaha_id'
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('set null');
         });
     }

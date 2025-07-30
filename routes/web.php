@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('unit_usaha', UnitUsahaController::class);
             Route::resource('akun', AkunController::class);
             Route::resource('user', UserController::class);
+            
             Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
         });
     });
@@ -89,7 +90,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
         Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
     });
-
     Route::prefix('usaha')->name('usaha.')->group(function () {
         Route::resource('produk', ProdukController::class);
         Route::resource('stok', StokController::class);

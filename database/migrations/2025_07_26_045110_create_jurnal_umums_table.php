@@ -21,11 +21,9 @@ return new class extends Migration
             $table->decimal('total_kredit', 18, 2);
             $table->unsignedBigInteger('user_id');
             $table->string('metode_transaksi')->nullable();
-            $table->unsignedBigInteger('bungdes_id'); // Changed from bumdes_id
             $table->timestamps();
 
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade'); // Changed reference
-            $table->foreign('bungdes_id')->references('bungdes_id')->on('bungdeses')->onDelete('cascade'); // Changed reference
         });
     }
 

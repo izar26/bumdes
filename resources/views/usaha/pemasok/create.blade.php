@@ -8,7 +8,7 @@
     <div class="card-header">
         <h3 class="card-title">Formulir Pemasok</h3>
     </div>
-    <form action="{{ route('pemasok.store') }}" method="POST">
+    <form action="{{ route('usaha.pemasok.store') }}" method="POST">
         @csrf
         <div class="card-body">
             @if ($errors->any())
@@ -50,7 +50,7 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">Simpan</button>
-            <a href="{{ route('pemasok.index') }}" class="btn btn-secondary">Batal</a>
+            <a href="{{ route('usaha.pemasok.index') }}" class="btn btn-secondary">Batal</a>
         </div>
     </form>
 </div>

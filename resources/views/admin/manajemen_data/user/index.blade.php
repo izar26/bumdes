@@ -53,8 +53,8 @@
                         <th>Username</th>
                         <th>Email</th>
                         <th>Peran</th>
-                        <th>Status</th> {{-- <--- NEW: Column for user status --}}
-                        <th>Unit Usaha Dikelola</th> {{-- <--- NEW: Column for managed units --}}
+                        <th>Status</th>
+                        <th>Unit Usaha Dikelola</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -67,7 +67,6 @@
                             <td>{{ $user->email }}</td>
                             <td>{{ $rolesOptions[$user->role] ?? $user->role }}</td>
                             <td>
-                                {{-- NEW: Display user active status --}}
                                 @if ($user->is_active)
                                     <span class="badge badge-success">Aktif</span>
                                 @else
@@ -75,7 +74,6 @@
                                 @endif
                             </td>
                             <td>
-                                {{-- NEW: Display units managed by this user --}}
                                 @if ($user->role === 'manajer_unit_usaha' && $user->unitUsahas->isNotEmpty())
                                     <ul>
                                         @foreach ($user->unitUsahas as $unitUsaha)
@@ -90,25 +88,43 @@
                                 <a href="{{ route('admin.manajemen-data.user.show', $user->user_id) }}" class="btn btn-info btn-xs">Detail</a>
                                 <a href="{{ route('admin.manajemen-data.user.edit', $user->user_id) }}" class="btn btn-warning btn-xs">Edit</a>
 
-                                {{-- NEW: Toggle Active/Inactive Form instead of Delete --}}
-                                <form action="{{ route('admin.manajemen-data.user.toggleActive', $user->user_id) }}" method="POST" style="display:inline;">
+                                {{-- Toggle Active/Non-Active Form --}}
+                                <form id="toggle-form-{{ $user->user_id }}"
+                                    action="{{ route('admin.manajemen-data.user.toggleActive', $user->user_id) }}"
+                                    method="POST" style="display:inline;">
                                     @csrf
                                     @method('PUT')
-                                    <button type="submit"
-                                            class="btn btn-{{ $user->is_active ? 'danger' : 'success' }} btn-xs"
-                                            onclick="return confirm('Apakah Anda yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan' }} pengguna {{ $user->name }}?')">
+                                    <button type="button"
+                                        class="btn btn-{{ $user->is_active ? 'danger' : 'success' }} btn-xs"
+                                        data-toggle="modal"
+                                        data-target="#confirmModal" {{-- Change this to a generic modal ID like 'confirmModal' --}}
+                                        data-form-id="toggle-form-{{ $user->user_id }}"
+                                        data-title="Konfirmasi Perubahan Status" {{-- Dynamic Title --}}
+                                        data-body="Apakah Anda yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan' }} pengguna {{ $user->name }}?"
+                                        data-button-text="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
+                                        data-button-class="btn-{{ $user->is_active ? 'danger' : 'success' }}">
                                         {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                     </button>
                                 </form>
 
-                                {{-- Optional: If you still want a permanent delete button for super admins --}}
-                                {{-- @if (Auth::user()->isSuperAdmin()) --}}
-                                {{-- <form action="{{ route('admin.user.destroy', $user->user_id) }}" method="POST" style="display:inline;">
+                                {{-- Delete Form --}}
+                                <form id="delete-form-{{ $user->user_id }}"
+                                    action="{{ route('admin.manajemen-data.user.destroy', $user->user_id) }}"
+                                    method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('PERINGATAN: Ini akan menghapus pengguna secara permanen. Lanjutkan?')">Hapus Permanen</button>
-                                </form> --}}
-                                {{-- @endif --}}
+                                    <button type="button"
+                                            class="btn btn-danger btn-xs"
+                                            data-toggle="modal"
+                                            data-target="#confirmModal" {{-- Use the same generic modal ID --}}
+                                            data-form-id="delete-form-{{ $user->user_id }}"
+                                            data-title="Konfirmasi Penghapusan" {{-- Dynamic Title --}}
+                                            data-body="Apakah Anda yakin ingin menghapus pengguna {{ $user->name }} secara permanen?"
+                                            data-button-text="Hapus Permanen"
+                                            data-button-class="btn-danger">
+                                        Hapus
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty
@@ -122,10 +138,11 @@
     </div>
 @stop
 
-@section('css')
-    {{-- Add any specific CSS for this page if needed --}}
-@stop
-
-@section('js')
-    {{-- Add any specific JS for this page if needed --}}
-@stop
+@include('components.confirm-modal', [
+    'modalId' => 'confirmModal',
+    'title' => 'Konfirmasi Aksi',
+    'body' => 'Apakah Anda yakin?',
+    'confirmButtonText' => 'Lanjutkan',
+    'confirmButtonClass' => 'btn-primary',
+    'actionFormId' => ''
+])

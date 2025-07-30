@@ -76,7 +76,7 @@ public function store(Request $request)
         }
 
         // ... (sisa logika untuk membuat jurnal dan menyimpan pembelian tetap sama)
-        
+
         $akunDebit = Akun::where('kode_akun', '1-10400')->firstOrFail(); // Persediaan Barang Dagang
         $deskripsiJurnal = 'Pembelian barang dagang dari ' . Pemasok::find($request->pemasok_id)->nama_pemasok;
 
@@ -87,7 +87,6 @@ public function store(Request $request)
         }
 
         $jurnal = JurnalUmum::create([
-            'bungdes_id' => 1,
             'user_id' => Auth::id(),
             'tanggal_transaksi' => $request->tanggal_pembelian,
             'deskripsi' => $deskripsiJurnal,
@@ -108,7 +107,7 @@ public function store(Request $request)
             'debit' => 0,
             'kredit' => $totalPembelian,
         ]);
-        
+
         $pembelian = Pembelian::create([
             'pemasok_id' => $request->pemasok_id,
             'no_faktur' => $request->no_faktur,
@@ -118,12 +117,12 @@ public function store(Request $request)
             'unit_usaha_id' => Pemasok::find($request->pemasok_id)->unit_usaha_id,
             'status_pembelian' => $request->status_pembelian,
         ]);
-        
+
         $pembelian->detailPembelians()->createMany($detailData);
-        
+
         DB::commit();
 
-        return redirect()->route('pembelian.index')->with('success', 'Transaksi pembelian berhasil disimpan dan stok telah diperbarui.');
+        return redirect()->route('usaha.pembelian.index')->with('success', 'Transaksi pembelian berhasil disimpan dan stok telah diperbarui.');
 
     } catch (\Exception $e) {
         DB::rollBack();
@@ -147,11 +146,11 @@ public function store(Request $request)
                 $jurnal->delete();
             }
             DB::commit();
-            return redirect()->route('pembelian.index')
+            return redirect()->route('usaha.pembelian.index')
                              ->with('success', 'Transaksi pembelian berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('pembelian.index')
+            return redirect()->route('usaha.pembelian.index')
                              ->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
         }
     }

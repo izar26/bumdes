@@ -349,7 +349,7 @@ return [
         'icon' => 'fas fa-fw fa-briefcase',
         'submenu' => [
             [
-                'text' => 'Data Bugdes',
+                'text' => 'Data Bumdes',
                 'url'  => 'admin/manajemen-data/bungdes',
             ],
             [
@@ -361,7 +361,7 @@ return [
                 'url'  => 'admin/manajemen-data/akun',
             ],
             [
-                'text' => 'User Management',
+                'text' => 'Manajemen User',
                 'url'  => 'admin/manajemen-data/user',
             ],
         ],
@@ -409,7 +409,7 @@ return [
         'submenu' => [
             [
                 'text' => 'Transaksi Penjualan',
-                'route'  => 'usaha.penjualan.index', // atau penjualan.create
+                'route'  => 'usaha.penjualan.index',
                 'icon' => 'fas fa-fw fa-cash-register',
             ],
             [
@@ -417,14 +417,10 @@ return [
                 'route'  => 'usaha.produk.index',
                 'icon' => 'fas fa-fw fa-boxes',
             ],
-            [
-                'text' => 'Manajemen Pemasok',
-                'route'  => 'pemasok.index',
-                'icon' => 'fas fa-fw fa-truck',
-            ],
+
             [
                 'text' => 'Transaksi Pembelian',
-                'route'  => 'pembelian.index',
+                'route'  => 'usaha.pembelian.index',
                 'icon' => 'fas fa-fw fa-shopping-cart',
             ],
             [

@@ -20,7 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'is_active', 
+        'is_active',
     ];
 
     protected $hidden = [
@@ -52,9 +52,6 @@ class User extends Authenticatable
     public function unitUsahas()
     {
         return $this->hasMany(UnitUsaha::class, 'user_id', 'user_id');
-        // UnitUsaha::class: The related model
-        // 'user_id': The foreign key on the UnitUsaha table (this is correct)
-        // 'user_id': The local key on the User table (this is your primary key for User, correct)
     }
 
     // Helper methods for role checking (keep these)

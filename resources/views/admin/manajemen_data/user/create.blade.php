@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Penambahan Pengguna</h3>
         </div>
-        <form action="{{ route('admin.user.store') }}" method="POST">
+        <form action="{{ route('admin.manajemen-data.user.store') }}" method="POST">
             @csrf
             <div class="card-body">
                 @if (session('success'))
@@ -130,7 +130,7 @@
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-primary">Simpan Pengguna</button>
-                <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">Batal</a>
+                <a href="{{ route('admin.manajemen-data.user.index') }}" class="btn btn-secondary">Batal</a>
             </div>
         </form>
     </div>

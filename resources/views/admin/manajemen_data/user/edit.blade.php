@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Edit Pengguna</h3>
         </div>
-        <form action="{{ route('admin.user.update', $user->user_id) }}" method="POST">
+        <form action="{{ route('admin.manajemen-data.user.update', $user->user_id) }}" method="POST">
             @csrf
             @method('PUT') {{-- Penting: Gunakan method PUT untuk update --}}
 
@@ -147,7 +147,7 @@
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-primary">Perbarui Pengguna</button>
-                <a href="{{ route('admin.user.index') }}" class="btn btn-secondary">Batal</a>
+                <a href="{{ route('admin.manajemen-data.user.index') }}" class="btn btn-secondary">Batal</a>
             </div>
         </form>
     </div>

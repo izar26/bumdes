@@ -53,7 +53,7 @@ class PemasokController extends Controller
 
         $pemasok->update($request->all());
 
-        return redirect()->route('pemasok.index')
+        return redirect()->route('usaha.pemasok.index')
                         ->with('success', 'Data pemasok berhasil diperbarui.');
     }
 
@@ -61,7 +61,7 @@ class PemasokController extends Controller
     {
         $pemasok->delete();
 
-        return redirect()->route('pemasok.index')
+        return redirect()->route('usaha.pemasok.index')
                         ->with('success', 'Data pemasok berhasil dihapus.');
     }
 }
