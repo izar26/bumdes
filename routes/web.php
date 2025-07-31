@@ -15,9 +15,8 @@ use App\Http\Controllers\Admin\UserController;
 
 
 // Keuangan
-use App\Http\Controllers\Keuangan\KasBankController;
-use App\Http\Controllers\Keuangan\TransaksiKasBankController;
 use App\Http\Controllers\Keuangan\JurnalUmumController;
+use App\Http\Controllers\Keuangan\JurnalManualController;
 
 //laporan
 use App\Http\Controllers\Laporan\BukuBesarController;
@@ -79,9 +78,9 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
     ]);
 
     Route::prefix('keuangan')->group(function () {
-        Route::resource('kas-bank', KasBankController::class);
-        Route::post('transaksi-kas-bank', [TransaksiKasBankController::class, 'store'])->name('transaksi.store');
-        Route::get('jurnal-umum', [JurnalUmumController::class, 'index'])->name('jurnal-umum.index');
+        Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
+        Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
+       Route::resource('jurnal-umum', JurnalUmumController::class);
     });
 
     Route::prefix('laporan')->name('laporan.')->group(function () {
@@ -102,7 +101,8 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
         // Removed redundant stok routes
         Route::resource('produk', ProdukController::class);
         Route::resource('penjualan', PenjualanController::class);
+        Route::resource('pembelian', PembelianController::class);
         Route::resource('pemasok', PemasokController::class);
         Route::resource('kategori', KategoriController::class)->except(['show']);
-    });
+    });  
 });

@@ -3,31 +3,23 @@
 namespace App\Http\Controllers\Keuangan;
 
 use App\Http\Controllers\Controller;
-use App\Models\JurnalUmum;
 use App\Models\Akun;
+use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
-class JurnalUmumController extends Controller
+class JurnalManualController extends Controller
 {
-    // ... method index() dan edit() tidak berubah ...
-    public function index()
+    public function create()
     {
-        $jurnals = JurnalUmum::with('detailJurnals.akun')
-                             ->latest('tanggal_transaksi')->get();
-        return view('keuangan.jurnal.index', compact('jurnals'));
-    }
-
-    public function edit(JurnalUmum $jurnalUmum)
-    {
-        $jurnal = $jurnalUmum->load('detailJurnals');
         $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get();
-        return view('keuangan.jurnal.edit', compact('jurnal', 'akuns'));
+        return view('keuangan.jurnal_manual.create', compact('akuns'));
     }
 
-
-    public function update(Request $request, JurnalUmum $jurnalUmum)
+    public function store(Request $request)
     {
         $request->validate([
             'tanggal_transaksi' => 'required|date',
@@ -38,30 +30,39 @@ class JurnalUmumController extends Controller
             'details.*.kredit' => 'required|numeric|min:0',
             'details.*.keterangan' => 'nullable|string|max:255', // <-- Validasi baru
         ]);
-        
+
         try {
             DB::beginTransaction();
-
-            $totalDebit = 0; $totalKredit = 0;
+            
+            $totalDebit = 0;
+            $totalKredit = 0;
             foreach ($request->details as $detail) {
-                if ($detail['debit'] > 0 && $detail['kredit'] > 0) throw new \Exception('Satu baris tidak boleh memiliki Debit dan Kredit sekaligus.');
-                if ($detail['debit'] == 0 && $detail['kredit'] == 0) throw new \Exception('Setiap baris harus memiliki nilai Debit atau Kredit.');
+                if ($detail['debit'] > 0 && $detail['kredit'] > 0) {
+                    throw new \Exception('Satu baris tidak boleh memiliki Debit dan Kredit sekaligus.');
+                }
+                if ($detail['debit'] == 0 && $detail['kredit'] == 0) {
+                    throw new \Exception('Setiap baris harus memiliki nilai Debit atau Kredit.');
+                }
                 $totalDebit += $detail['debit'];
                 $totalKredit += $detail['kredit'];
             }
-            if (round($totalDebit, 2) !== round($totalKredit, 2)) throw new \Exception('Total Debit dan Kredit tidak seimbang.');
 
-            $jurnalUmum->update([
+            if (round($totalDebit, 2) !== round($totalKredit, 2)) {
+                throw new \Exception('Total Debit dan Kredit tidak seimbang.');
+            }
+
+            $jurnal = JurnalUmum::create([
+                'bungdes_id' => 1,
+                'user_id' => Auth::id(),
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
                 'total_debit' => $totalDebit,
                 'total_kredit' => $totalKredit,
             ]);
 
-            $jurnalUmum->detailJurnals()->delete();
             foreach ($request->details as $detail) {
                 DetailJurnal::create([
-                    'jurnal_id' => $jurnalUmum->jurnal_id,
+                    'jurnal_id' => $jurnal->jurnal_id,
                     'akun_id' => $detail['akun_id'],
                     'debit' => $detail['debit'],
                     'kredit' => $detail['kredit'],
@@ -70,17 +71,11 @@ class JurnalUmumController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil diperbarui.');
+            return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil disimpan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memperbarui jurnal: ' . $e->getMessage())->withInput();
+            return redirect()->back()->with('error', 'Gagal menyimpan jurnal: ' . $e->getMessage())->withInput();
         }
-    }
-
-    public function destroy(JurnalUmum $jurnalUmum)
-    {
-        $jurnalUmum->delete();
-        return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil dihapus.');
     }
 }

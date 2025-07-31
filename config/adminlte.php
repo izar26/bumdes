@@ -371,9 +371,9 @@ return [
         'icon'    => 'fas fa-fw fa-wallet',
         'submenu' => [
             [
-                'text' => 'Kas & Bank',
-                'route'  => 'kas-bank.index',
-                'icon' => 'fas fa-fw fa-money-bill-wave',
+                'text' => 'Buat Jurnal Baru',      // <-- Teks baru
+                'route'  => 'jurnal-manual.create', // <-- Rute baru
+                'icon' => 'fas fa-fw fa-plus-circle',
             ],
             [
                 'text' => 'Jurnal Umum',
@@ -419,12 +419,12 @@ return [
             ],
             [
                 'text' => 'Manajemen Pemasok',
-                'route'  => 'pemasok.index',
+                'route'  => 'usaha.pemasok.index',
                 'icon' => 'fas fa-fw fa-truck',
             ],
             [
                 'text' => 'Transaksi Pembelian',
-                'route'  => 'pembelian.index',
+                'route'  => 'usaha.pembelian.index',
                 'icon' => 'fas fa-fw fa-shopping-cart',
             ],
             [

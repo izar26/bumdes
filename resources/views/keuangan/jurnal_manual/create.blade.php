@@ -1,0 +1,146 @@
+@extends('adminlte::page')
+
+@section('title', 'Buat Jurnal Baru')
+
+@section('content_header')
+    <h1>Buat Jurnal Umum Manual</h1>
+@stop
+
+@section('content')
+<form action="{{ route('jurnal-manual.store') }}" method="POST">
+    @csrf
+    <div class="card card-primary">
+        <div class="card-header">
+            <h3 class="card-title">Informasi Jurnal</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
+                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="deskripsi">Deskripsi Utama</label>
+                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Detail Jurnal</h3>
+            <div class="card-tools">
+                <button type="button" id="tambah-baris" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Tambah Baris
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Akun</th>
+                        <th style="width: 25%">Keterangan</th> {{-- KOLOM BARU --}}
+                        <th style="width: 15%">Debit</th>
+                        <th style="width: 15%">Kredit</th>
+                        <th style="width: 5%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="jurnal-details">
+                    {{-- Baris akan ditambahkan oleh JavaScript --}}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2" class="text-right">Total</th>
+                        <th><span id="total-debit">Rp 0</span></th>
+                        <th><span id="total-kredit">Rp 0</span></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th colspan="2" class="text-right">Status</th>
+                        <th colspan="2"><span id="status-jurnal" class="badge badge-danger">Tidak Seimbang</span></th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-footer text-right">
+            <button type="submit" id="simpan-jurnal" class="btn btn-primary" disabled>Simpan Jurnal</button>
+        </div>
+    </div>
+</form>
+@stop
+
+@section('plugins.Select2', true)
+
+@section('js')
+<script>
+$(document).ready(function() {
+    let rowIndex = 0;
+
+    $('#tambah-baris').on('click', function() {
+        let newRow = `
+            <tr id="row-${rowIndex}">
+                <td>
+                    <select name="details[${rowIndex}][akun_id]" class="form-control akun-select" required>
+                        <option value="">-- Pilih Akun --</option>
+                        @foreach($akuns as $akun)
+                        <option value="{{ $akun->akun_id }}">[ {{ $akun->kode_akun }} ] {{ $akun->nama_akun }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                {{-- INPUT BARU --}}
+                <td><input type="text" name="details[${rowIndex}][keterangan]" class="form-control" placeholder="Ket. baris (opsional)"></td>
+                <td><input type="number" name="details[${rowIndex}][debit]" class="form-control debit" value="0" min="0"></td>
+                <td><input type="number" name="details[${rowIndex}][kredit]" class="form-control kredit" value="0" min="0"></td>
+                <td class="text-center"><button type="button" class="btn btn-danger btn-sm hapus-baris">Hapus</button></td>
+            </tr>
+        `;
+        $('#jurnal-details').append(newRow);
+        $('#row-' + rowIndex + ' .akun-select').select2();
+        rowIndex++;
+    });
+
+    $('#tambah-baris').click();
+    $('#tambah-baris').click();
+
+    $(document).on('click', '.hapus-baris', function() {
+        $(this).closest('tr').remove();
+        calculateTotals();
+    });
+
+    function calculateTotals() {
+        let totalDebit = 0;
+        let totalKredit = 0;
+        $('#jurnal-details tr').each(function() {
+            totalDebit += parseFloat($(this).find('.debit').val()) || 0;
+            totalKredit += parseFloat($(this).find('.kredit').val()) || 0;
+        });
+        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
+        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
+        let statusBadge = $('#status-jurnal');
+        let saveButton = $('#simpan-jurnal');
+        if (totalDebit === totalKredit && totalDebit > 0) {
+            statusBadge.removeClass('badge-danger').addClass('badge-success').text('Seimbang');
+            saveButton.prop('disabled', false);
+        } else {
+            statusBadge.removeClass('badge-success').addClass('badge-danger').text('Tidak Seimbang');
+            saveButton.prop('disabled', true);
+        }
+    }
+
+    $(document).on('input', '.debit, .kredit', function() {
+        let row = $(this).closest('tr');
+        let debitInput = row.find('.debit');
+        let kreditInput = row.find('.kredit');
+        if ($(this).hasClass('debit') && $(this).val() > 0) {
+            kreditInput.val(0);
+        } else if ($(this).hasClass('kredit') && $(this).val() > 0) {
+            debitInput.val(0);
+        }
+        calculateTotals();
+    });
+});
+</script>
+@stop
