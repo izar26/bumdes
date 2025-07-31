@@ -116,7 +116,7 @@ class AkunController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Akun keuangan berhasil diperbarui!',
-            'data' => $akun->load('parent') // Load parent to get parent's name for display
+            'data' => $akun->load('parent')
         ]);
     }
 

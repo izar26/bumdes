@@ -68,6 +68,7 @@
 
 <button
     type="button"
+    data-button-class="btn-danger"
     class="btn btn-danger btn-xs"
     data-toggle="modal"
     data-target="#confirmDeleteModal"
@@ -85,6 +86,7 @@
             </table>
         </div>
     </div>
+    
     @include('components.confirm-modal', [
     'modalId' => 'confirmDeleteModal',
     'title' => 'Konfirmasi Penghapusan',

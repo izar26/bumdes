@@ -24,7 +24,13 @@
                 {{ session('success') }}
             </div>
         @endif
-        {{-- ... kode lainnya ... --}}
+        @if(session('error')) {{-- Tambahkan penanganan error juga --}}
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-ban"></i> Error!</h5>
+                {{ session('error') }}
+            </div>
+        @endif
 <table id="table-penjualan" class="table table-bordered table-striped">
     <thead>
         <tr>
@@ -33,17 +39,17 @@
             <th>Pelanggan</th>
             <th>Total</th>
             <th>Status</th>
-            <th style="width: 120px;">Aksi</th> {{-- Lebarkan sedikit kolom aksi --}}
+            <th style="width: 120px;">Aksi</th>
         </tr>
     </thead>
     <tbody>
         @forelse ($penjualans as $penjualan)
             <tr>
-                {{-- ... kolom lainnya ... --}}
                 <td>{{ \Carbon\Carbon::parse($penjualan->tanggal_penjualan)->format('d M Y') }}</td>
                 <td>{{ $penjualan->no_invoice }}</td>
                 <td>{{ $penjualan->nama_pelanggan ?? 'Umum' }}</td>
-                <td class="text-right">{{ 'Rp ' . number_format($penjualan->total_penjualan, 0, ',', '.') }}</td>
+                {{-- Menggunakan helper function formatRupiah yang sudah dibuat --}}
+                <td class="text-right">{{ formatRupiah($penjualan->total_penjualan) }}</td>
                 <td>
                     @if($penjualan->status_penjualan == 'Lunas')
                         <span class="badge badge-success">Lunas</span>
@@ -52,28 +58,50 @@
                     @endif
                 </td>
                 <td>
-                    <a href="{{ route('penjualan.show', $penjualan->penjualan_id) }}" class="btn btn-info btn-xs">Detail</a>
+                    <a href="{{ route('usaha.penjualan.show', $penjualan->penjualan_id) }}" class="btn btn-info btn-xs">Detail</a>
 
-                    {{-- ================== TAMBAHKAN FORM INI ================== --}}
-                    <form action="{{ route('penjualan.destroy', $penjualan->penjualan_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin membatalkan dan menghapus transaksi ini? Aksi ini tidak bisa dikembalikan.');">
+                    {{-- Delete Form (menggunakan modal dinamis) --}}
+                    <form id="delete-form-{{ $penjualan->penjualan_id }}"
+                          action="{{ route('usaha.penjualan.destroy', $penjualan->penjualan_id) }}" {{-- Pastikan route ini benar --}}
+                          method="POST"
+                          style="display:inline;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-xs">Hapus</button>
+                        <button type="button"
+                                class="btn btn-sm btn-danger mb-1"
+                                data-toggle="modal"
+                                data-target="#confirmModal"
+                                data-form-id="delete-form-{{ $penjualan->penjualan_id }}"
+                                data-title="Konfirmasi Penghapusan Transaksi" {{-- Judul modal --}}
+                                data-body="Apakah Anda yakin ingin membatalkan dan menghapus transaksi dengan invoice '{{ $penjualan->no_invoice }}' ini secara permanen? Aksi ini tidak bisa dikembalikan."
+                                data-button-text="Hapus Permanen"
+                                data-button-class="btn-danger">
+                            Hapus
+                        </button>
                     </form>
-                    {{-- ======================================================== --}}
                 </td>
             </tr>
         @empty
-            {{-- ... --}}
+            <tr>
+                <td colspan="6" class="text-center">Tidak ada data penjualan.</td>
+            </tr>
         @endforelse
     </tbody>
 </table>
-{{-- ... kode lainnya ... --}}
     </div>
 </div>
+
+    @include('components.confirm-modal', [
+        'modalId' => 'confirmModal',
+        'title' => 'Konfirmasi Aksi',
+        'body' => 'Apakah Anda yakin?',
+        'confirmButtonText' => 'Lanjutkan',
+        'confirmButtonClass' => 'btn-primary',
+        'actionFormId' => ''
+    ])
+
 @stop
 
-{{-- Aktifkan plugin datatables --}}
 @section('plugins.Datatables', true)
 @section('js')
 <script>
@@ -82,7 +110,7 @@
             "responsive": true,
             "lengthChange": false,
             "autoWidth": false,
-            "order": [[ 0, "desc" ]] // Urutkan berdasarkan tanggal terbaru
+            "order": [[ 0, "desc" ]]
         });
     });
 </script>

@@ -9,8 +9,8 @@
 @section('content')
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title">Manajemen Produk Usaha</h3> {{-- Changed H2 to H3 for consistency with AdminLTE card titles --}}
-            <div class="card-tools"> {{-- Added card-tools for better alignment --}}
+            <h3 class="card-title">Manajemen Produk Usaha</h3>
+            <div class="card-tools">
                 <a href="{{ route('usaha.produk.create') }}" class="btn btn-primary btn-sm">Tambah Produk</a>
             </div>
         </div>
@@ -51,7 +51,7 @@
                 </div>
             @else
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover"> {{-- Added table-bordered for better visuals --}}
+                    <table class="table table-bordered table-striped table-hover">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -70,8 +70,8 @@
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $produk->nama_produk }}</td>
-                                    <td>Rp {{ number_format($produk->harga_beli, 2, ',', '.') }}</td>
-                                    <td>Rp {{ number_format($produk->harga_jual, 2, ',', '.') }}</td>
+                                    <td>{{ formatRupiah($produk->harga_beli) }}</td>
+                                    <td>{{ formatRupiah($produk->harga_jual) }}</td>
                                     <td>{{ $produk->satuan_unit }}</td>
                                     <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
                                     <td>{{ $produk->kategori->nama_kategori ?? 'Tidak Berkategori' }}</td>
@@ -79,7 +79,6 @@
                                     <td>
                                         <a href="{{ route('usaha.produk.edit', $produk->produk_id) }}" class="btn btn-sm btn-warning mb-1">Edit</a>
 
-                                        {{-- Delete Form (using the dynamic modal) --}}
                                         <form id="delete-form-{{ $produk->produk_id }}"
                                               action="{{ route('usaha.produk.destroy', $produk->produk_id) }}"
                                               method="POST"
@@ -87,14 +86,14 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button"
-                                                    class="btn btn-sm btn-danger mb-1"
-                                                    data-toggle="modal"
-                                                    data-target="#confirmModal" {{-- Use the generic modal ID --}}
-                                                    data-form-id="delete-form-{{ $produk->produk_id }}"
-                                                    data-title="Konfirmasi Penghapusan Produk" {{-- Dynamic Title --}}
-                                                    data-body="Apakah Anda yakin ingin menghapus produk '{{ $produk->nama_produk }}' ini secara permanen?"
-                                                    data-button-text="Hapus Permanen"
-                                                    data-button-class="btn-danger">
+                                                            class="btn btn-sm btn-danger mb-1"
+                                                            data-toggle="modal"
+                                                            data-target="#confirmModal"
+                                                            data-form-id="delete-form-{{ $produk->produk_id }}"
+                                                            data-title="Konfirmasi Penghapusan Produk"
+                                                            data-body="Apakah Anda yakin ingin menghapus produk '{{ $produk->nama_produk }}' ini secara permanen?"
+                                                            data-button-text="Hapus Permanen"
+                                                            data-button-class="btn-danger">
                                                 Hapus
                                             </button>
                                         </form>
@@ -108,13 +107,12 @@
         </div>
     </div>
 
-    {{-- Include the generic confirm modal component --}}
     @include('components.confirm-modal', [
         'modalId' => 'confirmModal',
         'title' => 'Konfirmasi Aksi',
         'body' => 'Apakah Anda yakin?',
-        'confirmButtonText' => 'Lanjutkan', // Default button text
-        'confirmButtonClass' => 'btn-primary', // Default button class
-        'actionFormId' => '' // This will be set by JS dynamically
+        'confirmButtonText' => 'Lanjutkan',
+        'confirmButtonClass' => 'btn-primary',
+        'actionFormId' => ''
     ])
 @endsection

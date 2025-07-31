@@ -40,7 +40,8 @@
             @endif
 
             <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="akun-table">
+                {{-- Tambahkan class "display" untuk DataTables --}}
+                <table class="table table-bordered table-striped display" id="akun-table">
                     <thead class="thead-light">
                         <tr>
                             <th>Kode Akun</th>
@@ -52,9 +53,63 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($topLevelAkuns->sortBy('kode_akun') as $akun)
-                            {{-- Panggil Blade Component di sini --}}
-                            <x-akun-row :akun="$akun" :level="0" :tipe-akun-options="$tipeAkunOptions" />
+                        {{-- Iterasi semua akun, tidak hanya top-level, agar DataTables dapat memproses semua baris --}}
+                        {{-- Pastikan variabel `$akuns` berisi semua akun yang ingin ditampilkan, diurutkan jika perlu --}}
+                        @forelse ($akuns->sortBy('kode_akun') as $akun)
+                            {{-- Tambahkan class 'is-header-row' jika akun adalah header --}}
+                            <tr data-akun-id="{{ $akun->akun_id }}"
+                                data-original-kode_akun="{{ $akun->kode_akun }}"
+                                class="{{ $akun->is_header ? 'is-header-row' : '' }}">
+                                <td data-field="kode_akun" data-value="{{ $akun->kode_akun }}">
+                                    {{ $akun->kode_akun }}
+                                </td>
+                                <td data-field="nama_akun" data-value="{{ $akun->nama_akun }}">
+                                    {{-- Tambahkan indentasi visual jika akun memiliki parent_id --}}
+                                    @if ($akun->parent_id)
+                                        @php
+                                            // Hitung level indentasi berdasarkan kedalaman hierarki
+                                            // Ini mungkin memerlukan rekursi di controller atau model
+                                            // Untuk tujuan tampilan sederhana di sini, kita bisa membedakan berdasarkan parent_id saja.
+                                            // Jika ingin indentasi akurat sesuai level, logic di controller/model perlu dimodifikasi
+                                            $indentation = $akun->parent_id ? '  ' : ''; // Contoh sederhana: 2 spasi jika punya parent
+                                        @endphp
+                                        <span style="padding-left: {{ ($akun->depth ?? 0) * 20 }}px;"></span>
+                                        <i class="fas fa-level-up-alt fa-rotate-90 text-muted mr-1"></i>
+                                    @endif
+                                    {{ $akun->nama_akun }}
+                                </td>
+                                <td data-field="tipe_akun" data-value="{{ $akun->tipe_akun }}">
+                                    {{ $tipeAkunOptions[$akun->tipe_akun] ?? $akun->tipe_akun }}
+                                </td>
+                                <td data-field="is_header" data-value="{{ $akun->is_header ? 1 : 0 }}">
+                                    @if ($akun->is_header)
+                                        <span class="badge badge-success">Ya</span>
+                                    @else
+                                        <span class="badge badge-secondary">Tidak</span>
+                                    @endif
+                                </td>
+                                <td data-field="parent_id" data-value="{{ $akun->parent_id }}">
+                                    {{ $akun->parent ? $akun->parent->kode_akun . ' - ' . $akun->parent->nama_akun : '-' }}
+                                </td>
+                                <td class="actions">
+                                    <button class="btn btn-warning btn-xs edit-akun" data-id="{{ $akun->akun_id }}"
+                                        data-toggle="tooltip" title="Edit Akun">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <form id="delete-akun-form-{{ $akun->akun_id }}"
+                                        action="{{ route('admin.manajemen-data.akun.destroy', ['akun' => $akun->akun_id]) }}"
+                                        method="POST" class="delete-form" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-danger btn-xs" data-toggle="modal"
+                                            data-target="#deleteConfirmModal"
+                                            data-form-id="delete-akun-form-{{ $akun->akun_id }}"
+                                            title="Hapus Akun">
+                                            <i class="fas fa-trash"></i> Hapus
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                         @empty
                             <tr>
                                 <td colspan="6" class="text-center py-4">
@@ -82,6 +137,8 @@
 @stop
 
 @section('css')
+    {{-- DataTables CSS --}}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
     <style>
         .table td {
             vertical-align: middle;
@@ -120,19 +177,53 @@
             font-size: 0.8em;
             display: block;
         }
+
+        /* Gaya untuk membedakan akun header */
+        .is-header-row {
+            font-weight: bold;
+            background-color: #f2f2f2; /* Warna latar belakang abu-abu muda */
+        }
+        .is-header-row td {
+            border-top: 1px solid #dee2e6 !important; /* Tambahkan garis atas untuk pemisah visual */
+            border-bottom: 1px solid #dee2e6 !important; /* Tambahkan garis bawah */
+        }
     </style>
 @stop
 
 @section('js')
+    {{-- jQuery and DataTables JS --}}
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
     <script>
         $(document).ready(function() {
             // Initialize tooltips
             $('[data-toggle="tooltip"]').tooltip();
 
+            // Inisialisasi DataTables
+            $('#akun-table').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" // Bahasa Indonesia
+                },
+                "columnDefs": [
+                    { "orderable": false, "targets": [5] } // Nonaktifkan sorting untuk kolom aksi
+                ]
+            });
+
+
             // Store original values when entering edit mode
             let originalRowContent = {};
             // Make sure these variables are passed from the controller (AkunController@index)
+            // Pastikan `tipeAkunOptions` dan `akuns` (untuk parentAkunsData) dilewatkan dari controller
+            // dengan benar agar JavaScript bisa mengaksesnya.
             const tipeAkunOptions = @json($tipeAkunOptions ?? []);
+            // Perlu memastikan `$akuns` di sini adalah *semua* akun, bukan hanya topLevelAkuns
             const parentAkunsData = @json($akuns->filter(fn($a) => $a->is_header)->mapWithKeys(fn($a) => [$a->akun_id => $a->kode_akun . ' - ' . $a->nama_akun]) ?? []);
 
             // Handle Edit button click
@@ -207,7 +298,7 @@
                 const data = {
                     _token: '{{ csrf_token() }}',
                     _method: 'PUT',
-                    kode_akun: originalKodeAkun,
+                    kode_akun: originalKodeAkun, // Kode akun tidak bisa diubah lewat inline edit
                     nama_akun: $row.find('input[name="nama_akun"]').val(),
                     tipe_akun: $row.find('select[name="tipe_akun"]').val(),
                     is_header: $row.find('input[name="is_header"]').is(':checked') ? 1 : 0,
@@ -222,17 +313,44 @@
                     type: 'POST', // Use POST for _method:PUT
                     data: data,
                     success: function(response) {
-                        // Re-render the row with updated data (or fetch it again if complex)
-                        // A simpler approach for inline edit is to just update the displayed text
-                        $row.find('td[data-field="kode_akun"]').html(originalKodeAkun); // Code shouldn't change
-                        $row.find('td[data-field="nama_akun"]').text(response.data.nama_akun);
+                        // Mendapatkan instance DataTable
+                        const dataTable = $('#akun-table').DataTable();
+                        const rowNode = $row[0]; // Dapatkan DOM node dari baris
+                        const rowData = dataTable.row(rowNode).data(); // Dapatkan data baris yang ada di DataTable
+
+                        // Update data di DataTable
+                        // Perhatikan bahwa ini akan me-redraw baris, jadi pastikan data yang dikirim konsisten
+                        // dengan format yang diharapkan DataTable
+                        rowData[0] = originalKodeAkun; // Kode Akun
+                        rowData[1] = response.data.nama_akun; // Nama Akun
+                        rowData[2] = tipeAkunOptions[response.data.tipe_akun] || response.data.tipe_akun; // Tipe Akun
+                        rowData[3] = response.data.is_header ? '<span class="badge badge-success">Ya</span>' : '<span class="badge badge-secondary">Tidak</span>'; // Header?
+                        rowData[4] = response.data.parent ? response.data.parent.kode_akun + ' - ' + response.data.parent.nama_akun : '-'; // Parent Akun
+
+                        // Perbarui data di DOM secara manual untuk memastikan indentasi atau badge tetap
+                        $row.find('td[data-field="nama_akun"]').html(
+                            (response.data.parent_id ? '<span style="padding-left: ' + (response.data.depth * 20 || 20) + 'px;"></span><i class="fas fa-level-up-alt fa-rotate-90 text-muted mr-1"></i>' : '') + response.data.nama_akun
+                        );
                         $row.find('td[data-field="tipe_akun"]').text(tipeAkunOptions[response.data.tipe_akun] || response.data.tipe_akun).data('value', response.data.tipe_akun);
-                        $row.find('td[data-field="is_header"]').text(response.data.is_header ? 'Ya' : 'Tidak').data('value', response.data.is_header);
+                        $row.find('td[data-field="is_header"]').html(response.data.is_header ? '<span class="badge badge-success">Ya</span>' : '<span class="badge badge-secondary">Tidak</span>').data('value', response.data.is_header);
                         $row.find('td[data-field="parent_id"]').text(response.data.parent ? response.data.parent.kode_akun + ' - ' + response.data.parent.nama_akun : '-').data('value', response.data.parent_id);
+
+                        // Update DataTables internal data for the row
+                        dataTable.row(rowNode).data(rowData).draw(false); // redraw false agar tidak mereset paging/sorting
+
+                        // Set/unset header class
+                        if (response.data.is_header) {
+                            $row.addClass('is-header-row');
+                        } else {
+                            $row.removeClass('is-header-row');
+                        }
+
 
                         // Revert action buttons
                         $row.find('.actions').html(`
-                            <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}">Edit</button>
+                            <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}" data-toggle="tooltip" title="Edit Akun">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
                             <form id="delete-akun-form-${akunId}" action="${'{{ route('admin.manajemen-data.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
                                 @csrf
                                 @method('DELETE')
@@ -240,8 +358,9 @@
                                         class="btn btn-danger btn-xs"
                                         data-toggle="modal"
                                         data-target="#deleteConfirmModal"
-                                        data-form-id="delete-akun-form-${akunId}">
-                                    Hapus
+                                        data-form-id="delete-akun-form-${akunId}"
+                                        title="Hapus Akun">
+                                    <i class="fas fa-trash"></i> Hapus
                                 </button>
                             </form>
                         `);
@@ -281,11 +400,19 @@
                         const field = $td.data('field');
                         const originalVal = originalRowContent[akunId][field];
                         if (field === 'is_header') {
-                            $td.text(originalVal == 1 ? 'Ya' : 'Tidak').data('value', originalVal);
+                            $td.html(originalVal == 1 ? '<span class="badge badge-success">Ya</span>' : '<span class="badge badge-secondary">Tidak</span>').data('value', originalVal);
                         } else if (field === 'tipe_akun') {
                             $td.text(tipeAkunOptions[originalVal] || originalVal).data('value', originalVal);
                         } else if (field === 'parent_id') {
-                            $td.text(parentAkunsData[originalVal] || '-').data('value', originalVal);
+                            // Find parent data from the parentAkunsData array
+                            const parentDisplay = parentAkunsData[originalVal] || '-';
+                            $td.text(parentDisplay).data('value', originalVal);
+                        } else if (field === 'nama_akun') {
+                            // Re-apply indentation for nama_akun if it had a parent
+                            const originalParentId = originalRowContent[akunId]['parent_id'];
+                            const originalDepth = originalRowContent[akunId]['depth'] || 0; // Assuming depth is stored or can be calculated
+                            const indentHtml = originalParentId ? `<span style="padding-left: ${originalDepth * 20}px;"></span><i class="fas fa-level-up-alt fa-rotate-90 text-muted mr-1"></i>` : '';
+                            $td.html(indentHtml + originalVal);
                         } else {
                             $td.text(originalVal);
                         }
@@ -297,7 +424,9 @@
 
                 // Revert action buttons
                 $row.find('.actions').html(`
-                    <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}">Edit</button>
+                    <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}" data-toggle="tooltip" title="Edit Akun">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                     <form id="delete-akun-form-${akunId}" action="${'{{ route('admin.manajemen-data.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
                         @csrf
                         @method('DELETE')
@@ -305,8 +434,9 @@
                                 class="btn btn-danger btn-xs"
                                 data-toggle="modal"
                                 data-target="#deleteConfirmModal"
-                                data-form-id="delete-akun-form-${akunId}">
-                            Hapus
+                                data-form-id="delete-akun-form-${akunId}"
+                                title="Hapus Akun">
+                            <i class="fas fa-trash"></i> Hapus
                         </button>
                     </form>
                 `);
@@ -328,7 +458,7 @@
                     "showEasing": "swing",
                     "hideEasing": "linear",
                     "showMethod": "fadeIn",
-                    "hideMethod": "fadeOut"
+                    "hideMethod": "fadeOut"p
                 };
             }
         });

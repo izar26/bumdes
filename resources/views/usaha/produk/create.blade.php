@@ -1,5 +1,10 @@
 @extends('adminlte::page')
 
+@section('title', 'Tambah Produk Baru')
+
+@section('content_header')
+    <h1>Tambah Produk Baru</h1>
+@stop
 
 @section('content')
 <div class="card">
@@ -7,7 +12,7 @@
         <h2>Tambah Produk Baru</h2>
     </div>
     <div class="card-body">
-        <form action="{{ route('usaha.produk.store') }}" method="POST">
+        <form id="productForm" action="{{ route('usaha.produk.store') }}" method="POST"> {{-- Beri ID pada form --}}
             @csrf
             <div class="mb-3">
                 <label for="nama_produk" class="form-label">Nama Produk <span class="text-danger">*</span></label>
@@ -28,14 +33,14 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="harga_beli" class="form-label">Harga Beli <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" class="form-control @error('harga_beli') is-invalid @enderror" id="harga_beli" name="harga_beli" value="{{ old('harga_beli') }}" required min="0">
+                    <input type="text" class="form-control @error('harga_beli') is-invalid @enderror" id="harga_beli" name="harga_beli" value="{{ old('harga_beli') }}" required>
                     @error('harga_beli')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="harga_jual" class="form-label">Harga Jual <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" class="form-control @error('harga_jual') is-invalid @enderror" id="harga_jual" name="harga_jual" value="{{ old('harga_jual') }}" required min="0">
+                    <input type="text" class="form-control @error('harga_jual') is-invalid @enderror" id="harga_jual" name="harga_jual" value="{{ old('harga_jual') }}" required>
                     @error('harga_jual')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -99,4 +104,15 @@
         </form>
     </div>
 </div>
-@endsection
+@stop
+
+@section('js')
+    <script src="{{ asset('js/currency-formatter.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            numberFormatted('harga_beli');
+            numberFormatted('harga_jual');
+            cleanFormatted('productForm', ['harga_beli', 'harga_jual']);
+        });
+    </script>
+@stop

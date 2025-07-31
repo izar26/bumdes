@@ -1,8 +1,11 @@
 @extends('adminlte::page')
+
 @section('title', 'Manajemen Pemasok')
+
 @section('content_header')
     <h1>Manajemen Pemasok</h1>
 @stop
+
 @section('content')
 <div class="card">
     <div class="card-header">
@@ -19,6 +22,14 @@
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                 <h5><i class="icon fas fa-check"></i> Berhasil!</h5>
                 {{ session('success') }}
+            </div>
+        @endif
+        {{-- Tambahkan penanganan error juga --}}
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-ban"></i> Error!</h5>
+                {{ session('error') }}
             </div>
         @endif
         <table id="table-pemasok" class="table table-bordered table-striped">
@@ -40,10 +51,24 @@
                         <td>{{ $pemasok->email ?? '-' }}</td>
                         <td>
                             <a href="{{ route('usaha.pemasok.edit', $pemasok->pemasok_id) }}" class="btn btn-info btn-xs">Edit</a>
-                            <form action="{{ route('usaha.pemasok.destroy', $pemasok->pemasok_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus pemasok ini?');">
+                            {{-- FORM INI DIPERBAIKI: ID form dan data-form-id --}}
+                            <form id="delete-form-{{ $pemasok->pemasok_id }}" {{-- Perbaikan: penjualan_id diganti jadi pemasok_id --}}
+                                  action="{{ route('usaha.pemasok.destroy', $pemasok->pemasok_id) }}"
+                                  method="POST"
+                                  style="display:inline;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-xs">Hapus</button>
+                                <button type="button"
+                                        class="btn btn-xs btn-danger"
+                                        data-toggle="modal"
+                                        data-target="#confirmDeleteModal" {{-- Perbaikan: ID target modal sesuai dengan include --}}
+                                        data-form-id="delete-form-{{ $pemasok->pemasok_id }}"
+                                        data-title="Konfirmasi Penghapusan Pemasok" {{-- Judul modal lebih spesifik --}}
+                                        data-body="Apakah Anda yakin ingin menghapus pemasok '{{ $pemasok->nama_pemasok }}' ini secara permanen? Aksi ini tidak bisa dikembalikan."
+                                        data-button-text="Hapus Permanen"
+                                        data-button-class="btn-danger">
+                                    Hapus
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -52,12 +77,16 @@
         </table>
     </div>
 </div>
+
+{{-- MODAL INI DIPERBAIKI: ID modal --}}
+@include('components.confirm-modal', [
+    'modalId' => 'confirmDeleteModal', {{-- Ini adalah ID yang benar --}}
+    'title' => 'Konfirmasi Penghapusan Pemasok', {{-- Perbarui judul default --}}
+    'body' => 'Apakah Anda yakin ingin menghapus data ini?', {{-- Perbarui body default --}}
+    'confirmButtonText' => 'Hapus',
+    'confirmButtonClass' => 'btn-danger',
+    'actionFormId' => '' {{-- Ini akan diisi oleh JavaScript modal --}}
+])
 @stop
+
 @section('plugins.Datatables', true)
-@section('js')
-<script>
-    $('#table-pemasok').DataTable({
-        "responsive": true, "lengthChange": false, "autoWidth": false,
-    });
-</script>
-@stop

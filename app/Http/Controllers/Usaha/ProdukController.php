@@ -14,9 +14,6 @@ use App\Http\Controllers\Usaha\KategoriController; // <-- Pastikan ini ada
 
 class ProdukController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         // Tambahkan relasi 'stok' untuk ditampilkan di tabel

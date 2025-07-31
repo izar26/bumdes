@@ -66,7 +66,7 @@
                     <select class="form-select @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" name="unit_usaha_id" required>
                         <option value="">Pilih Unit Usaha</option>
                         @foreach ($unitUsahas as $unitUsaha)
-                            <option value="{{ $unitUsaha->id }}" {{ old('unit_usaha_id', $produk->unit_usaha_id) == $unitUsaha->id ? 'selected' : '' }}>
+                            <option value="{{ $unitUsaha->unit_usaha_id }}" {{ old('unit_usaha_id', $produk->unit_usaha_id) == $unitUsaha->id ? 'selected' : '' }}>
                                 {{ $unitUsaha->nama_unit }}
                             </option>
                         @endforeach
@@ -97,3 +97,14 @@
     </div>
 </div>
 @endsection
+
+@section('js')
+    <script src="{{ asset('js/currency-formatter.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            numberFormatted('harga_beli');
+            numberFormatted('harga_jual');
+            cleanFormatted('productForm', ['harga_beli', 'harga_jual']);
+        });
+    </script>
+@stop

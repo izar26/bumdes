@@ -23,7 +23,7 @@ class AkunSeeder extends Seeder
         $accounts = [
             // KELOMPOK AKUN UTAMA (Level 1)
             '1.00.00.00' => ['nama_akun' => 'ASET', 'tipe_akun' => 'Aset', 'is_header' => true],
-                '1.1.00.00' => ['nama_akun' => 'ASET LANCAR', 'tipe_akun' => 'Aset', 'is_header' => true],
+            '1.1.00.00' => ['nama_akun' => 'ASET LANCAR', 'tipe_akun' => 'Aset', 'is_header' => true],
                     '1.1.01.00' => ['nama_akun' => 'Kas & Setara Kas', 'tipe_akun' => 'Aset', 'is_header' => true],
                         '1.1.01.01' => ['nama_akun' => 'Kas Tunai', 'tipe_akun' => 'Aset', 'is_header' => false],
                         '1.1.01.02' => ['nama_akun' => 'Kas di Bank BSI', 'tipe_akun' => 'Aset', 'is_header' => false],

@@ -1,48 +1,109 @@
 @extends('adminlte::page')
 
+@section('title', 'Manajemen Kategori Usaha')
+
+@section('content_header')
+    <h1 class="m-0 text-dark">Manajemen Kategori Usaha</h1>
+@stop
 
 @section('content')
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h2>Daftar Kategori</h2>
-        <a href="{{ route('usaha.kategori.create') }}" class="btn btn-primary">Tambah Kategori</a>
-    </div>
-    <div class="card-body">
-        @if ($kategoris->isEmpty())
-            <div class="alert alert-warning" role="alert">
-                Belum ada kategori yang terdaftar.
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            @include('components.flash-message')
+
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">Daftar Kategori Usaha</h3>
+                        <a href="{{ route('usaha.kategori.create') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus-circle mr-1"></i> Tambah Kategori
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if ($kategoris->isEmpty())
+                        <div class="alert alert-info">
+                            <i class="icon fas fa-info-circle"></i>
+                            Belum ada kategori yang terdaftar.
+                        </div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-bordered">
+                                <thead class="">
+                                    <tr>
+                                        <th width="5%" class="text-center">#</th>
+                                        <th width="25%">Nama Kategori</th>
+                                        <th>Deskripsi</th>
+                                        <th width="15%" class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($kategoris as $kategori)
+                                        <tr>
+                                            <td class="text-center">{{ $loop->iteration }}</td>
+                                            <td>
+                                                <strong>{{ $kategori->nama_kategori }}</strong>
+                                            </td>
+                                            <td>{{ $kategori->deskripsi ?: '-' }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ route('usaha.kategori.edit', $kategori->id) }}"
+                                                       class="btn btn-info"
+                                                       title="Edit">
+                                                       Edit
+                                                    </a>
+                                                    {{-- FORM INI DIPERBARUI --}}
+                                                    <form id="delete-form-{{ $kategori->id }}"
+                                                          action="{{ route('usaha.kategori.destroy', $kategori->id) }}"
+                                                          method="POST"
+                                                          style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="button" {{-- Ubah type dari 'submit' ke 'button' --}}
+                                                                class="btn btn-danger"
+                                                                title="Hapus"
+                                                                data-toggle="modal"
+                                                                data-target="#confirmDeleteModalKategori" {{-- ID modal yang unik --}}
+                                                                data-form-id="delete-form-{{ $kategori->id }}"
+                                                                data-title="Konfirmasi Penghapusan Kategori"
+                                                                data-body="Apakah Anda yakin ingin menghapus kategori '{{ $kategori->nama_kategori }}' ini secara permanen? Produk terkait akan dikategorikan sebagai Tanpa Kategori. Aksi ini tidak bisa dikembalikan."
+                                                                data-button-text="Hapus Permanen"
+                                                                data-button-class="btn-danger">
+                                                                Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
             </div>
-        @else
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nama Kategori</th>
-                            <th>Deskripsi</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($kategoris as $kategori)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $kategori->nama_kategori }}</td>
-                                <td>{{ $kategori->deskripsi ?? '-' }}</td>
-                                <td>
-                                    <a href="{{ route('usaha.kategori.edit', $kategori->id) }}" class="btn btn-sm btn-warning mb-1">Edit</a>
-                                    <form action="{{ route('usaha.kategori.destroy', $kategori->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini? Menghapus kategori akan mengatur kategori produk terkait menjadi NULL.');" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger mb-1">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+        </div>
     </div>
 </div>
-@endsection
+
+@include('components.confirm-modal', [
+    'modalId' => 'confirmDeleteModalKategori', // ID unik untuk modal ini
+    'title' => 'Konfirmasi Penghapusan Kategori',
+    'body' => 'Apakah Anda yakin ingin menghapus data ini?',
+    'confirmButtonText' => 'Hapus',
+    'confirmButtonClass' => 'btn-danger',
+    'actionFormId' => '' // Akan diisi oleh JavaScript
+])
+@stop
+
+@section('css')
+    <style>
+        .table thead th {
+            vertical-align: middle;
+        }
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+@stop
