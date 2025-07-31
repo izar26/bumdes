@@ -71,7 +71,6 @@
         </div>
     </div>
 
-    {{-- Place the Confirm Modal component here (make sure you have this component defined) --}}
     <x-confirm-modal
         modal-id="deleteConfirmModal"
         title="Konfirmasi Hapus Akun"

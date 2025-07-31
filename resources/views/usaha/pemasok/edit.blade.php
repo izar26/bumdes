@@ -8,7 +8,7 @@
     <div class="card-header">
         <h3 class="card-title">Formulir Edit Pemasok</h3>
     </div>
-    <form action="{{ route('pemasok.update', $pemasok->pemasok_id) }}" method="POST">
+    <form action="{{ route('usaha.pemasok.update', $pemasok->pemasok_id) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="card-body">

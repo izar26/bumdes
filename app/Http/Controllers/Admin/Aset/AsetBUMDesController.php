@@ -32,7 +32,6 @@ class AsetBUMDesController extends Controller
             'tanggal_perolehan' => 'required|date',
             'kondisi' => 'required|string|max:100',
             'lokasi' => 'nullable|string|max:255',
-            'bungdes_id' => 'required|exists:bungdeses,bungdes_id',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
             'penanggung_jawab' => 'nullable|exists:users,id', // Diubah: merujuk ke users.id
         ]);
@@ -62,7 +61,6 @@ class AsetBUMDesController extends Controller
             'tanggal_perolehan' => 'required|date',
             'kondisi' => 'required|string|max:100',
             'lokasi' => 'nullable|string|max:255',
-            'bungdes_id' => 'required|exists:bungdeses,bungdes_id',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
             'penanggung_jawab' => 'nullable|exists:users,id', // Diubah: merujuk ke users.id
         ]);

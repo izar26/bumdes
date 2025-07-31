@@ -33,11 +33,9 @@ class TransaksiKasBankController extends Controller
             $jumlah = $request->jumlah;
             $user_id = Auth::id();
             // Asumsi BUMDes ID = 1 untuk sementara, sesuaikan jika perlu
-            $bungdes_id = 1; 
-            
+
             // 2. Buat Jurnal Umum (Header)
             $jurnal = JurnalUmum::create([
-                'bungdes_id' => $bungdes_id,
                 'user_id' => $user_id,
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
@@ -77,7 +75,7 @@ class TransaksiKasBankController extends Controller
                     'kredit' => $jumlah,
                 ]);
             }
-            
+
             // 4. Catat Transaksi Kas & Update Saldo (Logika lama tetap berjalan)
             TransaksiKasBank::create([
                 'kas_bank_id' => $kasBank->kas_bank_id,
@@ -87,7 +85,7 @@ class TransaksiKasBankController extends Controller
                 'deskripsi' => $request->deskripsi,
                 'user_id' => $user_id,
             ]);
-            
+
             if ($request->jenis_transaksi == 'debit') {
                 $kasBank->saldo_saat_ini += $jumlah;
             } else {

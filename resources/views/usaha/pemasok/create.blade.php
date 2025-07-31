@@ -8,7 +8,7 @@
     <div class="card-header">
         <h3 class="card-title">Formulir Pemasok</h3>
     </div>
-    <form action="{{ route('pemasok.store') }}" method="POST">
+    <form action="{{ route('usaha.pemasok.store') }}" method="POST">
         @csrf
         <div class="card-body">
             @if ($errors->any())

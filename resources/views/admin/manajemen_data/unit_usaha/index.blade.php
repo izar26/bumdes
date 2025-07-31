@@ -43,7 +43,6 @@
                         <th>ID</th>
                         <th>Nama Unit</th>
                         <th>Jenis Usaha</th>
-                        <th>BUMDes</th>
                         <th>Penanggung Jawab</th>
                         <th>Tgl Mulai Operasi</th>
                         <th>Status</th>
@@ -56,18 +55,25 @@
                             <td>{{ $unitUsaha->unit_usaha_id }}</td>
                             <td>{{ $unitUsaha->nama_unit }}</td>
                             <td>{{ $unitUsaha->jenis_usaha }}</td>
-                            <td>{{ $unitUsaha->bungdes->nama_bumdes ?? 'N/A' }}</td>
                             <td>{{ $unitUsaha->user->username ?? 'N/A' }}</td> {{-- Menampilkan username penanggung jawab --}}
                             <td>{{ optional($unitUsaha->tanggal_mulai_operasi)->format('d-m-Y') }}</td>
                             <td>{{ $unitUsaha->status_operasi }}</td>
                             <td>
                                 <a href="{{ route('admin.manajemen-data.unit_usaha.show', $unitUsaha->unit_usaha_id) }}" class="btn btn-info btn-xs">Detail</a>
                                 <a href="{{ route('admin.manajemen-data.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning btn-xs">Edit</a>
-                                <form action="{{ route('admin.manajemen-data.unit_usaha.destroy', $unitUsaha->unit_usaha_id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Apakah Anda yakin ingin menghapus unit usaha ini?')">Hapus</button>
-                                </form>
+                                <form id="delete-form-{{ $unitUsaha->unit_usaha_id }}" action="{{ route('admin.manajemen-data.unit_usaha.destroy', $unitUsaha->unit_usaha_id) }}" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+<button
+    type="button"
+    class="btn btn-danger btn-xs"
+    data-toggle="modal"
+    data-target="#confirmDeleteModal"
+    data-form-id="delete-form-{{ $unitUsaha->unit_usaha_id }}">
+    Hapus
+</button>
                             </td>
                         </tr>
                     @empty
@@ -79,4 +85,13 @@
             </table>
         </div>
     </div>
+    @include('components.confirm-modal', [
+    'modalId' => 'confirmDeleteModal',
+    'title' => 'Konfirmasi Penghapusan',
+    'body' => 'Apakah Anda yakin ingin menghapus unit usaha ini?',
+    'confirmButtonText' => 'Hapus',
+    'confirmButtonClass' => 'btn-danger',
+    'actionFormId' => ''
+])
+
 @stop

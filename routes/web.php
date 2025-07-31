@@ -36,15 +36,12 @@ use App\Http\Controllers\Usaha\KategoriController;
 Route::get('/', [HomeController::class, 'index']);
 
 Auth::routes();
+// ... (semua import dan route di atas tetap)
 
-// All routes within this middleware group require authentication
-Route::middleware(['auth'])->group(function () { // <-- Moved this middleware group to wrap more routes
+Route::middleware(['auth'])->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
-
+        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
         Route::resource('berita', BeritaController::class);
         Route::resource('potensi', PotensiController::class);
         Route::get('profil', [ProfilController::class, 'edit'])->name('profil.edit');
@@ -53,20 +50,19 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
         Route::put('pengaturan-halaman', [HomepageSettingController::class, 'update'])->name('homepage_setting.update');
         Route::resource('social_link', SocialLinkController::class)->except(['show'])->parameters(['social_link' => 'socialLink']);
 
-        Route::prefix('manajemen-data')->name('manajemen-data.')->group (function () {
+        Route::prefix('manajemen-data')->name('manajemen-data.')->group(function () {
             Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
             Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
             Route::resource('unit_usaha', UnitUsahaController::class);
             Route::resource('akun', AkunController::class);
             Route::resource('user', UserController::class);
+            
             Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
         });
     });
 
-    // PENTING: Pindahkan rute spesifik ini di atas Route::resource
     Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
     Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
-
     Route::resource('bumdes/aset', AsetBUMDesController::class)->names([
         'index' => 'bumdes.aset.index',
         'create' => 'bumdes.aset.create',
@@ -93,16 +89,13 @@ Route::middleware(['auth'])->group(function () { // <-- Moved this middleware gr
         Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
         Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
     });
-    Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
-    Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
-    // All 'usaha' routes should also require authentication
     Route::prefix('usaha')->name('usaha.')->group(function () {
-        Route::resource('stok', StokController::class);
-        // Removed redundant stok routes
         Route::resource('produk', ProdukController::class);
+        Route::resource('stok', StokController::class);
         Route::resource('penjualan', PenjualanController::class);
         Route::resource('pembelian', PembelianController::class);
         Route::resource('pemasok', PemasokController::class);
+        Route::resource('pembelian', PembelianController::class);
         Route::resource('kategori', KategoriController::class)->except(['show']);
     });  
 });

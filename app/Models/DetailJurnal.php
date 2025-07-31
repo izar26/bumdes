@@ -11,7 +11,7 @@ class DetailJurnal extends Model
     use HasFactory;
     protected $table = 'detail_jurnals';
     protected $primaryKey = 'detail_jurnal_id';
-    public $timestamps = false; // Tabel ini tidak punya created_at/updated_at
+    public $timestamps = false; 
     protected $fillable = ['jurnal_id', 'akun_id', 'debit', 'kredit', 'keterangan'];
 
     public function akun(): BelongsTo

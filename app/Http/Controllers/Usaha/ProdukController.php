@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Models\UnitUsaha;
 use App\Models\Stok; // <-- Pastikan ini ada
+use App\Models\Kategori; // <-- Pastikan ini ada
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- Pastikan ini ada
+use App\Http\Controllers\Usaha\KategoriController; // <-- Pastikan ini ada
 
 class ProdukController extends Controller
 {
@@ -65,7 +68,7 @@ class ProdukController extends Controller
 
             DB::commit();
 
-            return redirect()->route('produk.index')
+            return redirect()->route('usaha.produk.index')
                              ->with('success', 'Produk baru berhasil ditambahkan beserta stok awalnya.');
 
         } catch (\Exception $e) {
@@ -133,7 +136,7 @@ class ProdukController extends Controller
             $produk->delete();
         });
 
-        return redirect()->route('produk.index')
+        return redirect()->route('usaha.produk.index')
                          ->with('success', 'Data produk berhasil dihapus.');
     }
 }

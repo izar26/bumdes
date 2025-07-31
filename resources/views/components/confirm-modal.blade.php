@@ -2,18 +2,22 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="{{ $modalId }}Label">{{ $title }}</h5>
+                <h5 class="modal-title" id="{{ $modalId }}Label">
+                    {{-- Default title, will be overridden by JS if data-title is present --}}
+                    {{ $title ?? 'Konfirmasi Aksi' }}
+                </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                {{ $body }}
+                {{-- Default body, will be overridden by JS if data-body is present --}}
+                {{ $body ?? 'Apakah Anda yakin ingin melakukan aksi ini?' }}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="button" class="btn {{ $confirmButtonClass }}" id="{{ $modalId }}-confirm-btn" data-form-id="{{ $actionFormId }}">
-                    {{ $confirmButtonText }}
+                <button type="button" class="btn {{ $confirmButtonClass ?? 'btn-primary' }}" id="confirmModalButton">
+                    {{ $confirmButtonText ?? 'Konfirmasi' }}
                 </button>
             </div>
         </div>
@@ -22,25 +26,31 @@
 
 @push('js')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('{{ $modalId }}-confirm-btn').addEventListener('click', function () {
-            const formId = this.getAttribute('data-form-id');
-            const form = document.getElementById(formId);
-            if (form) {
-                form.submit();
-            }
-            // Close the modal after submission
-            $('#{{ $modalId }}').modal('hide');
-        });
+    // This script ensures the modal's content is updated dynamically
+    $(document).ready(function() {
+        $('#{{ $modalId }}').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget); // Button that triggered the modal
+            var formId = button.data('form-id');
+            var modalTitle = button.data('title'); // New: get title from data attribute
+            var modalBody = button.data('body');
+            var confirmButtonText = button.data('button-text');
+            var confirmButtonClass = button.data('button-class');
 
-        // Event listener for buttons that trigger this modal
-        // These buttons will need a data-toggle="modal" and data-target="#{{ $modalId }}"
-        // AND a data-form-id attribute pointing to the specific form to submit.
-        document.querySelectorAll('[data-toggle="modal"][data-target="#{{ $modalId }}"]').forEach(button => {
-            button.addEventListener('click', function() {
-                const formToSubmitId = this.getAttribute('data-form-id');
-                // Set the form ID on the modal's confirm button
-                document.getElementById('{{ $modalId }}-confirm-btn').setAttribute('data-form-id', formToSubmitId);
+            var modal = $(this);
+
+            if (modalTitle) {
+                modal.find('.modal-title').text(modalTitle);
+            } else {
+                modal.find('.modal-title').text('Konfirmasi Aksi'); // Fallback
+            }
+
+            modal.find('.modal-body').text(modalBody);
+            var confirmButton = modal.find('#confirmModalButton');
+            confirmButton.text(confirmButtonText);
+            confirmButton.removeClass().addClass('btn').addClass(confirmButtonClass);
+
+            confirmButton.off('click').on('click', function() {
+                $('#' + formId).submit();
             });
         });
     });

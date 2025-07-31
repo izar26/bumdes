@@ -71,7 +71,6 @@ class PenjualanController extends Controller
             }
 
             $jurnal = JurnalUmum::create([
-                'bungdes_id' => 1, // Asumsi
                 'user_id' => Auth::id(),
                 'tanggal_transaksi' => $request->tanggal_penjualan,
                 'deskripsi' => $deskripsiJurnal,

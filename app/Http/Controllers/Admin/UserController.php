@@ -69,23 +69,9 @@ class UserController extends Controller
             if ($user->role === 'manajer_unit_usaha') {
                 $selectedUnitUsahaIds = $request->input('unit_usaha_ids', []);
 
-                // Hapus user_id dari unit usaha yang tidak dipilih lagi atau sebelumnya dikelola user lain
-                // Kemudian set user_id untuk unit usaha yang baru dipilih ke user ini.
-                // Ini setara dengan sync() untuk relasi Many-to-Many, tapi diterapkan pada One-to-Many
-                // Pastikan bahwa user_id di unit_usahas adalah nullable atau Anda ingin menimpa.
-                // Pendekatan ini akan mengosongkan user_id dari semua unit usaha, lalu mengisinya kembali.
-                // Perhatikan: ini akan 'mengambil alih' unit usaha dari manajer lain jika unit_usaha_id tersebut sudah punya user_id.
-
-                // Melepaskan semua unit usaha dari user yang akan dibuat ini (tidak relevan untuk CREATE, tapi bagus untuk UPDATE)
-                // UnitUsaha::where('user_id', $user->user_id)->update(['user_id' => null]);
-
-                // Menugaskan user_id ini ke unit usaha yang dipilih
                 UnitUsaha::whereIn('unit_usaha_id', $selectedUnitUsahaIds)
                             ->update(['user_id' => $user->user_id]);
 
-                // Mengosongkan user_id dari unit usaha yang sebelumnya dikelola oleh user_id yang sama,
-                // tetapi sekarang tidak lagi dipilih dalam list.
-                // Ini penting jika seorang manajer unit usaha di-update, dan beberapa unit usahanya dicabut.
                 UnitUsaha::where('user_id', $user->user_id)
                          ->whereNotIn('unit_usaha_id', $selectedUnitUsahaIds)
                          ->update(['user_id' => null]);
@@ -96,7 +82,7 @@ class UserController extends Controller
 
             DB::commit(); // Commit transaksi jika semua berhasil
 
-            return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil ditambahkan!');
+            return redirect()->route('admin.manajemen-data.user.index')->with('success', 'Pengguna berhasil ditambahkan!');
 
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback transaksi jika terjadi error
@@ -185,7 +171,7 @@ class UserController extends Controller
 
             DB::commit(); // Commit transaksi
 
-            return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil diperbarui!');
+            return redirect()->route('admin.manajemen-data.user.index')->with('success', 'Pengguna berhasil diperbarui!');
 
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback transaksi
@@ -219,6 +205,6 @@ public function toggleActive(User $user)
         // }
 
         $user->delete(); // This will permanently delete the user
-        return redirect()->route('admin.user.index')->with('success', 'Pengguna berhasil dihapus secara permanen!');
+        return redirect()->route('admin.manajemen-data.user.index')->with('success', 'Pengguna berhasil dihapus secara permanen!');
     }
 }
