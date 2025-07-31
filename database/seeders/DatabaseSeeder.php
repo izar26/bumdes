@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             BungdesSeeder::class,
             AkunSeeder::class,
             UnitUsahaSeeder::class,
+            JurnalSeeder::class,
         ]);
     }
 }

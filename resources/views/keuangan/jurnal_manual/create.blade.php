@@ -9,23 +9,7 @@
 @section('content')
 <form action="{{ route('jurnal-manual.store') }}" method="POST">
     @csrf
-    <div class="card card-primary">
-        <div class="card-header">
-            <h3 class="card-title">Informasi Jurnal</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="form-group col-md-6">
-                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
-                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ date('Y-m-d') }}" required>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="deskripsi">Deskripsi Utama</label>
-                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" required>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Kartu atas sekarang kita kosongkan dan bisa dihapus --}}
 
     <div class="card">
         <div class="card-header">
@@ -36,12 +20,25 @@
                 </button>
             </div>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body">
+            {{-- Isian Tanggal dan Deskripsi dipindah ke sini --}}
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
+                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="form-group col-md-8">
+                    <label for="deskripsi">Deskripsi Utama</label>
+                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" required>
+                </div>
+            </div>
+            <hr>
+
             <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th style="width: 30%">Akun</th>
-                        <th style="width: 25%">Keterangan</th> {{-- KOLOM BARU --}}
+                        <th style="width: 25%">Keterangan</th>
                         <th style="width: 15%">Debit</th>
                         <th style="width: 15%">Kredit</th>
                         <th style="width: 5%">Aksi</th>
@@ -72,8 +69,8 @@
 </form>
 @stop
 
+{{-- Bagian @section('js') tidak ada perubahan, jadi tidak perlu disalin ulang --}}
 @section('plugins.Select2', true)
-
 @section('js')
 <script>
 $(document).ready(function() {
@@ -90,7 +87,6 @@ $(document).ready(function() {
                         @endforeach
                     </select>
                 </td>
-                {{-- INPUT BARU --}}
                 <td><input type="text" name="details[${rowIndex}][keterangan]" class="form-control" placeholder="Ket. baris (opsional)"></td>
                 <td><input type="number" name="details[${rowIndex}][debit]" class="form-control debit" value="0" min="0"></td>
                 <td><input type="number" name="details[${rowIndex}][kredit]" class="form-control kredit" value="0" min="0"></td>

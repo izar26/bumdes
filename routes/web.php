@@ -22,6 +22,8 @@ use App\Http\Controllers\Keuangan\JurnalManualController;
 use App\Http\Controllers\Laporan\BukuBesarController;
 use App\Http\Controllers\Laporan\LabaRugiController;
 use App\Http\Controllers\Laporan\NeracaController;
+use App\Http\Controllers\Laporan\NeracaSaldoController;
+use App\Http\Controllers\Laporan\PerubahanEkuitasController;
 
 //usaha
 use App\Http\Controllers\Usaha\ProdukController;
@@ -88,6 +90,12 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
         Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
+
+         Route::get('neraca-saldo', [NeracaSaldoController::class, 'index'])->name('neraca-saldo.index');
+        Route::post('neraca-saldo', [NeracaSaldoController::class, 'generate'])->name('neraca-saldo.generate');
+
+        Route::get('perubahan-ekuitas', [PerubahanEkuitasController::class, 'index'])->name('perubahan-ekuitas.index');
+Route::post('perubahan-ekuitas', [PerubahanEkuitasController::class, 'generate'])->name('perubahan-ekuitas.generate');
     });
     Route::prefix('usaha')->name('usaha.')->group(function () {
         Route::resource('produk', ProdukController::class);

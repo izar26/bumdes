@@ -401,6 +401,16 @@ return [
                 'route'  => 'laporan.neraca.index',
                 'icon' => 'fas fa-fw fa-balance-scale',
             ],
+            [
+                'text' => 'Neraca Saldo',
+                'route'  => 'laporan.neraca-saldo.index',
+                'icon' => 'fas fa-fw fa-balance-scale-right',
+            ],
+            [
+                'text' => 'Perubahan Ekuitas',
+                'route'  => 'laporan.perubahan-ekuitas.index',
+                'icon' => 'fas fa-fw fa-chart-pie',
+            ],
         ],
     ],
     [

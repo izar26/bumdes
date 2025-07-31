@@ -10,23 +10,7 @@
 <form action="{{ route('jurnal-umum.update', $jurnal->jurnal_id) }}" method="POST">
     @csrf
     @method('PUT')
-    <div class="card card-primary">
-        <div class="card-header">
-            <h3 class="card-title">Informasi Jurnal</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="form-group col-md-6">
-                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
-                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ old('tanggal_transaksi', \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('Y-m-d')) }}" required>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="deskripsi">Deskripsi Utama</label>
-                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" value="{{ old('deskripsi', $jurnal->deskripsi) }}" required>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Kartu atas sekarang kita kosongkan dan bisa dihapus --}}
 
     <div class="card">
         <div class="card-header">
@@ -35,7 +19,20 @@
                 <button type="button" id="tambah-baris" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Tambah Baris</button>
             </div>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body">
+            {{-- Isian Tanggal dan Deskripsi dipindah ke sini --}}
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
+                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ old('tanggal_transaksi', \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('Y-m-d')) }}" required>
+                </div>
+                <div class="form-group col-md-8">
+                    <label for="deskripsi">Deskripsi Utama</label>
+                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" value="{{ old('deskripsi', $jurnal->deskripsi) }}" required>
+                </div>
+            </div>
+            <hr>
+
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -71,20 +68,19 @@
 </form>
 @stop
 
+{{-- Bagian @section('js') tidak ada perubahan, jadi tidak perlu disalin ulang --}}
 @section('plugins.Select2', true)
-
 @section('js')
 <script>
 $(document).ready(function() {
     let rowIndex = 0;
-    // Ambil data detail jurnal lama dari controller
     let oldDetails = @json($jurnal->detailJurnals->toArray());
 
     function addRow(detail = null) {
         let akunId = detail ? detail.akun_id : '';
         let debit = detail ? detail.debit : 0;
         let kredit = detail ? detail.kredit : 0;
-        let keterangan = detail && detail.keterangan ? detail.keterangan : ''; // Data Keterangan
+        let keterangan = detail && detail.keterangan ? detail.keterangan : '';
 
         let newRow = `
             <tr id="row-${rowIndex}">
@@ -112,39 +108,19 @@ $(document).ready(function() {
         rowIndex++;
     }
 
-    $('#tambah-baris').on('click', function() {
-        addRow();
-    });
-
-    // Isi form dengan data lama saat halaman dimuat
-    if (oldDetails.length > 0) {
-        oldDetails.forEach(function(detail) {
-            addRow(detail);
-        });
-    } else { // Jika jurnal lama tidak punya detail (seharusnya tidak terjadi)
-        addRow();
-        addRow();
-    }
-    
-    // Panggil calculateTotals() sekali di awal untuk set status & tombol
+    $('#tambah-baris').on('click', function() { addRow(); });
+    if (oldDetails.length > 0) { oldDetails.forEach(function(detail) { addRow(detail); }); } else { addRow(); addRow(); }
     calculateTotals();
-
-    $(document).on('click', '.hapus-baris', function() {
-        $(this).closest('tr').remove();
-        calculateTotals();
-    });
-
+    $(document).on('click', '.hapus-baris', function() { $(this).closest('tr').remove(); calculateTotals(); });
     function calculateTotals() {
-        let totalDebit = 0;
-        let totalKredit = 0;
+        let totalDebit = 0; let totalKredit = 0;
         $('#jurnal-details tr').each(function() {
             totalDebit += parseFloat($(this).find('.debit').val()) || 0;
             totalKredit += parseFloat($(this).find('.kredit').val()) || 0;
         });
         $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
         $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
-        let statusBadge = $('#status-jurnal');
-        let saveButton = $('#simpan-jurnal');
+        let statusBadge = $('#status-jurnal'); let saveButton = $('#simpan-jurnal');
         if (totalDebit === totalKredit && totalDebit > 0) {
             statusBadge.removeClass('badge-danger').addClass('badge-success').text('Seimbang');
             saveButton.prop('disabled', false);
@@ -153,11 +129,9 @@ $(document).ready(function() {
             saveButton.prop('disabled', true);
         }
     }
-
     $(document).on('input', '.debit, .kredit', function() {
         let row = $(this).closest('tr');
-        let debitInput = row.find('.debit');
-        let kreditInput = row.find('.kredit');
+        let debitInput = row.find('.debit'); let kreditInput = row.find('.kredit');
         if ($(this).hasClass('debit') && $(this).val() > 0) {
             kreditInput.val(0);
         } else if ($(this).hasClass('kredit') && $(this).val() > 0) {

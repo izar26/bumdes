@@ -56,7 +56,7 @@ class NeracaController extends Controller
         }
 
         // 2. Hitung KEWAJIBAN
-        $akunKewajibans = Akun::where('tipe_akun', 'Liabilitas')->where('is_header', 0)->get();
+        $akunKewajibans = Akun::where('tipe_akun', 'Kewajiban')->where('is_header', 0)->get();
         $kewajibans = [];
         $totalKewajiban = 0;
         foreach ($akunKewajibans as $akun) {
