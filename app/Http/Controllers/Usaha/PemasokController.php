@@ -32,7 +32,7 @@ class PemasokController extends Controller
 
         Pemasok::create($request->all());
 
-        return redirect()->route('pemasok.index')
+        return redirect()->route('usaha.pemasok.index')
                         ->with('success', 'Pemasok baru berhasil ditambahkan.');
     }
 

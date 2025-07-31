@@ -18,7 +18,6 @@ return new class extends Migration
         $table->decimal('debit', 18, 2)->default(0);
         $table->decimal('kredit', 18, 2)->default(0);
         $table->text('keterangan')->nullable();
-        // Kolom-kolom seperti total_debit, total_kredit, tanggal_transaksi kita hapus karena sudah ada di tabel jurnal_umums
     });
 }
 
