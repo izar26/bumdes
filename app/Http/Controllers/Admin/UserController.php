@@ -132,7 +132,7 @@ class UserController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        DB::beginTransaction(); // Mulai transaksi
+        DB::beginTransaction(); 
 
         try {
             $userData = [

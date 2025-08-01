@@ -14,8 +14,7 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        // Tambahkan redirect lain jika kamu punya role lain
-        return redirect('/'); // default
+        return redirect()->route('admin.dashboard'); // default
     }
 
     public function index()

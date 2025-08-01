@@ -458,7 +458,7 @@
                     "showEasing": "swing",
                     "hideEasing": "linear",
                     "showMethod": "fadeIn",
-                    "hideMethod": "fadeOut"p
+                    "hideMethod": "fadeOut"
                 };
             }
         });

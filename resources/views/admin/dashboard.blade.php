@@ -1,5 +1,4 @@
 @extends('adminlte::page')
-
 @section('title', 'Dashboard BUMDes')
 
 @section('content_header')
@@ -35,6 +34,15 @@
             </x-adminlte-card>
         </div>
     </div>
+<!-- Trigger -->
+<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+    Logout
+</a>
+
+<!-- Hidden Form -->
+<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+    @csrf
+</form>
 
     {{-- Status Unit-Unit Usaha --}}
     <div class="row">

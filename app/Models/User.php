@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+// Import trait HasRoles dari Spatie
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\UnitUsaha;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $primaryKey = 'user_id';
 
@@ -39,38 +42,45 @@ class User extends Authenticatable
     public static function getRolesOptions()
     {
         return [
-            'admin' => 'Admin BUMDes',
+            'admin_bumdes' => 'Admin BUMDes',
             'manajer_unit_usaha' => 'Manajer Unit Usaha',
-            'staf' => 'Staf',
+            'bendahara_bumdes' => 'Bendahara BUMDes',
+            'kepala_desa' => 'Kepala Desa',
+            'admin_unit_usaha' => 'Admin Unit Usaha'
         ];
     }
 
-    // Add the hasMany relationship for UnitUsaha
-    /**
-     * Get the unit usahas that the user is responsible for.
-     */
     public function unitUsahas()
     {
         return $this->hasMany(UnitUsaha::class, 'user_id', 'user_id');
     }
 
-    // Helper methods for role checking (keep these)
+    // Fungsi pembantu untuk memeriksa peran menggunakan Spatie
     public function isAdminBumdes()
     {
-        return $this->role === 'admin';
+        return $this->hasRole('admin_bumdes');
     }
 
     public function isManajerUnitUsaha()
     {
-        return $this->role === 'manajer_unit_usaha';
+        return $this->hasRole('manajer_unit_usaha');
     }
 
-    public function isStaf()
+    public function isBendaharaBumdes()
     {
-        return $this->role === 'staf';
+        return $this->hasRole('bendahara_bumdes');
     }
 
-    // Scopes for active/inactive users (keep these)
+    public function isKepalaDesa()
+    {
+        return $this->hasRole('kepala_desa');
+    }
+    public function isAdminUnitUsaha()
+    {
+        return $this->hasRole('admin_unit_usaha');
+    }
+
+    // Scopes for active/inactive users
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

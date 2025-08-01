@@ -22,22 +22,34 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected function redirectTo()
-    {
-        $user = auth()->user();
+   protected function redirectTo()
+{
+    $user = auth()->user();
 
-        // Optional logging from previous debugging steps, can be removed once fixed
-        \Log::info('Attempting redirect for user: ' . ($user ? $user->username : 'NULL'));
-        \Log::info('User role: ' . ($user ? $user->role : 'NULL'));
-
-        if ($user && $user->role === 'admin') {
-            \Log::info('Redirecting to admin dashboard.');
-            return '/admin/dashboard';
-        }
-
-        \Log::info('Redirecting to default home.');
-        return '/home'; // fallback
+    if (!$user) {
+        \Log::warning('Redirect attempted without authenticated user.');
+        return '/login';
     }
+
+    \Log::info('User attempting redirect: ' . $user->username);
+    \Log::info('User role: ' . $user->role);
+
+    switch ($user->role) {
+        case 'admin_bumdes':
+            return '/admin/dashboard';
+        case 'bendahara_bumdes':
+            return '/admin/dashboard';
+        case 'manajer_unit_usaha':
+            return '/anggot/dashboard';
+        case 'kepala_desa':
+            return '/admin/dashboard';
+        case 'bendahara_bumdes':
+            return '/admin/dashboard';
+        default:
+            return '/home';
+    }
+}
+
 
     /**
      * Create a new controller instance.

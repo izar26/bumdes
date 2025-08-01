@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ProfilSeeder::class,
             HomepageSettingSeeder::class,
             BungdesSeeder::class,
+                PermissionSeeder::class,
             AkunSeeder::class,
             UnitUsahaSeeder::class,
             JurnalSeeder::class,
