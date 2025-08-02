@@ -8,14 +8,31 @@ use App\Models\Akun;
 use App\Models\DetailJurnal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; // <-- Pastikan ini ada
 
 class JurnalUmumController extends Controller
 {
-    // ... method index() dan edit() tidak berubah ...
     public function index()
     {
-        $jurnals = JurnalUmum::with('detailJurnals.akun')
-                             ->latest('tanggal_transaksi')->get();
+        $user = Auth::user();
+        
+        // Mulai query builder
+        $jurnalQuery = JurnalUmum::with('detailJurnals.akun')
+                                 ->latest('tanggal_transaksi');
+
+        // Terapkan filter berdasarkan peran
+        if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
+            // 1. Ambil ID semua unit usaha yang dikelola oleh user ini
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
+
+            // 2. Filter jurnal agar hanya menampilkan yang unit_usaha_id-nya cocok
+            $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        }
+        // Jika user adalah bendahara atau peran lain yang lebih tinggi, tidak ada filter yang diterapkan (melihat semua)
+
+        // Eksekusi query untuk mendapatkan hasilnya
+        $jurnals = $jurnalQuery->get();
+
         return view('keuangan.jurnal.index', compact('jurnals'));
     }
 
@@ -26,7 +43,6 @@ class JurnalUmumController extends Controller
         return view('keuangan.jurnal.edit', compact('jurnal', 'akuns'));
     }
 
-
     public function update(Request $request, JurnalUmum $jurnalUmum)
     {
         $request->validate([
@@ -36,7 +52,7 @@ class JurnalUmumController extends Controller
             'details.*.akun_id' => 'required|exists:akuns,akun_id',
             'details.*.debit' => 'required|numeric|min:0',
             'details.*.kredit' => 'required|numeric|min:0',
-            'details.*.keterangan' => 'nullable|string|max:255', // <-- Validasi baru
+            'details.*.keterangan' => 'nullable|string|max:255',
         ]);
         
         try {
@@ -65,7 +81,7 @@ class JurnalUmumController extends Controller
                     'akun_id' => $detail['akun_id'],
                     'debit' => $detail['debit'],
                     'kredit' => $detail['kredit'],
-                    'keterangan' => $detail['keterangan'], // <-- Simpan keterangan
+                    'keterangan' => $detail['keterangan'],
                 ]);
             }
 

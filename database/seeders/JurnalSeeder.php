@@ -2,29 +2,29 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
 use App\Models\Akun;
+use App\Models\User;
+use App\Models\UnitUsaha;
 use Illuminate\Support\Facades\DB;
 
 class JurnalSeeder extends Seeder
 {
     public function run(): void
     {
-        // Helper function untuk membuat jurnal
-        $createJurnal = function ($tanggal, $deskripsi, $details) {
+        $createJurnal = function ($tanggal, $deskripsi, $userId, $unitUsahaId, $details) {
             $totalDebit = collect($details)->sum('debit');
             $totalKredit = collect($details)->sum('kredit');
 
-            if ($totalDebit !== $totalKredit) {
+            if (round($totalDebit, 2) !== round($totalKredit, 2)) {
                 throw new \Exception("Jurnal tidak seimbang untuk: " . $deskripsi);
             }
 
             $jurnal = JurnalUmum::create([
-                // 'bungdes_id' => 1,
-                'user_id' => 1,
+                'user_id' => $userId,
+                'unit_usaha_id' => $unitUsahaId,
                 'tanggal_transaksi' => $tanggal,
                 'deskripsi' => $deskripsi,
                 'total_debit' => $totalDebit,
@@ -32,7 +32,8 @@ class JurnalSeeder extends Seeder
             ]);
 
             foreach ($details as $detail) {
-                $akun = Akun::where('kode_akun', $detail['kode_akun'])->first();
+                // Diganti menjadi firstOrFail untuk memastikan error jika akun tidak ada
+                $akun = Akun::where('kode_akun', $detail['kode_akun'])->firstOrFail();
                 DetailJurnal::create([
                     'jurnal_id' => $jurnal->jurnal_id,
                     'akun_id' => $akun->akun_id,
@@ -43,43 +44,31 @@ class JurnalSeeder extends Seeder
             }
         };
 
-        // --- CONTOH TRANSAKSI UNTUK JULI 2025 ---
+        $bendahara = User::where('username', 'bendahara_bumdes')->first();
+        $adminUnit = User::where('username', 'admin_unit_usaha')->first();
+        $unitToko = UnitUsaha::where('nama_unit', 'Toko BUMDes')->first();
+        $unitWisata = UnitUsaha::where('nama_unit', 'Wisata Desa')->first();
 
-        // 1. Setoran Modal Awal
-        $createJurnal('2025-07-01', 'Setoran modal awal dari Desa', [
-            ['kode_akun' => '1.1.01.01', 'debit' => 10000000, 'kredit' => 0], // Kas di Tangan
-            ['kode_akun' => '3.1.01.01', 'debit' => 0, 'kredit' => 10000000], // Penyertaan Modal Desa
+        // --- CONTOH TRANSAKSI (KODE AKUN SUDAH DISESUAIKAN) ---
+
+        $createJurnal('2025-07-01', 'Setoran modal awal dari Desa', $bendahara->user_id, null, [
+            ['kode_akun' => '1.1.01.02', 'debit' => 50000000, 'kredit' => 0], // Kas di Bank BSI
+            ['kode_akun' => '3.1.01.01', 'debit' => 0, 'kredit' => 50000000], // Penyertaan Modal Desa
         ]);
 
-        // 2. Pembelian Barang secara Kredit
-        $createJurnal('2025-07-02', 'Pembelian barang dagangan dari Pemasok A', [
-            ['kode_akun' => '1.1.05.01', 'debit' => 2000000, 'kredit' => 0], // Persediaan Barang Dagangan
-            ['kode_akun' => '2.1.01.01', 'debit' => 0, 'kredit' => 2000000], // Utang Usaha
+        $createJurnal('2025-07-05', 'Pembelian stok awal toko secara kredit', $adminUnit->user_id, $unitToko->unit_usaha_id, [
+            ['kode_akun' => '1.1.05.01', 'debit' => 5000000, 'kredit' => 0], // Persediaan
+            ['kode_akun' => '2.1.01.01', 'debit' => 0, 'kredit' => 5000000], // Utang Usaha
         ]);
 
-        // 3. Penjualan Tunai
-        $createJurnal('2025-07-05', 'Penjualan tunai di toko', [
-            ['kode_akun' => '1.1.01.01', 'debit' => 1500000, 'kredit' => 0], // Kas di Tangan
-            ['kode_akun' => '4.2.01.91', 'debit' => 0, 'kredit' => 1500000], // Pendapatan Penjualan Barang Dagangan
+        $createJurnal('2025-07-10', 'Penjualan tunai pertama di toko', $adminUnit->user_id, $unitToko->unit_usaha_id, [
+            ['kode_akun' => '1.1.01.01', 'debit' => 750000, 'kredit' => 0], // Kas Tunai
+            ['kode_akun' => '4.2.01.91', 'debit' => 0, 'kredit' => 750000], // Pendapatan Penjualan Barang Dagangan
         ]);
 
-        // 4. Pembayaran Beban Listrik
-        $createJurnal('2025-07-10', 'Pembayaran beban listrik bulan Juni', [
-            ['kode_akun' => '6.1.04.01', 'debit' => 250000, 'kredit' => 0], // Beban Listrik
-            ['kode_akun' => '1.1.01.01', 'debit' => 0, 'kredit' => 250000], // Kas di Tangan
-        ]);
-
-        // 5. Penjualan Kredit
-        $createJurnal('2025-07-15', 'Penjualan kredit kepada Pelanggan B', [
-            ['kode_akun' => '1.1.03.01', 'debit' => 1000000, 'kredit' => 0], // Piutang Usaha
-            ['kode_akun' => '4.2.01.91', 'debit' => 0, 'kredit' => 1000000], // Pendapatan Penjualan Barang Dagangan
-        ]);
-
-        // 6. Pembayaran Gaji 2 Karyawan
-        $createJurnal('2025-07-25', 'Pembayaran gaji Juli untuk Budi dan Ani', [
-            ['kode_akun' => '6.1.01.01', 'debit' => 700000, 'kredit' => 0, 'keterangan' => 'Gaji Budi'], // Beban Gaji
-            ['kode_akun' => '6.1.01.01', 'debit' => 800000, 'kredit' => 0, 'keterangan' => 'Gaji Ani'], // Beban Gaji
-            ['kode_akun' => '1.1.01.01', 'debit' => 0, 'kredit' => 1500000], // Kas di Tangan
+        $createJurnal('2025-07-15', 'Pembayaran biaya promosi Unit Wisata', $bendahara->user_id, $unitWisata->unit_usaha_id, [
+            ['kode_akun' => '6.3.02.01', 'debit' => 1200000, 'kredit' => 0], // Beban Iklan
+            ['kode_akun' => '1.1.01.02', 'debit' => 0, 'kredit' => 1200000], // Kas di Bank BSI
         ]);
     }
 }
