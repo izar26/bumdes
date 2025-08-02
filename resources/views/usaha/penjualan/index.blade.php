@@ -93,7 +93,7 @@
 
     @include('components.confirm-modal', [
         'modalId' => 'confirmModal',
-        'title' => 'Konfirmasi Aksi',
+        'title' => '',
         'body' => 'Apakah Anda yakin?',
         'confirmButtonText' => 'Lanjutkan',
         'confirmButtonClass' => 'btn-primary',

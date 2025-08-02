@@ -24,38 +24,58 @@ class ProdukController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+   public function create()
     {
-        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        $currentUser = Auth::user();
+
+        // Jika pengguna adalah manajer_unit_usaha, hanya ambil unit usahanya sendiri
+        if ($currentUser->role === 'manajer_unit_usaha') {
+            $unitUsahas = $currentUser->unitUsahas; // Menggunakan relasi
+        } else {
+            // Untuk peran lain (admin_bumdes, bendahara_bumdes), tampilkan semua unit usaha
+            $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        }
+
         $kategoris = Kategori::orderBy('nama_kategori')->get();
         return view('usaha.produk.create', compact('unitUsahas', 'kategoris'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // Tambahkan validasi untuk stok_awal
-        $request->validate([
+        $currentUser = Auth::user();
+
+        // Aturan validasi dasar
+        $validationRules = [
             'nama_produk' => 'required|string|max:255',
             'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|gte:harga_beli',
+            'harga_jual' => 'required|numeric|min:0',
             'satuan_unit' => 'required|string|max:50',
             'deskripsi_produk' => 'nullable|string|max:1000',
-            'kategori' => 'nullable|string|max:100',
+            'kategori_id' => 'nullable|exists:kategoris,id', 
             'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
-            'stok_awal' => 'required|numeric|min:0', // <-- Validasi baru
-        ]);
+            'stok_awal' => 'required|numeric|min:0',
+        ];
+
+        if ($currentUser->role === 'manajer_unit_usaha') {
+            $validationRules['unit_usaha_id'] = [
+                'required',
+                'exists:unit_usahas,unit_usaha_id',
+                function ($attribute, $value, $fail) use ($currentUser) {
+                    if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
+                        $fail('Anda tidak memiliki izin untuk mengelola unit usaha ini.');
+                    }
+                },
+            ];
+        }
+
+        $request->validate($validationRules);
 
         try {
             DB::beginTransaction();
 
-            // 1. Simpan Produk
             $produk = Produk::create($request->all());
 
-            // 2. Buat Stok Awal untuk produk baru
             Stok::create([
                 'produk_id' => $produk->produk_id,
                 'unit_usaha_id' => $request->unit_usaha_id,

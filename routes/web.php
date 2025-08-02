@@ -73,7 +73,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Manajer Unit Usaha & Bendahara BUMDes bisa mengelola manajemen usaha
-    Route::middleware(['role:manajer_unit_usaha|bendahara_bumdes'])->group(function () {
+    Route::middleware(['role:manajer_unit_usaha|admin_unit_usaha'])->group(function () {
         Route::prefix('usaha')->name('usaha.')->group(function () {
             Route::resource('produk', ProdukController::class);
             Route::resource('stok', StokController::class);
@@ -85,7 +85,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Bendahara BUMDes bisa mengelola keuangan
-    Route::middleware(['role:bendahara_bumdes'])->group(function () {
+    Route::middleware(['role:bendahara_bumdes|admin_unit_usaha'])->group(function () {
         Route::prefix('keuangan')->group(function () {
             Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
             Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');

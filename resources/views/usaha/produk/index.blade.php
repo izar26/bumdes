@@ -70,8 +70,9 @@
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $produk->nama_produk }}</td>
-                                    <td>{{ formatRupiah($produk->harga_beli) }}</td>
-                                    <td>{{ formatRupiah($produk->harga_jual) }}</td>
+                                    <td>Rp {{ number_format($produk->harga_beli, 0, ',', '.') }}</td>
+<td>Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
+
                                     <td>{{ $produk->satuan_unit }}</td>
                                     <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
                                     <td>{{ $produk->kategori->nama_kategori ?? 'Tidak Berkategori' }}</td>
@@ -109,7 +110,7 @@
 
     @include('components.confirm-modal', [
         'modalId' => 'confirmModal',
-        'title' => 'Konfirmasi Aksi',
+        'title' => '',
         'body' => 'Apakah Anda yakin?',
         'confirmButtonText' => 'Lanjutkan',
         'confirmButtonClass' => 'btn-primary',
