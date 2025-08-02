@@ -5,68 +5,81 @@ namespace App\Http\Controllers\Usaha;
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Models\UnitUsaha;
-use App\Models\Stok; // <-- Pastikan ini ada
-use App\Models\Kategori; // <-- Pastikan ini ada
-use Illuminate\Support\Facades\Validator;
+use App\Models\Stok;
+use App\Models\Kategori;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // <-- Pastikan ini ada
-use App\Http\Controllers\Usaha\KategoriController; // <-- Pastikan ini ada
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ProdukController extends Controller
 {
+    /**
+     * Helper function untuk mengambil daftar Unit Usaha berdasarkan peran user.
+     */
+    private function getUnitUsahasForUser()
+    {
+        $user = auth()->user();
+        // Bendahara atau Admin BUMDes bisa melihat semua unit usaha
+        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+            return UnitUsaha::where('status_operasi', 'Aktif')->get();
+        }
+
+        // Peran lain hanya melihat unit usaha yang menjadi tanggung jawabnya
+        return $user->unitUsahas()->where('status_operasi', 'Aktif')->get();
+    }
+
     public function index()
     {
-        // Tambahkan relasi 'stok' untuk ditampilkan di tabel
         $produks = Produk::with('unitUsaha', 'stok')->latest()->get();
         return view('usaha.produk.index', compact('produks'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new product.
      */
-   public function create()
+    public function create()
     {
         $currentUser = Auth::user();
 
         // Jika pengguna adalah manajer_unit_usaha, hanya ambil unit usahanya sendiri
         if ($currentUser->role === 'manajer_unit_usaha') {
-            $unitUsahas = $currentUser->unitUsahas; // Menggunakan relasi
+            $unitUsahas = $currentUser->unitUsahas;
         } else {
-            // Untuk peran lain (admin_bumdes, bendahara_bumdes), tampilkan semua unit usaha
+            // Untuk admin dan bendahara, ambil semua
             $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
         }
 
         $kategoris = Kategori::orderBy('nama_kategori')->get();
+
         return view('usaha.produk.create', compact('unitUsahas', 'kategoris'));
     }
 
+    /**
+     * Store a newly created product in storage.
+     */
     public function store(Request $request)
     {
         $currentUser = Auth::user();
 
-        // Aturan validasi dasar
         $validationRules = [
             'nama_produk' => 'required|string|max:255',
             'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'satuan_unit' => 'required|string|max:50',
             'deskripsi_produk' => 'nullable|string|max:1000',
-            'kategori_id' => 'nullable|exists:kategoris,id', 
+            'kategori_id' => 'nullable|exists:kategoris,id',
             'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
             'stok_awal' => 'required|numeric|min:0',
         ];
 
+        // Jika manajer unit usaha, pastikan hanya memilih unit usaha miliknya
         if ($currentUser->role === 'manajer_unit_usaha') {
-            $validationRules['unit_usaha_id'] = [
-                'required',
-                'exists:unit_usahas,unit_usaha_id',
-                function ($attribute, $value, $fail) use ($currentUser) {
-                    if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
-                        $fail('Anda tidak memiliki izin untuk mengelola unit usaha ini.');
-                    }
-                },
-            ];
+            $validationRules['unit_usaha_id'][] = function ($attribute, $value, $fail) use ($currentUser) {
+                if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
+                    $fail('Anda tidak memiliki izin untuk mengelola unit usaha ini.');
+                }
+            };
         }
 
         $request->validate($validationRules);
@@ -85,75 +98,50 @@ class ProdukController extends Controller
 
             DB::commit();
 
-            return redirect()->route('usaha.produk.index')
+            return redirect()->route('produk.index')
                              ->with('success', 'Produk baru berhasil ditambahkan beserta stok awalnya.');
-
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal menyimpan produk: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                             ->with('error', 'Gagal menyimpan produk: ' . $e->getMessage())
+                             ->withInput();
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Produk $produk)
     {
         return view('usaha.produk.show', compact('produk'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Produk $produk)
     {
-        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
-        $kategoris = Kategori::orderBy('nama_kategori')->get();
-        return view('usaha.produk.edit', compact('produk', 'unitUsahas', 'kategoris'));
+        $unitUsahas = $this->getUnitUsahasForUser();
+        return view('usaha.produk.edit', compact('produk', 'unitUsahas'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Produk $produk)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'nama_produk' => 'required|string|max:255',
-            'deskripsi_produk' => 'nullable|string',
             'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0|gt:harga_beli',
+            'harga_jual' => 'required|numeric|min:0', // Tidak perlu validasi harga jual > beli
             'satuan_unit' => 'required|string|max:50',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
-            'stok_minimum' => 'required|integer|min:0',
-            'kategori_id' => 'nullable|exists:kategoris,id',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
+        $produk->update($request->all());
 
-        try {
-            $produk->update($request->all());
-            return redirect()->route('usaha.produk.index')->with('success', 'Produk berhasil diperbarui!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memperbarui produk: ' . $e->getMessage())->withInput();
-        }
+        return redirect()->route('produk.index')
+                         ->with('success', 'Data produk berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Produk $produk)
     {
-        // Menggunakan transaction untuk keamanan jika ada proses lain nantinya
         DB::transaction(function () use ($produk) {
-            // Hapus stok terkait terlebih dahulu jika tidak ada onDelete Cascade di level DB
-            // Namun, karena skema DB kita sudah punya onDelete cascade,
-            // Stok akan terhapus otomatis saat produk dihapus.
             $produk->delete();
         });
 
-        return redirect()->route('usaha.produk.index')
+        return redirect()->route('produk.index')
                          ->with('success', 'Data produk berhasil dihapus.');
     }
 }

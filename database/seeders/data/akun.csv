@@ -1,0 +1,320 @@
+akun_id,kode_akun,nama_akun,tipe_akun,is_header,parent_id
+1,1.00.00.00,ASET,Aset,true,
+2,1.1.00.00,ASET LANCAR,Aset,true,1
+3,1.1.01.00,Kas & Setara Kas,Aset,true,2
+4,1.1.01.01,Kas Tunai,Aset,false,3
+5,1.1.01.02,Kas di Bank BSI,Aset,false,3
+6,1.1.01.03,Kas di Bank Mandiri,Aset,false,3
+7,1.1.01.04,Kas di Bank BRI,Aset,false,3
+8,1.1.01.05,Kas di Bank BPD,Aset,false,3
+9,1.1.01.98,Kas Kecil (Petty Cash),Aset,false,3
+10,1.1.02.00,Investasi Jangka Pendek,Aset,true,2
+11,1.1.02.01,Deposito <= 3 bulan,Aset,false,10
+12,1.1.02.99,Setara Kas Lainnya,Aset,false,10
+13,1.1.03.00,Piutang,Aset,true,2
+14,1.1.03.01,Piutang Usaha,Aset,false,13
+15,1.1.03.02,Piutang kepada Pegawai,Aset,false,13
+16,1.1.03.99,Piutang Lainnya,Aset,false,13
+17,1.1.04.00,Penyisihan Piutang Tak Tertagih,Aset,true,2
+18,1.1.04.01,Penyisihan Piutang Usaha Tak Tertagih,Aset,false,17
+19,1.1.04.02,Penyisihan Piutang kepada Pegawai Tak Tertagih,Aset,false,17
+20,1.1.04.99,Penyisihan Piutang Lainnya Tak Tertagih,Aset,false,17
+21,1.1.05.00,Persediaan,Aset,true,2
+22,1.1.05.01,Persediaan Barang Dagangan,Aset,false,21
+23,1.1.05.02,Persediaan Bahan Baku,Aset,false,21
+24,1.1.05.03,Persediaan Barang Dalam Proses,Aset,false,21
+25,1.1.05.04,Persediaan Barang Jadi,Aset,false,21
+26,1.1.06.00,Perlengkapan,Aset,true,2
+27,1.1.06.01,Alat Tulis Kantor (ATK),Aset,false,26
+28,1.1.07.00,Beban Dibayar Dimuka,Aset,true,2
+29,1.1.07.01,Sewa Dibayar Dimuka,Aset,false,28
+30,1.1.07.02,Asuransi Dibayar Dimuka,Aset,false,28
+31,1.1.07.03,PPh 25,Aset,false,28
+32,1.1.07.04,PPN Masukan,Aset,false,28
+33,1.1.98.00,Aset Lancar Lainnya,Aset,true,2
+34,1.1.98.99,Aset Lancar Lainnya,Aset,false,33
+35,1.1.99.00,Rekening Antar Kas (RAK),Aset,true,2
+36,1.1.99.01,RK Unit Wisata,Aset,false,35
+37,1.1.99.02,RK Unit Restoran,Aset,false,35
+38,1.1.99.03,RK Unit Minimart Desa,Aset,false,35
+39,1.1.99.04,RK Unit Gedung Serbaguna,Aset,false,35
+40,1.1.99.05,RK Unit Simpan Pinjam,Aset,false,35
+41,1.1.99.06,RK Unit Pengelolaan Air Bersih,Aset,false,35
+42,1.1.99.07,RK Unit Pengelolaan Sampah,Aset,false,35
+43,1.2.00.00,ASET TIDAK LANCAR,Aset,true,1
+44,1.2.01.00,Investasi Jangka Panjang,Aset,true,43
+45,1.2.01.01,Deposito > 3 bulan,Aset,false,44
+46,1.2.01.99,Investasi Lainnya,Aset,false,44
+47,1.3.00.00,ASET TETAP,Aset,true,1
+48,1.3.01.00,Tanah,Aset,true,47
+49,1.3.01.01,Tanah,Aset,false,48
+50,1.3.02.00,Kendaraan,Aset,true,47
+51,1.3.02.01,Kendaraan,Aset,false,50
+52,1.3.03.00,Peralatan dan Mesin,Aset,true,47
+53,1.3.03.01,Peralatan dan Mesin,Aset,false,52
+54,1.3.04.00,Meubelair,Aset,true,47
+55,1.3.04.01,Meubelair,Aset,false,54
+56,1.3.05.00,Gedung dan Bangunan,Aset,true,47
+57,1.3.05.01,Gedung dan Bangunan,Aset,false,56
+58,1.3.06.00,Konstruksi Dalam Pengerjaan,Aset,true,47
+59,1.3.06.01,Konstruksi Dalam Pengerjaan,Aset,false,58
+60,1.3.07.00,Akumulasi Penyusutan Aset Tetap,Aset,true,47
+61,1.3.07.01,Akumulasi Penyusutan Kendaraan,Aset,false,60
+62,1.3.07.02,Akumulasi Penyusutan Peralatan dan Mesin,Aset,false,60
+63,1.3.07.03,Akumulasi Penyusutan Meubelair,Aset,false,60
+64,1.3.07.04,Akumulasi Penyusutan Gedung dan Bangunan,Aset,false,60
+65,1.3.99.00,Aset Tetap Lainnya,Aset,true,47
+66,1.3.99.99,Aset Tetap Lainnya,Aset,false,65
+67,1.4.00.00,ASET TAKBERWUJUD,Aset,true,1
+68,1.4.01.00,Aset Takberwujud,Aset,true,67
+69,1.4.01.01,Software,Aset,false,68
+70,1.4.01.02,Patent,Aset,false,68
+71,1.4.01.03,Trademark,Aset,false,68
+72,1.4.02.00,Amortisasi Aset Takberwujud,Aset,true,67
+73,1.4.02.01,Amortisasi Aset takberwujud,Aset,false,72
+74,1.9.00.00,ASET LAIN-LAIN,Aset,true,1
+75,1.9.01.00,Aset Lain-lain,Aset,true,74
+76,1.9.01.01,Aset Lain-lain,Aset,false,75
+77,1.9.01.02,Akumulasi Penyusutan Aset Lain-lain,Aset,false,75
+78,2.00.00.00,KEWAJIBAN,Kewajiban,true,
+79,2.1.00.00,KEWAJIBAN JANGKA PENDEK,Kewajiban,true,78
+80,2.1.01.00,Utang Usaha,Kewajiban,true,79
+81,2.1.01.01,Utang Usaha,Kewajiban,false,80
+82,2.1.02.00,Utang Pajak,Kewajiban,true,79
+83,2.1.02.01,PPN Keluaran,Kewajiban,false,82
+84,2.1.02.02,PPh 21,Kewajiban,false,82
+85,2.1.02.03,PPh 23,Kewajiban,false,82
+86,2.1.02.04,PPh 29,Kewajiban,false,82
+87,2.1.03.00,Utang Gaji,Kewajiban,true,79
+88,2.1.03.01,Utang Gaji dan Tunjangan,Kewajiban,false,87
+89,2.1.03.02,Utang Gaji/Upah Karyawan,Kewajiban,false,87
+90,2.1.04.00,Utang Utilitas,Kewajiban,true,79
+91,2.1.04.01,Utang Listrik,Kewajiban,false,90
+92,2.1.04.02,Utang Telepon/Internet,Kewajiban,false,90
+93,2.1.04.93,Utang Utilitas Lainnya,Kewajiban,false,90
+94,2.1.05.00,Utang Pihak Ketiga Jangka Pendek,Kewajiban,true,79
+95,2.1.05.01,Utang kepada Pihak Ketiga Jk. Pendek,Kewajiban,false,94
+96,2.1.05.99,Utang kepada Pihak Ketiga Jk. Pendek Lainnya,Kewajiban,false,94
+97,2.1.09.00,Utang Jangka Pendek Lainnya,Kewajiban,true,79
+98,2.1.09.99,Utang Jangka Pendek Lainnya,Kewajiban,false,97
+99,2.2.00.00,KEWAJIBAN JANGKA PANJANG,Kewajiban,true,78
+100,2.2.01.00,Utang Bank,Kewajiban,true,99
+101,2.2.01.01,Utang Ke Bank,Kewajiban,false,100
+102,2.2.02.00,Utang Pihak Ketiga Jangka Panjang,Kewajiban,true,99
+103,2.2.02.01,Utang kepada Pihak Ketiga Jk. Panjang,Kewajiban,false,102
+104,2.2.99.00,Utang Jangka Panjang Lainnya,Kewajiban,true,99
+105,2.2.99.99,Utang Jangka Panjang Lainnya,Kewajiban,false,104
+106,3.00.00.00,EKUITAS,Ekuitas,true,
+107,3.1.00.00,Modal Disetor,Ekuitas,true,106
+108,3.1.01.00,Penyertaan Modal Desa,Ekuitas,true,107
+109,3.1.01.01,Penyertaan Modal Desa,Ekuitas,false,108
+110,3.1.01.02,Penyertaan Modal Desa A,Ekuitas,false,108
+111,3.1.01.03,Penyertaan Modal Desa B,Ekuitas,false,108
+112,3.1.01.04,Penyertaan Modal Desa C,Ekuitas,false,108
+113,3.1.02.00,Penyertaan Modal Masyarakat,Ekuitas,true,107
+114,3.1.02.01,Penyertaan Modal Masyarakat,Ekuitas,false,113
+115,3.1.02.02,Penyertaan Modal Masyarakat Desa A,Ekuitas,false,113
+116,3.1.02.03,Penyertaan Modal Masyarakat Desa B,Ekuitas,false,113
+117,3.1.02.04,Penyertaan Modal Masyarakat Desa C,Ekuitas,false,113
+118,3.2.00.00,Bagi Hasil,Ekuitas,true,106
+119,3.2.01.00,Bagi Hasil Penyertaan Modal Desa,Ekuitas,true,118
+120,3.2.01.01,Bagi Hasil Penyertaan Modal Desa,Ekuitas,false,119
+121,3.2.01.02,Bagi Hasil Penyertaan Modal Desa A,Ekuitas,false,119
+122,3.2.01.03,Bagi Hasil Penyertaan Modal Desa B,Ekuitas,false,119
+123,3.2.01.04,Bagi Hasil Penyertaan Modal Desa C,Ekuitas,false,119
+124,3.2.02.00,Bagi Hasil Penyertaan Modal Masyarakat,Ekuitas,true,118
+125,3.2.02.01,Bagi Hasil Penyertaan Modal Masyarakat,Ekuitas,false,124
+126,3.2.02.02,Bagi Hasil Penyertaan Modal Masyarakat Desa A,Ekuitas,false,124
+127,3.2.02.03,Bagi Hasil Penyertaan Modal Masyarakat Desa B,Ekuitas,false,124
+128,3.2.02.04,Bagi Hasil Penyertaan Modal Masyarakat Desa C,Ekuitas,false,124
+129,3.3.00.00,Saldo Laba,Ekuitas,true,106
+130,3.3.01.00,Saldo Laba Ditahan,Ekuitas,true,129
+131,3.3.01.01,Saldo Laba Tidak Dicadangkan,Ekuitas,false,130
+132,3.3.01.02,Saldo Laba Dicadangkan untuk Pembayaran Utang Jangka Panjang,Ekuitas,false,130
+133,3.3.02.00,Saldo Laba Dicadangkan,Ekuitas,true,129
+134,3.3.02.01,Saldo Laba Dicadangkan untuk Pembelian Aset Tetap,Ekuitas,false,133
+135,3.4.00.00,Modal Donasi,Ekuitas,true,106
+136,3.4.01.00,Modal Donasi/Sumbangan,Ekuitas,true,135
+137,3.4.01.01,Modal Donasi/Sumbangan,Ekuitas,false,136
+138,3.8.00.00,Rekening Antar Kantor (RAK),Ekuitas,true,106
+139,3.8.01.00,RK Pusat,Ekuitas,true,138
+140,3.8.01.01,RK Pusat,Ekuitas,false,139
+141,3.9.00.00,Ikhtisar Laba Rugi,Ekuitas,true,106
+142,3.9.01.00,Ikhtisar Laba Rugi,Ekuitas,true,141
+143,3.9.01.01,Ikhtisar Laba Rugi,Ekuitas,false,142
+144,4.00.00.00,PENDAPATAN,Pendapatan,true,
+145,4.1.00.00,Pendapatan Jasa,Pendapatan,true,144
+146,4.1.01.00,Pendapatan Wisata,Pendapatan,true,145
+147,4.1.01.01,Pendapatan Tiket,Pendapatan,false,146
+148,4.1.01.02,Pendapatan Wahana,Pendapatan,false,146
+149,4.1.01.03,Pendapatan Paket Wisata,Pendapatan,false,146
+150,4.1.02.00,Pendapatan Pengelolaan Air,Pendapatan,true,145
+151,4.1.02.01,Pendapatan Pengelolaan Air Bersih,Pendapatan,false,150
+152,4.1.03.00,Pendapatan Pengelolaan Sampah,Pendapatan,true,145
+153,4.1.03.01,Pendapatan Pengelolaan Sampah,Pendapatan,false,152
+154,4.1.04.00,Pendapatan Sewa,Pendapatan,true,145
+155,4.1.04.01,Pendapatan Sewa Tempat Outbound,Pendapatan,false,154
+156,4.1.04.02,Pendapatan Sewa Tempat untuk Toko/Kios,Pendapatan,false,154
+157,4.1.04.03,Pendapatan Sewa Gedung,Pendapatan,false,154
+158,4.1.04.04,Pendapatan Sewa Mobil,Pendapatan,false,154
+159,4.1.04.05,Pendapatan Sewa Peralatan Gedung,Pendapatan,false,154
+160,4.1.04.99,Pendapatan Sewa Lainnya,Pendapatan,false,154
+161,4.1.05.00,Pendapatan Jasa Pelayanan,Pendapatan,true,145
+162,4.1.05.01,Pendapatan Jasa Pembayaran Listrik,Pendapatan,false,161
+163,4.1.05.99,Pendapatan Jasa Pelayanan lainnya,Pendapatan,false,161
+164,4.1.06.00,Pendapatan Transportasi,Pendapatan,true,145
+165,4.1.06.01,Pendapatan Transportasi,Pendapatan,false,164
+166,4.1.07.00,Pendapatan Parkir,Pendapatan,true,145
+167,4.1.07.01,Pendapatan Parkir Mobil,Pendapatan,false,166
+168,4.1.07.02,Pendapatan Parkir Motor,Pendapatan,false,166
+169,4.1.08.00,Pendapatan Simpan Pinjam,Pendapatan,true,145
+170,4.1.08.01,Pendapatan Simpan Pinjam,Pendapatan,false,169
+171,4.1.09.00,Pendapatan Pelatihan,Pendapatan,true,145
+172,4.1.09.01,Pendapatan Pelatihan,Pendapatan,false,171
+173,4.1.10.00,Pendapatan Homestay,Pendapatan,true,145
+174,4.1.10.01,Pendapatan Homestay,Pendapatan,false,173
+175,4.1.11.00,Pendapatan Komisi,Pendapatan,true,145
+176,4.1.11.01,Pendapatan Komisi,Pendapatan,false,175
+177,4.1.12.00,Pendapatan Agen,Pendapatan,true,145
+178,4.1.12.01,Pendapatan BRI Link,Pendapatan,false,177
+179,4.2.00.00,PENDAPATAN PENJUALAN BARANG DAGANGAN,Pendapatan,true,144
+180,4.2.01.00,Pendapatan Penjualan,Pendapatan,true,179
+181,4.2.01.01,Pendapatan Penjualan Makanan/Minuman,Pendapatan,false,180
+182,4.2.01.02,Pendapatan Penjualan Pakaian/Kaos/Jaket,Pendapatan,false,180
+183,4.2.01.03,Pendapatan Penjualan Hasil Kerajinan/Suvenir,Pendapatan,false,180
+184,4.2.01.04,Pendapatan Penjualan Buku,Pendapatan,false,180
+185,4.2.01.05,Pendapatan Penjualan Biji Kopi,Pendapatan,false,180
+186,4.2.01.06,Pendapatan Penjualan Bensin,Pendapatan,false,180
+187,4.2.01.91,Pendapatan Penjualan Barang Dagangan,Pendapatan,false,180
+188,4.2.02.00,Retur Penjualan,Pendapatan,true,179
+189,4.2.02.01,Retur Penjualan Barang Dagangan,Pendapatan,false,188
+190,4.2.03.00,Diskon Penjualan,Pendapatan,true,179
+191,4.2.03.01,Diskon Penjualan Barang Dagangan,Pendapatan,false,190
+192,4.3.00.00,PENDAPATAN PENJUALAN BARANG JADI,Pendapatan,true,144
+193,4.3.01.00,Pendapatan Penjualan,Pendapatan,true,192
+194,4.3.01.01,Pendapatan Katering,Pendapatan,false,193
+195,4.3.01.02,Pendapatan Restoran,Pendapatan,false,193
+196,4.3.01.03,Pendapatan Kopi,Pendapatan,false,193
+197,4.3.01.91,Pendapatan Penjualan Barang Jadi,Pendapatan,false,193
+198,4.3.02.00,Retur Penjualan,Pendapatan,true,192
+199,4.3.02.01,Retur Penjualan Barang Jadi,Pendapatan,false,198
+200,4.3.03.00,Diskon Penjualan,Pendapatan,true,192
+201,4.3.03.01,Diskon Penjualan Barang Jadi,Pendapatan,false,200
+202,5.00.00.00,HARGA POKOK PENJUALAN,HPP,true,
+203,5.1.00.00,Harga Pokok Penjualan Barang Dagangan,HPP,true,202
+204,5.1.01.00,HPP Barang Dagangan,HPP,true,203
+205,5.1.01.01,Harga Pokok Penjualan Barang Dagangan,HPP,false,204
+206,5.2.00.00,Harga Pokok Penjualan Barang Jadi,HPP,true,202
+207,5.2.01.00,HPP Barang Jadi,HPP,true,206
+208,5.2.01.01,Harga Pokok Penjualan Barang Jadi,HPP,false,207
+209,5.3.00.00,Harga Pokok Produksi,HPP,true,202
+210,5.3.01.00,HPP Produksi,HPP,true,209
+211,5.3.01.01,Harga Pokok Produksi,HPP,false,210
+212,6.00.00.00,BEBAN,Beban,true,
+213,6.1.00.00,BEBAN ADMINISTRASI & UMUM,Beban,true,212
+214,6.1.01.00,Beban Pegawai Bag. Adum,Beban,true,213
+215,6.1.01.01,Beban Gaji dan Tunjangan Bag. Adum,Beban,false,214
+216,6.1.01.02,Beban Honor Lembur Bag. Adum,Beban,false,214
+217,6.1.01.03,Beban Honor Narasumber,Beban,false,214
+218,6.1.01.04,Beban Insentif (Bonus) Bag. Adum,Beban,false,214
+219,6.1.01.05,Beban Komisi Bag. Adum,Beban,false,214
+220,6.1.01.06,Beban Seragam Pegawai Bag. Adum,Beban,false,214
+221,6.1.01.07,Beban Penguatan SDM,Beban,false,214
+222,6.1.01.99,Beban Pegawai Bag. Adum Lainnya,Beban,false,214
+223,6.1.02.00,Beban Perlengkapan,Beban,true,213
+224,6.1.02.01,Beban Alat Tulis Kantor (ATK),Beban,false,223
+225,6.1.02.02,Beban Foto Copy,Beban,false,223
+226,6.1.02.03,Beban Konsumsi Rapat,Beban,false,223
+227,6.1.02.04,Beban Cetak dan Dekorasi,Beban,false,223
+228,6.1.02.99,Beban Perlengkapan Lainnya,Beban,false,223
+229,6.1.03.00,Beban Pemeliharaan,Beban,true,213
+230,6.1.03.01,Beban Pemeliharaan dan Perbaikan,Beban,false,229
+231,6.1.04.00,Beban Utilitas,Beban,true,213
+232,6.1.04.01,Beban Listrik,Beban,false,231
+233,6.1.04.02,Beban Telepon/Internet,Beban,false,231
+234,6.1.04.99,Beban Utilitas Lainnya,Beban,false,231
+235,6.1.05.00,Beban Dibayar Dimuka,Beban,true,213
+236,6.1.05.01,Beban Sewa,Beban,false,235
+237,6.1.05.02,Beban Asuransi,Beban,false,235
+238,6.1.06.00,Beban Kebersihan dan Keamanan,Beban,true,213
+239,6.1.06.01,Beban Kebersihan,Beban,false,238
+240,6.1.06.02,Beban Keamanan,Beban,false,238
+241,6.1.07.00,Beban Penyusutan & Amortisasi,Beban,true,213
+242,6.1.07.01,Beban Penyisihan Piutang Tak Tertagih,Beban,false,241
+243,6.1.07.02,Beban Penyusutan Kendaraan,Beban,false,241
+244,6.1.07.03,Beban Penyusutan Peralatan dan Mesin,Beban,false,241
+245,6.1.07.04,Beban Penyusutan Meubelair,Beban,false,241
+246,6.1.07.05,Beban Penyusutan Gedung dan Bangunan,Beban,false,241
+247,6.1.07.06,Beban Amortisasi Aset takberwujud,Beban,false,241
+248,6.1.99.00,Beban Adum Lainnya,Beban,true,213
+249,6.1.99.01,Beban Parkir,Beban,false,248
+250,6.1.99.02,Beban Audit,Beban,false,248
+251,6.1.99.03,Beban Perjalanan Dinas,Beban,false,248
+252,6.1.99.04,Beban Transportasi,Beban,false,248
+253,6.1.99.05,Beban Jamuan Tamu,Beban,false,248
+254,6.1.99.99,Beban Administrasi dan Umum Lainnya,Beban,false,248
+255,6.2.00.00,BEBAN OPERASIONAL,Beban,true,212
+256,6.2.01.00,Beban Pegawai Bag. Operasional,Beban,true,255
+257,6.2.01.01,Beban Gaji/Upah Bag. Operasional SPAM Desa,Beban,false,256
+258,6.2.01.02,Beban Uang Makan Bag. Operasional,Beban,false,256
+259,6.2.02.00,Beban Pemeliharaan Bag. Operasional,Beban,true,255
+260,6.2.02.01,Beban Pemeliharaan dan Perbaikan SPAM Desa,Beban,false,259
+261,6.2.02.02,Beban Renovasi SPAM Desa,Beban,false,259
+262,6.2.03.00,Beban Penunjang Operasional,Beban,true,255
+263,6.2.03.01,Beban Tim SAR,Beban,false,262
+264,6.2.03.02,Beban P3K,Beban,false,262
+265,6.2.99.00,Beban Operasional Lainnya,Beban,true,255
+266,6.2.99.01,Beban Komunikasi,Beban,false,265
+267,6.2.99.02,Beban Sewa Lokasi,Beban,false,265
+268,6.2.99.03,Beban Pakan Ikan,Beban,false,265
+269,6.2.99.99,Beban Operasional Lainnya,Beban,false,265
+270,6.3.00.00,BEBAN PEMASARAN,Beban,true,212
+271,6.3.01.00,Beban Pegawai Bag. Pemasaran,Beban,true,270
+272,6.3.01.01,Beban Gaji/Upah Bag. Pemasaran,Beban,false,271
+273,6.3.01.02,Beban Insentif (Bonus) Bag. Pemasaran,Beban,false,271
+274,6.3.01.03,Beban Seragam Pegawai Bag. Pemasaran,Beban,false,271
+275,6.3.02.00,Beban Promosi,Beban,true,270
+276,6.3.02.01,Beban Iklan,Beban,false,275
+277,6.3.02.02,Beban Promosi wartawan,Beban,false,275
+278,6.3.02.03,Beban Dana Sosial,Beban,false,275
+279,6.3.99.00,Beban Pemasaran Lainnya,Beban,true,270
+280,6.3.99.99,Beban Pemasaran Lainnya,Beban,false,279
+281,7.00.00.00,PENDAPATAN DAN BEBAN LAIN-LAIN,Pendapatan & Beban Lainnya,true,
+282,7.1.00.00,PENDAPATAN LAIN-LAIN,Pendapatan & Beban Lainnya,true,281
+283,7.1.01.00,Pendapatan Bunga,Pendapatan & Beban Lainnya,true,282
+284,7.1.01.01,Pendapatan Bunga Bank,Pendapatan & Beban Lainnya,false,283
+285,7.1.01.02,Pendapatan Fee Agen BNI 46,Pendapatan & Beban Lainnya,false,283
+286,7.1.02.00,Pendapatan Dividen,Pendapatan & Beban Lainnya,true,282
+287,7.1.02.01,Pendapatan Dividen,Pendapatan & Beban Lainnya,false,286
+288,7.1.03.00,Pendapatan Denda,Pendapatan & Beban Lainnya,true,282
+289,7.1.03.01,Pendapatan Denda,Pendapatan & Beban Lainnya,false,288
+290,7.1.04.00,Pendapatan Iklan,Pendapatan & Beban Lainnya,true,282
+291,7.1.04.01,Pendapatan Iklan,Pendapatan & Beban Lainnya,false,290
+292,7.1.05.00,Keuntungan Penjualan Aset,Pendapatan & Beban Lainnya,true,282
+293,7.1.05.01,Keuntungan Penjualan Aset Tetap,Pendapatan & Beban Lainnya,false,292
+294,7.1.99.00,Pendapatan Lain-lain,Pendapatan & Beban Lainnya,true,282
+295,7.1.99.99,Pendapatan Lain-lain lainnya,Pendapatan & Beban Lainnya,false,294
+296,7.2.00.00,BEBAN LAIN-LAIN,Pendapatan & Beban Lainnya,true,281
+297,7.2.01.00,Beban Bunga dan Administrasi Bank,Pendapatan & Beban Lainnya,true,296
+298,7.2.01.01,Beban Administrasi Bank,Pendapatan & Beban Lainnya,false,297
+299,7.2.02.00,Beban Bunga,Pendapatan & Beban Lainnya,true,296
+300,7.2.02.01,Beban Bunga,Pendapatan & Beban Lainnya,false,299
+301,7.2.03.00,Beban Denda,Pendapatan & Beban Lainnya,true,296
+302,7.2.03.01,Beban Denda,Pendapatan & Beban Lainnya,false,301
+303,7.2.04.00,Kerugian Penjualan Aset,Pendapatan & Beban Lainnya,true,296
+304,7.2.04.01,Kerugian Penjualan Aset Tetap,Pendapatan & Beban Lainnya,false,303
+305,7.2.99.00,Beban Lain-lain Lainnya,Pendapatan & Beban Lainnya,true,296
+306,7.2.99.99,Beban Lain-lain lainnya,Pendapatan & Beban Lainnya,false,305
+307,7.3.00.00,BEBAN PAJAK PENGHASILAN,Pendapatan & Beban Lainnya,true,281
+308,7.3.01.00,Beban Pajak,Pendapatan & Beban Lainnya,true,307
+309,7.3.01.01,Beban Pajak Air Permukaan,Pendapatan & Beban Lainnya,false,308
+310,7.3.01.02,Beban Pajak Bunga Bank,Pendapatan & Beban Lainnya,false,308
+311,7.3.01.03,Beban Pajak Daerah,Pendapatan & Beban Lainnya,false,308
+312,7.3.01.04,Beban Pajak Hiburan,Pendapatan & Beban Lainnya,false,308
+313,7.3.01.05,Beban Pajak Reklame,Pendapatan & Beban Lainnya,false,308
+314,7.3.01.06,Beban PPh 21,Pendapatan & Beban Lainnya,false,308
+315,7.3.01.07,Beban PPh 23,Pendapatan & Beban Lainnya,false,308
+316,7.3.01.08,Beban PPh 25,Pendapatan & Beban Lainnya,false,308
+317,7.3.01.09,Beban PPh 29,Pendapatan & Beban Lainnya,false,308
+318,7.3.01.10,Beban PPh Final,Pendapatan & Beban Lainnya,false,308
+319,7.3.01.99,Beban Pajak Lainnya,Pendapatan & Beban Lainnya,false,308

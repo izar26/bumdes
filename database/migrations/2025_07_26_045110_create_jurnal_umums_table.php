@@ -20,10 +20,12 @@ return new class extends Migration
             $table->decimal('total_debit', 18, 2);
             $table->decimal('total_kredit', 18, 2);
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('unit_usaha_id')->nullable(); 
             $table->string('metode_transaksi')->nullable();
             $table->timestamps();
 
-            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade'); // Changed reference
+            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+            $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('set null');
         });
     }
 

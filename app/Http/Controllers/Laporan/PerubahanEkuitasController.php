@@ -12,7 +12,6 @@ class PerubahanEkuitasController extends Controller
 {
     public function index()
     {
-        // View untuk form filter, tidak berubah.
         return view('laporan.perubahan_ekuitas.index');
     }
 
@@ -26,8 +25,8 @@ class PerubahanEkuitasController extends Controller
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
 
-        // Helper function untuk menghitung saldo sebuah akun spesifik hingga tanggal tertentu
-        $calculateBalanceByCode = function($kode_akun, $endDate) {
+        // Helper function untuk menghitung saldo sebuah akun spesifik HINGGA tanggal tertentu
+        $calculateBalanceUpTo = function($kode_akun, $endDate) {
             $akun = Akun::where('kode_akun', $kode_akun)->first();
             if (!$akun) return 0;
 
@@ -44,7 +43,7 @@ class PerubahanEkuitasController extends Controller
             return $kredit - $debit;
         };
         
-        // Helper function untuk menghitung perubahan (mutasi) dalam periode tertentu
+        // Helper function untuk menghitung perubahan (mutasi) DALAM periode tertentu
         $calculateMutationByCode = function($kode_akun, $startDate, $endDate) {
             $akun = Akun::where('kode_akun', $kode_akun)->first();
             if (!$akun) return 0;
@@ -52,25 +51,25 @@ class PerubahanEkuitasController extends Controller
             $debit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.debit');
             $kredit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.kredit');
 
-            // Saldo normal Ekuitas di Kredit
             return $kredit - $debit;
         };
 
         // 1. PERHITUNGAN PENYERTAAN MODAL
-        $modalDesaAwal = $calculateBalanceByCode('3.1.01.01', $startDate->copy()->subDay());
-        $modalMasyarakatAwal = $calculateBalanceByCode('3.1.02.01', $startDate->copy()->subDay());
+        $modalDesaAwal = $calculateBalanceUpTo('3.1.01.01', $startDate->copy()->subDay());
+        $modalMasyarakatAwal = $calculateBalanceUpTo('3.1.02.01', $startDate->copy()->subDay());
         $penambahanModalDesa = $calculateMutationByCode('3.1.01.01', $startDate, $endDate);
         $penambahanModalMasyarakat = $calculateMutationByCode('3.1.02.01', $startDate, $endDate);
         $modalAkhir = $modalDesaAwal + $modalMasyarakatAwal + $penambahanModalDesa + $penambahanModalMasyarakat;
 
         // 2. PERHITUNGAN SALDO LABA
         // Laba ditahan dari periode-periode sebelumnya
-        $totalPendapatanTerdahulu = Akun::where('tipe_akun', 'Pendapatan')->get()->reduce(function($carry, $akun) use ($calculateBalanceByCode, $startDate){
-            return $carry + $calculateBalanceByCode($akun->kode_akun, $startDate->copy()->subDay());
+        $totalPendapatanTerdahulu = Akun::where('tipe_akun', 'Pendapatan')->get()->reduce(function($carry, $akun) use ($calculateBalanceUpTo, $startDate){
+            return $carry + $calculateBalanceUpTo($akun->kode_akun, $startDate->copy()->subDay());
         });
-        $totalBebanTerdahulu = Akun::whereIn('tipe_akun', ['Beban', 'HPP'])->get()->reduce(function($carry, $akun) use ($calculateBalanceByCode, $startDate){
-            $debit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->where('jurnal_umums.tanggal_transaksi', '<', $startDate)->sum('detail_jurnals.debit');
-            $kredit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->where('jurnal_umums.tanggal_transaksi', '<', $startDate)->sum('detail_jurnals.kredit');
+        $totalBebanTerdahulu = Akun::whereIn('tipe_akun', ['Beban', 'HPP'])->get()->reduce(function($carry, $akun) use ($startDate){
+            $akunModel = Akun::where('kode_akun', $akun->kode_akun)->first();
+            $debit = DetailJurnal::where('akun_id', $akunModel->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->where('jurnal_umums.tanggal_transaksi', '<', $startDate)->sum('detail_jurnals.debit');
+            $kredit = DetailJurnal::where('akun_id', $akunModel->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->where('jurnal_umums.tanggal_transaksi', '<', $startDate)->sum('detail_jurnals.kredit');
             return $carry + ($debit - $kredit);
         });
         $saldoLabaAwal = $totalPendapatanTerdahulu - $totalBebanTerdahulu;
@@ -79,19 +78,20 @@ class PerubahanEkuitasController extends Controller
         $labaRugiPeriodeIni = Akun::where('tipe_akun', 'Pendapatan')->get()->reduce(function($carry, $akun) use ($calculateMutationByCode, $startDate, $endDate){
             return $carry + $calculateMutationByCode($akun->kode_akun, $startDate, $endDate);
         }) - Akun::whereIn('tipe_akun', ['Beban', 'HPP'])->get()->reduce(function($carry, $akun) use ($startDate, $endDate){
-            $debit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.debit');
-            $kredit = DetailJurnal::where('akun_id', $akun->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.kredit');
+            $akunModel = Akun::where('kode_akun', $akun->kode_akun)->first();
+            $debit = DetailJurnal::where('akun_id', $akunModel->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.debit');
+            $kredit = DetailJurnal::where('akun_id', $akunModel->akun_id)->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate])->sum('detail_jurnals.kredit');
             return $carry + ($debit - $kredit);
         });
 
-        // Bagi hasil dianggap sebagai pengurang laba
-        $bagiHasilDesa = $calculateMutationByCode('3.3.01.01', $startDate, $endDate);
-        $bagiHasilMasyarakat = $calculateMutationByCode('3.3.02.01', $startDate, $endDate);
+        // Bagi hasil dianggap sebagai pengurang laba (normalnya didebit)
+        $bagiHasilDesa = $calculateMutationByCode('3.3.01.01', $startDate, $endDate) * -1;
+        $bagiHasilMasyarakat = $calculateMutationByCode('3.3.02.01', $startDate, $endDate) * -1;
         
         $saldoLabaAkhir = $saldoLabaAwal + $labaRugiPeriodeIni - $bagiHasilDesa - $bagiHasilMasyarakat;
 
         // 3. PERHITUNGAN MODAL DONASI
-        $modalDonasi = $calculateBalanceByCode('3.4.01.01', $endDate);
+        $modalDonasi = $calculateBalanceUpTo('3.4.01.01', $endDate);
 
         // 4. EKUITAS AKHIR
         $ekuitasAkhir = $modalAkhir + $saldoLabaAkhir + $modalDonasi;
