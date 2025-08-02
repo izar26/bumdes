@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
 use App\Models\UnitUsaha;
 
 class User extends Authenticatable
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'photo',
         'is_active',
     ];
 
@@ -89,5 +91,25 @@ class User extends Authenticatable
     public function scopeInactive($query)
     {
         return $query->where('is_active', false);
+    }
+     public function adminlte_image()
+    {
+        if ($this->photo && Storage::disk('public')->exists('photos/' . $this->photo)) {
+            return asset('storage/photos/' . $this->photo);
+        }
+
+        return asset('vendor/adminlte/dist/img/avatar.png');
+    }
+
+    /**
+     * Metode kustom untuk mendapatkan peran pengguna AdminLTE.
+     * AdminLTE akan memanggil metode ini.
+     *
+     * @return string
+     */
+    public function adminlte_desc()
+    {
+        $roles = self::getRolesOptions();
+        return $roles[$this->role] ?? ucfirst($this->role);
     }
 }

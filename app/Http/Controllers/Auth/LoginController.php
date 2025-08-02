@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
-use App\Models\User; // Make sure this is imported
+use App\Models\User;
 
 class LoginController extends Controller
 {
@@ -15,46 +15,37 @@ class LoginController extends Controller
      * The primary key for the user table.
      * This tells AuthenticatesUsers trait to use 'user_id' instead of 'id'.
      */
-    protected $primaryKey = 'user_id'; // <--- ADD THIS LINE
+    protected $primaryKey = 'user_id';
 
     /**
      * Where to redirect users after login.
-     *
-     * @var string
      */
-   protected function redirectTo()
-{
-    $user = auth()->user();
+    protected function redirectTo()
+    {
+        $user = auth()->user();
 
-    if (!$user) {
-        \Log::warning('Redirect attempted without authenticated user.');
-        return '/login';
+        if (!$user) {
+            \Log::warning('Redirect attempted without authenticated user.');
+            return '/login';
+        }
+
+        \Log::info('User attempting redirect: ' . $user->username);
+        \Log::info('User role: ' . $user->role);
+
+        switch ($user->role) {
+            case 'admin_bumdes':
+            case 'bendahara_bumdes':
+            case 'kepala_desa':
+                return '/admin/dashboard';
+            case 'manajer_unit_usaha':
+                return '/anggota/dashboard';
+            default:
+                return '/home';
+        }
     }
-
-    \Log::info('User attempting redirect: ' . $user->username);
-    \Log::info('User role: ' . $user->role);
-
-    switch ($user->role) {
-        case 'admin_bumdes':
-            return '/admin/dashboard';
-        case 'bendahara_bumdes':
-            return '/admin/dashboard';
-        case 'manajer_unit_usaha':
-            return '/anggot/dashboard';
-        case 'kepala_desa':
-            return '/admin/dashboard';
-        case 'bendahara_bumdes':
-            return '/admin/dashboard';
-        default:
-            return '/home';
-    }
-}
-
 
     /**
      * Create a new controller instance.
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -62,8 +53,7 @@ class LoginController extends Controller
     }
 
     /**
-     * Memberitahu Laravel untuk menggunakan 'username' untuk login,
-     * bukan 'email'.
+     * Use 'username' instead of 'email' for login.
      */
     public function username()
     {
@@ -71,19 +61,23 @@ class LoginController extends Controller
     }
 
     /**
-     * The user has been authenticated.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  mixed  $user
-     * @return mixed
+     * Override the credentials used in login to include `is_active = 1`.
+     */
+    protected function credentials(Request $request)
+    {
+        return [
+            'username'  => $request->get('username'),
+            'password'  => $request->get('password'),
+            'is_active' => 1,
+        ];
+    }
+
+    /**
+     * After user is authenticated, update their last_login time.
      */
     protected function authenticated(Request $request, $user)
     {
-        // Update the last_login timestamp
         $user->last_login = now();
-        $user->save(); // This is the line that caused the error before! Now it should work.
-
-        // The default redirect will then proceed via redirectTo()
-        // return redirect()->intended($this->redirectPath()); // Uncomment if you want to override redirectTo logic
+        $user->save();
     }
 }

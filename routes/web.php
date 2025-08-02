@@ -34,6 +34,7 @@ use App\Http\Controllers\Usaha\PembelianController;
 use App\Http\Controllers\Admin\Aset\AsetBUMDesController;
 use App\Http\Controllers\Usaha\KategoriController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\ProfileController;
 
 
 Route::get('/', [HomeController::class, 'index']);
@@ -43,6 +44,8 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
     // Semua peran bisa mengakses dashboard
     Route::get('/admin/dashboard', fn () => view('admin.dashboard'))->name('admin.dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Admin BUMDes & Kepala Desa bisa mengelola konten website
     Route::middleware(['role:admin_bumdes|kepala_desa'])->group(function () {

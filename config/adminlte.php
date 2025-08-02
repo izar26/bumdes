@@ -64,7 +64,7 @@ return [
     */
 
     'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo_img' => null,
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
@@ -136,7 +136,7 @@ return [
     'usermenu_enabled' => true,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,
+    'usermenu_image' => true,
     'usermenu_desc' => false,
     'usermenu_profile_url' => false,
 
@@ -256,9 +256,9 @@ return [
     |
     */
 
-    'use_route_url' => false,
+    'use_route_url' => true,
     // 'dashboard_url' => 'dashboard',
-    // 'logout_url' => 'logout',
+    'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
     // 'password_reset_url' => 'password/reset',
@@ -330,8 +330,7 @@ return [
         'icon'         => 'fas fa-sign-out-alt',
         'method'       => 'post',
         'topnav_right' => true,
-        'classes
-        '        => 'text-danger logout-trigger',
+        'classes' => 'text-danger logout-trigger',
     ],
 
     // Sidebar items
@@ -426,6 +425,11 @@ return [
             ['text' => 'Pemeliharaan Aset', 'url' => 'bumdes/aset/pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
         ],
     ],
+    [
+        'text' => 'Pengaturan',
+        'icon' => 'fas fa-fw fa-cogs',
+        'url'  => 'profile',
+    ]
 ],
 
 //     [
