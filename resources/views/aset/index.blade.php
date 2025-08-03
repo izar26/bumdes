@@ -38,15 +38,14 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Nomor Inventaris</th>
                         <th>Nama Aset</th>
                         <th>Jenis Aset</th>
                         <th>Nilai Perolehan</th>
                         <th>Tanggal Perolehan</th>
                         <th>Kondisi</th>
                         <th>Lokasi</th>
-                        <th>BUMDes</th>
                         <th>Unit Usaha</th>
-                        <th>Penanggung Jawab</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -54,17 +53,21 @@
                     @forelse($aset as $item)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
+                            <td>{{ $item->nomor_inventaris ?? '-' }}</td>
                             <td>{{ $item->nama_aset }}</td>
                             <td>{{ $item->jenis_aset }}</td>
                             <td>Rp {{ number_format($item->nilai_perolehan, 2, ',', '.') }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal_perolehan)->format('d M Y') }}</td>
                             <td><span class="badge badge-{{ $item->kondisi == 'Baik' ? 'success' : ($item->kondisi == 'Rusak Ringan' ? 'warning' : 'danger') }}">{{ $item->kondisi }}</span></td>
                             <td>{{ $item->lokasi ?? '-' }}</td>
-                            <td>{{ $item->bungdes->nama_bungdes ?? '-' }}</td>
+                            {{-- Baris ini telah diperbarui untuk menggunakan 'nama_unit_usaha' --}}
                             <td>{{ $item->unitUsaha->nama_unit ?? '-' }}</td>
-                            <td>{{ $item->penanggungJawabUser->name ?? '-' }}</td>
                             <td class="text-nowrap">
-                                {{-- <a href="{{ route('bumdes.aset.edit', $item->aset_id) }}" class="btn btn-xs btn-info" title="Edit Aset">
+                                {{-- Tombol Show telah ditambahkan di sini --}}
+                                <a href="{{ route('bumdes.aset.show', $item->aset_id) }}" class="btn btn-xs btn-primary" title="Lihat Detail Aset">
+                                    <i class="fas fa-eye"></i> Show
+                                </a>
+                                <a href="{{ route('bumdes.aset.edit', $item->aset_id) }}" class="btn btn-xs btn-info" title="Edit Aset">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                                 <form action="{{ route('bumdes.aset.destroy', $item->aset_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aset ini?');">
@@ -73,12 +76,12 @@
                                     <button type="submit" class="btn btn-xs btn-danger" title="Hapus Aset">
                                         <i class="fas fa-trash"></i> Hapus
                                     </button>
-                                </form> --}}
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="text-center">Tidak ada data aset yang ditemukan.</td>
+                            <td colspan="10" class="text-center">Tidak ada data aset yang ditemukan.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -114,10 +117,4 @@
             border-radius: .2rem;
         }
     </style>
-@stop
-
-@section('js')
-    <script>
-        console.log('Daftar Aset BUMDes loaded!');
-    </script>
 @stop

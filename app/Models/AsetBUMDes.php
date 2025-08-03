@@ -4,38 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AsetBUMDes extends Model
 {
     use HasFactory;
 
-    protected $table = 'asets'; // Diubah: Nama tabel menjadi 'asets'
+    // Nama tabel di database
+    protected $table = 'aset_bumdes';
+    
+    // Primary key custom
     protected $primaryKey = 'aset_id';
 
+    // Kolom yang bisa diisi secara massal
     protected $fillable = [
+        'nomor_inventaris',
         'nama_aset',
         'jenis_aset',
         'nilai_perolehan',
         'tanggal_perolehan',
         'kondisi',
         'lokasi',
-        'unit_usaha_id',
-        'penanggung_jawab',
+        'unit_usaha_id'
     ];
 
-    protected $casts = [
-        'tanggal_perolehan' => 'date',
-        'nilai_perolehan' => 'decimal:2',
-    ];
+    // Konversi kolom tanggal_perolehan menjadi objek Carbon
+    protected $dates = ['tanggal_perolehan'];
 
-
-    public function unitUsaha()
+    /**
+     * Mendefinisikan relasi "many-to-one" dengan UnitUsaha.
+     * Satu Aset BUMDes hanya dimiliki oleh satu Unit Usaha.
+     */
+    public function unitUsaha(): BelongsTo
     {
-        return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
-    }
-
-    public function penanggungJawabUser()
-    {
-        return $this->belongsTo(User::class, 'penanggung_jawab', 'id'); // Diubah: merujuk ke 'id'
+        return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id');
     }
 }

@@ -1,112 +1,215 @@
 @extends('adminlte::page')
 
-@section('title', 'Edit Aset BUMDes')
-
-@section('content_header')
-    <h1><i class="fas fa-fw fa-edit"></i> Edit Aset: {{ $aset->nama_aset }}</h1>
-@stop
-
 @section('content')
-    <div class="card card-info card-outline">
-        <div class="card-header">
-            <h3 class="card-title">Form Edit Aset</h3>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-edit mr-2"></i> Edit Aset BUMDes</h4>
+                        <a href="{{ route('bumdes.aset.index') }}" class="btn btn-sm btn-light">
+                            <i class="fas fa-arrow-left mr-1"></i> Kembali
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-5">
+                    <form action="{{ route('bumdes.aset.update', $aset->aset_id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="row">
+                            <!-- Nomor Inventaris -->
+                            <div class="col-md-6 mb-4">
+                                <label for="nomor_inventaris" class="form-label fw-bold">Nomor Inventaris</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
+                                    <input type="text" class="form-control @error('nomor_inventaris') is-invalid @enderror" 
+                                           id="nomor_inventaris" name="nomor_inventaris" 
+                                           value="{{ old('nomor_inventaris', $aset->nomor_inventaris) }}" required>
+                                    @error('nomor_inventaris')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Nama Aset -->
+                            <div class="col-md-6 mb-4">
+                                <label for="nama_aset" class="form-label fw-bold">Nama Aset</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-box"></i></span>
+                                    <input type="text" class="form-control @error('nama_aset') is-invalid @enderror" 
+                                           id="nama_aset" name="nama_aset" 
+                                           value="{{ old('nama_aset', $aset->nama_aset) }}" required>
+                                    @error('nama_aset')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Jenis Aset -->
+                            <div class="col-md-6 mb-4">
+                                <label for="jenis_aset" class="form-label fw-bold">Jenis Aset</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-tag"></i></span>
+                                    <input type="text" class="form-control @error('jenis_aset') is-invalid @enderror" 
+                                           id="jenis_aset" name="jenis_aset" 
+                                           value="{{ old('jenis_aset', $aset->jenis_aset) }}" required>
+                                    @error('jenis_aset')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Nilai Perolehan -->
+                            <div class="col-md-6 mb-4">
+                                <label for="nilai_perolehan" class="form-label fw-bold">Nilai Perolehan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">Rp</span>
+                                    <input type="number" class="form-control @error('nilai_perolehan') is-invalid @enderror" 
+                                           id="nilai_perolehan" name="nilai_perolehan" 
+                                           value="{{ old('nilai_perolehan', $aset->nilai_perolehan) }}" required min="0">
+                                    @error('nilai_perolehan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Tanggal Perolehan -->
+                            <div class="col-md-6 mb-4">
+                                <label for="tanggal_perolehan" class="form-label fw-bold">Tanggal Perolehan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" class="form-control @error('tanggal_perolehan') is-invalid @enderror" 
+                                           id="tanggal_perolehan" name="tanggal_perolehan" 
+                                           value="{{ old('tanggal_perolehan', $aset->tanggal_perolehan) }}" required>
+                                    @error('tanggal_perolehan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Kondisi -->
+                            <div class="col-md-6 mb-4">
+                                <label for="kondisi" class="form-label fw-bold">Kondisi</label>
+                                <select class="form-select @error('kondisi') is-invalid @enderror" id="kondisi" name="kondisi" required>
+                                    <option value="Baik" {{ old('kondisi', $aset->kondisi) == 'Baik' ? 'selected' : '' }}>Baik</option>
+                                    <option value="Rusak Ringan" {{ old('kondisi', $aset->kondisi) == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan</option>
+                                    <option value="Rusak Berat" {{ old('kondisi', $aset->kondisi) == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+                                </select>
+                                @error('kondisi')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Lokasi -->
+                            <div class="col-md-6 mb-4">
+                                <label for="lokasi" class="form-label fw-bold">Lokasi</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt"></i></span>
+                                    <input type="text" class="form-control @error('lokasi') is-invalid @enderror" 
+                                           id="lokasi" name="lokasi" 
+                                           value="{{ old('lokasi', $aset->lokasi) }}">
+                                    @error('lokasi')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Unit Usaha -->
+                            <div class="col-md-6 mb-4">
+                                <label for="unit_usaha_id" class="form-label fw-bold">Unit Usaha</label>
+                                <select class="form-select @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" name="unit_usaha_id">
+                                    <option value="">Pilih Unit Usaha</option>
+                                    @foreach($unitUsahas as $unitUsaha)
+                                        <option value="{{ $unitUsaha->unit_usaha_id }}" {{ old('unit_usaha_id', $aset->unit_usaha_id) == $unitUsaha->unit_usaha_id ? 'selected' : '' }}>
+                                            {{ $unitUsaha->nama_unit }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('unit_usaha_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="reset" class="btn btn-outline-secondary me-3">
+                                <i class="fas fa-undo mr-1"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <form action="{{ route('bumdes.aset.update', $aset->aset_id) }}" method="POST">
-            @csrf
-            @method('PUT')
-            <div class="card-body">
-                <div class="form-group">
-                    <label for="nama_aset">Nama Aset</label>
-                    <input type="text" name="nama_aset" class="form-control @error('nama_aset') is-invalid @enderror" id="nama_aset" value="{{ old('nama_aset', $aset->nama_aset) }}" placeholder="Masukkan nama aset" required>
-                    @error('nama_aset')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="jenis_aset">Jenis Aset</label>
-                    <input type="text" name="jenis_aset" class="form-control @error('jenis_aset') is-invalid @enderror" id="jenis_aset" value="{{ old('jenis_aset', $aset->jenis_aset) }}" placeholder="Contoh: Gedung, Kendaraan, Peralatan" required>
-                    @error('jenis_aset')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="nilai_perolehan">Nilai Perolehan (Rp)</label>
-                    <input type="number" name="nilai_perolehan" class="form-control @error('nilai_perolehan') is-invalid @enderror" id="nilai_perolehan" value="{{ old('nilai_perolehan', $aset->nilai_perolehan) }}" step="0.01" min="0" placeholder="Contoh: 15000000.00" required>
-                    @error('nilai_perolehan')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="tanggal_perolehan">Tanggal Perolehan</label>
-                    <input type="date" name="tanggal_perolehan" class="form-control @error('tanggal_perolehan') is-invalid @enderror" id="tanggal_perolehan" value="{{ old('tanggal_perolehan', $aset->tanggal_perolehan->format('Y-m-d')) }}" required>
-                    @error('tanggal_perolehan')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="kondisi">Kondisi</label>
-                    <select name="kondisi" id="kondisi" class="form-control @error('kondisi') is-invalid @enderror" required>
-                        <option value="">Pilih Kondisi</option>
-                        <option value="Baik" {{ old('kondisi', $aset->kondisi) == 'Baik' ? 'selected' : '' }}>Baik</option>
-                        <option value="Rusak Ringan" {{ old('kondisi', $aset->kondisi) == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan</option>
-                        <option value="Rusak Berat" {{ old('kondisi', $aset->kondisi) == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
-                    </select>
-                    @error('kondisi')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="lokasi">Lokasi (Opsional)</label>
-                    <input type="text" name="lokasi" class="form-control @error('lokasi') is-invalid @enderror" id="lokasi" value="{{ old('lokasi', $aset->lokasi) }}" placeholder="Contoh: Kantor Pusat, Unit Simpan Pinjam">
-                    @error('lokasi')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-               
-                <div class="form-group">
-                    <label for="unit_usaha_id">ID Unit Usaha (Opsional)</label>
-                    <input type="number" name="unit_usaha_id" class="form-control @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" value="{{ old('unit_usaha_id', $aset->unit_usaha_id) }}" placeholder="ID Unit Usaha (opsional)">
-                    @error('unit_usaha_id')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="penanggung_jawab">Penanggung Jawab (Opsional)</label>
-                    <select name="penanggung_jawab" id="penanggung_jawab" class="form-control @error('penanggung_jawab') is-invalid @enderror">
-                        <option value="">Pilih Penanggung Jawab</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ old('penanggung_jawab', $aset->penanggung_jawab) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('penanggung_jawab')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-            </div>
-            <div class="card-footer">
-                <button type="submit" class="btn btn-info"><i class="fas fa-sync-alt"></i> Perbarui Aset</button>
-                <a href="{{ route('bumdes.aset.index') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Batal</a>
-            </div>
-        </form>
     </div>
-@stop
+</div>
 
-@section('css')
-    <style>
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease-in-out;
+<style>
+    .card {
+        border-radius: 12px;
+        border: none;
+    }
+    
+    .card-header {
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .form-label {
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .input-group-text {
+        min-width: 45px;
+        justify-content: center;
+    }
+    
+    .form-control, .form-select {
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem !important;
+        border: 1px solid #ced4da;
+    }
+    
+    .btn {
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    
+    .invalid-feedback {
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem;
         }
-        .card:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transform: translateY(-3px);
-        }
-    </style>
-@stop
-
-@section('js')
-    <script>
-        console.log('Edit Aset BUMDes loaded!');
-    </script>
-@stop
+    }
+</style>
+@endsection

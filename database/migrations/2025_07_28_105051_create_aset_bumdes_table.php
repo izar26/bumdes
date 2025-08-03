@@ -11,19 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('asets', function (Blueprint $table) {
-            $table->id('id');
+        Schema::create('aset_bumdes', function (Blueprint $table) {
+            // Menggunakan bigIncrements untuk primary key BIGINT
+            $table->bigIncrements('aset_id');
             $table->string('nama_aset', 255);
             $table->string('jenis_aset', 100);
             $table->decimal('nilai_perolehan', 18, 2);
             $table->date('tanggal_perolehan');
             $table->string('kondisi', 100);
-            $table->string('lokasi', 255)->nullable(); // Diubah: lokasi menjadi nullable
+            $table->string('lokasi', 255)->nullable();
+            
+            // Kolom unik untuk nomor inventaris
+            $table->string('nomor_inventaris', 100)->unique();
+            
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
-            $table->unsignedBigInteger('penanggung_jawab')->nullable(); // Ditambahkan: kolom penanggung_jawab
+            
+            // Kolom timestamps
             $table->timestamps();
 
-            $table->foreign('penanggung_jawab')->references('user_id')->on('users')->onDelete('set null');
+            // Foreign key untuk unit_usaha_id
             $table->foreign('unit_usaha_id')->references('unit_usaha_id')->on('unit_usahas')->onDelete('set null');
         });
     }
@@ -33,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('asets'); // Diubah: nama tabel konsisten dengan up()
+        Schema::dropIfExists('AsetBUMDes');
     }
 };

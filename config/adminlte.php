@@ -422,7 +422,7 @@ return [
         'submenu' => [
             ['text' => 'Pencatatan Aset', 'url' => 'bumdes/aset', 'icon' => 'fas fa-fw fa-clipboard-list'],
             ['text' => 'Penyusutan Aset', 'url' => 'bumdes/aset/penyusutan', 'icon' => 'fas fa-fw fa-percent'],
-            ['text' => 'Pemeliharaan Aset', 'url' => 'bumdes/aset/pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
+            // ['text' => 'Pemeliharaan Aset', 'url' => 'bumdes/aset/pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
         ],
     ],
     [

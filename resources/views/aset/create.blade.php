@@ -7,84 +7,123 @@
 @stop
 
 @section('content')
-    <div class="card card-success card-outline">
+    <div class="card card-primary card-outline">
         <div class="card-header">
-            <h3 class="card-title">Form Data Aset</h3>
+            <h3 class="card-title">Form Tambah Aset</h3>
         </div>
         <form action="{{ route('bumdes.aset.store') }}" method="POST">
             @csrf
             <div class="card-body">
+                @if ($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                @endif
+                <div class="form-group">
+                    <label for="nomor_inventaris">Nomor Inventaris</label>
+                    <input type="text" name="nomor_inventaris" id="nomor_inventaris"
+                        class="form-control @error('nomor_inventaris') is-invalid @enderror"
+                        value="{{ old('nomor_inventaris') }}" placeholder="Masukkan nomor inventaris aset">
+                    @error('nomor_inventaris')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
                 <div class="form-group">
                     <label for="nama_aset">Nama Aset</label>
-                    <input type="text" name="nama_aset" class="form-control @error('nama_aset') is-invalid @enderror" id="nama_aset" value="{{ old('nama_aset') }}" placeholder="Masukkan nama aset" required>
+                    <input type="text" name="nama_aset" id="nama_aset"
+                        class="form-control @error('nama_aset') is-invalid @enderror" value="{{ old('nama_aset') }}"
+                        placeholder="Masukkan nama aset">
                     @error('nama_aset')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
                 <div class="form-group">
                     <label for="jenis_aset">Jenis Aset</label>
-                    <input type="text" name="jenis_aset" class="form-control @error('jenis_aset') is-invalid @enderror" id="jenis_aset" value="{{ old('jenis_aset') }}" placeholder="Contoh: Gedung, Kendaraan, Peralatan" required>
+                    <input type="text" name="jenis_aset" id="jenis_aset"
+                        class="form-control @error('jenis_aset') is-invalid @enderror" value="{{ old('jenis_aset') }}"
+                        placeholder="Contoh: Gedung, Kendaraan, Peralatan">
                     @error('jenis_aset')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
                 <div class="form-group">
-                    <label for="nilai_perolehan">Nilai Perolehan (Rp)</label>
-                    <input type="number" name="nilai_perolehan" class="form-control @error('nilai_perolehan') is-invalid @enderror" id="nilai_perolehan" value="{{ old('nilai_perolehan') }}" step="0.01" min="0" placeholder="Contoh: 15000000.00" required>
+                    <label for="nilai_perolehan">Nilai Perolehan</label>
+                    <input type="number" step="0.01" name="nilai_perolehan" id="nilai_perolehan"
+                        class="form-control @error('nilai_perolehan') is-invalid @enderror"
+                        value="{{ old('nilai_perolehan') }}" placeholder="Masukkan nilai perolehan (contoh: 15000000)">
                     @error('nilai_perolehan')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
                 <div class="form-group">
                     <label for="tanggal_perolehan">Tanggal Perolehan</label>
-                    <input type="date" name="tanggal_perolehan" class="form-control @error('tanggal_perolehan') is-invalid @enderror" id="tanggal_perolehan" value="{{ old('tanggal_perolehan') }}" required>
+                    <input type="date" name="tanggal_perolehan" id="tanggal_perolehan"
+                        class="form-control @error('tanggal_perolehan') is-invalid @enderror"
+                        value="{{ old('tanggal_perolehan') }}">
                     @error('tanggal_perolehan')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
                 <div class="form-group">
                     <label for="kondisi">Kondisi</label>
-                    <select name="kondisi" id="kondisi" class="form-control @error('kondisi') is-invalid @enderror" required>
+                    <select name="kondisi" id="kondisi" class="form-control @error('kondisi') is-invalid @enderror">
                         <option value="">Pilih Kondisi</option>
                         <option value="Baik" {{ old('kondisi') == 'Baik' ? 'selected' : '' }}>Baik</option>
-                        <option value="Rusak Ringan" {{ old('kondisi') == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan</option>
-                        <option value="Rusak Berat" {{ old('kondisi') == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+                        <option value="Rusak Ringan" {{ old('kondisi') == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan
+                        </option>
+                        <option value="Rusak Berat" {{ old('kondisi') == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat
+                        </option>
                     </select>
                     @error('kondisi')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
                 <div class="form-group">
-                    <label for="lokasi">Lokasi (Opsional)</label>
-                    <input type="text" name="lokasi" class="form-control @error('lokasi') is-invalid @enderror" id="lokasi" value="{{ old('lokasi') }}" placeholder="Contoh: Kantor Pusat, Unit Simpan Pinjam">
+                    <label for="lokasi">Lokasi</label>
+                    <input type="text" name="lokasi" id="lokasi"
+                        class="form-control @error('lokasi') is-invalid @enderror" value="{{ old('lokasi') }}"
+                        placeholder="Masukkan lokasi aset">
                     @error('lokasi')
-                        <span class="invalid-feedback">{{ $message }}</span>
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
                     @enderror
                 </div>
-               
+                <!-- Contoh sederhana di aset.create atau aset.edit -->
                 <div class="form-group">
-                    <label for="unit_usaha_id">ID Unit Usaha (Opsional)</label>
-                    <input type="number" name="unit_usaha_id" class="form-control @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" value="{{ old('unit_usaha_id') }}" placeholder="ID Unit Usaha (opsional)">
-                    @error('unit_usaha_id')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="penanggung_jawab">Penanggung Jawab (Opsional)</label>
-                    <select name="penanggung_jawab" id="penanggung_jawab" class="form-control @error('penanggung_jawab') is-invalid @enderror">
-                        <option value="">Pilih Penanggung Jawab</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ old('penanggung_jawab') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                    <label for="unit_usaha_id">Unit Usaha</label>
+                    <select name="unit_usaha_id" id="unit_usaha_id" class="form-control">
+                        <option value="">Pilih Unit Usaha (Opsional)</option>
+                        @foreach ($unitUsahas as $unitUsaha)
+                            <option value="{{ $unitUsaha->unit_usaha_id }}">
+                                {{ $unitUsaha->nama_unit }}
+                            </option>
                         @endforeach
                     </select>
-                    @error('penanggung_jawab')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
                 </div>
             </div>
             <div class="card-footer">
-                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Simpan Aset</button>
-                <a href="{{ route('bumdes.aset.index') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Batal</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                <a href="{{ route('bumdes.aset.index') }}" class="btn btn-secondary">Batal</a>
             </div>
         </form>
     </div>
@@ -95,17 +134,6 @@
         .card {
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease-in-out;
-        }
-        .card:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transform: translateY(-3px);
         }
     </style>
-@stop
-
-@section('js')
-    <script>
-        console.log('Tambah Aset BUMDes loaded!');
-    </script>
 @stop
