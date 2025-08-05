@@ -449,12 +449,9 @@ return [
         'icon'    => 'fas fa-fw fa-store',
         'can'     => 'manajer_unit_usaha_or_admin_unit_usaha',
         'submenu' => [
-            ['text' => 'Transaksi Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-cash-register'],
-            ['text' => 'Transaksi Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
-            ['text' => 'Manajemen Produk', 'route' => 'usaha.produk.index', 'icon' => 'fas fa-fw fa-boxes'],
-            ['text' => 'Stok Produk', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-warehouse'],
-            ['text' => 'Pemasok', 'route' => 'usaha.pemasok.index', 'icon' => 'fas fa-fw fa-truck'],
-            ['text' => 'Kategori Produk', 'route' => 'usaha.kategori.index', 'icon' => 'fas fa-fw fa-tags'],
+            ['text' => 'Pencatatan Aset', 'url' => 'bumdes/aset', 'icon' => 'fas fa-fw fa-clipboard-list'],
+            ['text' => 'Penyusutan Aset', 'url' => 'bumdes/aset/penyusutan', 'icon' => 'fas fa-fw fa-percent'],
+            // ['text' => 'Pemeliharaan Aset', 'url' => 'bumdes/aset/pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
         ],
     ],
 
