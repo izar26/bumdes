@@ -9,9 +9,11 @@ use App\Http\Controllers\Admin\HomepageSettingController;
 use App\Http\Controllers\Admin\SocialLinkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\BungdesController;
-use App\Http\Controllers\Admin\UnitUsahaController;
 use App\Http\Controllers\Admin\AkunController;
 use App\Http\Controllers\Admin\UserController;
+
+use App\Http\Controllers\Admin\UnitUsahaController;
+use App\Http\Controllers\Usaha\AdminUnitUsahaController;
 
 // Keuangan
 use App\Http\Controllers\Keuangan\JurnalUmumController;
@@ -36,7 +38,6 @@ use App\Http\Controllers\Usaha\KategoriController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
 
-
 Route::get('/', [HomeController::class, 'index']);
 
 Auth::routes();
@@ -47,8 +48,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Admin BUMDes & Kepala Desa bisa mengelola konten website
-    Route::middleware(['role:admin_bumdes|kepala_desa'])->group(function () {
+    // =====================================================================================================================
+    // ROUTE UNTUK ADMIN BUMDES
+    // =====================================================================================================================
+    Route::middleware(['role:admin_bumdes'])->group(function () {
+        Route::prefix('admin/manajemen-data')->name('admin.manajemen-data.')->group(function () {
+            Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
+            Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
+            Route::resource('akun', AkunController::class);
+            Route::resource('user', UserController::class);
+            Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
+            Route::resource('unit-usaha', UnitUsahaController::class)->except(['show'])->names('unit_usaha');
+        });
         Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('berita', BeritaController::class);
             Route::resource('potensi', PotensiController::class);
@@ -60,41 +71,38 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    // Admin BUMDes saja yang bisa mengakses manajemen data
-    Route::middleware(['role:admin_bumdes'])->group(function () {
-        Route::prefix('admin/manajemen-data')->name('admin.manajemen-data.')->group(function () {
-            Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
-            Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
-            Route::resource('unit_usaha', UnitUsahaController::class);
-            Route::resource('akun', AkunController::class);
-            Route::resource('user', UserController::class);
-            Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
+    // =====================================================================================================================
+    // ROUTE UNTUK KEPALA DESA
+    // =====================================================================================================================
+    Route::middleware(['role:kepala_desa'])->group(function () {
+
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::resource('berita', BeritaController::class)->only(['index','show']);
+            Route::resource('potensi', PotensiController::class)->only(['index','show']);
+            Route::get('profil', [ProfilController::class, 'edit'])->name('profil.edit');
+            Route::put('profil', [ProfilController::class, 'update'])->name('profil.update');
+            Route::get('pengaturan-halaman', [HomepageSettingController::class, 'edit'])->name('homepage_setting.edit');
+            Route::put('pengaturan-halaman', [HomepageSettingController::class, 'update'])->name('homepage_setting.update');
+            Route::resource('social_link', SocialLinkController::class)->except(['show'])->parameters(['social_link' => 'socialLink']);
         });
     });
 
-    // Manajer Unit Usaha & Bendahara BUMDes bisa mengelola manajemen usaha
-    Route::middleware(['role:manajer_unit_usaha|admin_unit_usaha'])->group(function () {
-        Route::prefix('usaha')->name('usaha.')->group(function () {
-            Route::resource('produk', ProdukController::class);
-            Route::resource('stok', StokController::class);
-            Route::resource('penjualan', PenjualanController::class);
-            Route::resource('pembelian', PembelianController::class);
-            Route::resource('pemasok', PemasokController::class);
-            Route::resource('kategori', KategoriController::class)->except(['show']);
-        });
-    });
-
-    // Bendahara BUMDes bisa mengelola keuangan
-    Route::middleware(['role:bendahara_bumdes|admin_unit_usaha'])->group(function () {
-        Route::prefix('keuangan')->group(function () {
-            Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
-            Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
-            Route::resource('jurnal-umum', JurnalUmumController::class);
-        });
-    });
-
-    // Bendahara BUMDes & Kepala Desa bisa melihat laporan
-    Route::middleware(['role:bendahara_bumdes|kepala_desa'])->group(function () {
+    // =====================================================================================================================
+    // ROUTE UNTUK BENDHARA BUMDES
+    // =====================================================================================================================
+    Route::middleware(['role:bendahara_bumdes'])->group(function () {
+        // Bendahara mengelola aset dan laporan
+        Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
+        Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
+        Route::resource('bumdes/aset', AsetBUMDesController::class)->names([
+            'index' => 'bumdes.aset.index',
+            'create' => 'bumdes.aset.create',
+            'store' => 'bumdes.aset.store',
+            'show' => 'bumdes.aset.show',
+            'edit' => 'bumdes.aset.edit',
+            'update' => 'bumdes.aset.update',
+            'destroy' => 'bumdes.aset.destroy',
+        ]);
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
             Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
@@ -109,25 +117,48 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    // Admin BUMDes saja yang bisa mengelola aset
-    Route::middleware(['role:admin_bumdes'])->group(function () {
-        Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
-        Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
-        Route::resource('bumdes/aset', AsetBUMDesController::class)->names([
-            'index' => 'bumdes.aset.index',
-            'create' => 'bumdes.aset.create',
-            'store' => 'bumdes.aset.store',
-            'show' => 'bumdes.aset.show',
-            'edit' => 'bumdes.aset.edit',
-            'update' => 'bumdes.aset.update',
-            'destroy' => 'bumdes.aset.destroy',
-        ]);
+    // =====================================================================================================================
+    // ROUTE UNTUK MANAJER UNIT USAHA
+    // =====================================================================================================================
+    Route::middleware(['role:manajer_unit_usaha'])->group(function () {
+        // Manajer unit usaha mengelola usaha dan melihat buku besar
+        Route::prefix('usaha')->name('usaha.')->group(function () {
+            Route::resource('produk', ProdukController::class);
+            Route::resource('stok', StokController::class);
+            Route::resource('penjualan', PenjualanController::class);
+            Route::resource('pembelian', PembelianController::class);
+            Route::resource('pemasok', PemasokController::class);
+            Route::resource('kategori', KategoriController::class)->except(['show']);
+        });
+        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+    });
+
+    // =====================================================================================================================
+    // ROUTE UNTUK ADMIN UNIT USAHA
+    // =====================================================================================================================
+    Route::middleware(['role:admin_unit_usaha'])->group(function () {
+        // Admin unit usaha mengelola keuangan dan melihat laporan
+        Route::get('admin/kelola-unit-usaha', [AdminUnitUsahaController::class, 'edit'])->name('admin.kelola_unit_usaha.edit');
+        Route::put('admin/kelola-unit-usaha', [AdminUnitUsahaController::class, 'update'])->name('admin.kelola_unit_usaha.update');
+        Route::prefix('keuangan')->group(function () {
+            Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
+            Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
+            Route::resource('jurnal-umum', JurnalUmumController::class);
+        });
+        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+            Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+            // ... rute laporan lainnya
+        });
     });
 });
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-     ->name('logout');
-     // routes/web.php
-Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
-     ->name('home')      // tambahkan ini
-     ->middleware('auth');
 
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->name('logout');
+
+Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
+    ->name('home')
+    ->middleware('auth');

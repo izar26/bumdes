@@ -5,19 +5,20 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\UnitUsaha;
-use App\Models\User; // Pastikan User model di-import
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class UnitUsahaController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        // Menghapus 'bungdes' dari eager loading karena relasi sudah dihapus
         $query = UnitUsaha::with(['user']);
 
+        // Manajer unit usaha hanya bisa melihat unit usaha yang dia kelola
         if ($user->isManajerUnitUsaha()) {
             $query->where('user_id', $user->user_id);
         }
@@ -31,15 +32,9 @@ class UnitUsahaController extends Controller
      */
     public function create()
     {
-        // Hanya admin_bumdes yang boleh mengakses form ini
-        if (!Auth::user()->isAdminBumdes()) {
-            abort(403, 'Anda tidak memiliki akses untuk membuat Unit Usaha.');
-        }
-
-        // $bungdeses dihapus
+        // Pemeriksaan di sini dihapus karena sudah ada middleware di rute
         // Hanya tampilkan user dengan role manajer_unit_usaha untuk pilihan penanggung jawab
         $users = User::where('role', 'manajer_unit_usaha')->get();
-        // $bungdeses dihapus dari compact
         return view('admin.manajemen_data.unit_usaha.create', compact('users'));
     }
 
@@ -48,17 +43,13 @@ class UnitUsahaController extends Controller
      */
     public function store(Request $request)
     {
-        // Hanya admin_bumdes yang boleh melakukan operasi ini
-        if (!Auth::user()->isAdminBumdes()) {
-            abort(403, 'Anda tidak memiliki akses untuk menyimpan Unit Usaha.');
-        }
-
+        // Pemeriksaan di sini dihapus karena sudah ada middleware di rute
         $rules = [
             'nama_unit' => 'required|string|max:255|unique:unit_usahas,nama_unit',
             'jenis_usaha' => 'required|string|max:100',
             'tanggal_mulai_operasi' => 'nullable|date',
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
-            'user_id' => 'nullable|exists:users,user_id', // Admin bisa menugaskan
+            'user_id' => 'nullable|exists:users,user_id',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -72,7 +63,7 @@ class UnitUsahaController extends Controller
             'jenis_usaha',
             'tanggal_mulai_operasi',
             'status_operasi',
-            'user_id' // Admin BUMDes bisa memilih user_id
+            'user_id'
         ]);
 
         if ($request->filled('user_id')) {
@@ -91,7 +82,6 @@ class UnitUsahaController extends Controller
 
     public function show(UnitUsaha $unitUsaha)
     {
-        // Menghapus 'bungdes' dari eager loading
         $unitUsaha->load(['user']);
         return view('admin.manajemen_data.unit_usaha.show', compact('unitUsaha'));
     }
@@ -100,12 +90,17 @@ class UnitUsahaController extends Controller
     {
         $user = Auth::user();
 
-        // Manajer unit usaha hanya bisa mengedit unit usaha yang dia kelola.
+        // Pemeriksaan ini sudah benar karena membedakan hak edit antara Manajer & Admin
         if ($user->isManajerUnitUsaha() && $unitUsaha->user_id !== $user->user_id) {
             abort(403, 'Anda tidak memiliki akses untuk mengedit unit usaha ini.');
         }
 
-        $users = User::where('role', 'manajer_unit_usaha')->get();
+        if ($user->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
+            $users = User::where('role', 'manajer_unit_usaha')->get();
+        } else {
+            $users = collect([]);
+        }
+
         return view('admin.manajemen_data.unit_usaha.edit', compact('unitUsaha', 'users'));
     }
 
@@ -124,7 +119,8 @@ class UnitUsahaController extends Controller
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
         ];
 
-        if ($loggedInUser->isAdminBumdes()) {
+        // Tambahkan aturan validasi user_id hanya jika yang login adalah admin_bumdes
+        if ($loggedInUser->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
             $rules['user_id'] = 'nullable|exists:users,user_id';
         } else {
             $rules['user_id'] = ['nullable', Rule::in([$unitUsaha->user_id])];
@@ -143,8 +139,7 @@ class UnitUsahaController extends Controller
             'status_operasi',
         ]);
 
-        // Hanya tambahkan user_id ke $data jika admin_bumdes yang mengedit
-        if ($loggedInUser->isAdminBumdes()) {
+        if ($loggedInUser->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
             if ($request->filled('user_id')) {
                 $selectedUser = User::find($request->user_id);
                 if (!$selectedUser || !$selectedUser->isManajerUnitUsaha()) {
@@ -152,7 +147,7 @@ class UnitUsahaController extends Controller
                 }
                 $data['user_id'] = $request->user_id;
             } else {
-                $data['user_id'] = null; // Jika admin ingin mengosongkan penanggung jawab
+                $data['user_id'] = null;
             }
         } else {
             $data['user_id'] = $unitUsaha->user_id;
@@ -165,10 +160,11 @@ class UnitUsahaController extends Controller
 
     public function destroy(UnitUsaha $unitUsaha)
     {
-        if (!Auth::user()->isAdminBumdes()) {
+        // <-- INI JUGA MASALAHNYA -->
+        // Harusnya admin_bumdes yang bisa menghapus
+        if (!Auth::user()->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha()
             abort(403, 'Anda tidak memiliki akses untuk menghapus Unit Usaha.');
         }
-
 
         $unitUsaha->delete();
         return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil dihapus!');

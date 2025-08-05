@@ -39,74 +39,71 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        $currentUser = Auth::user();
-
-        // Jika pengguna adalah manajer_unit_usaha, hanya ambil unit usahanya sendiri
-        if ($currentUser->role === 'manajer_unit_usaha') {
-            $unitUsahas = $currentUser->unitUsahas;
-        } else {
-            // Untuk admin dan bendahara, ambil semua
-            $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
-        }
-
+        // Menggunakan helper function agar lebih rapi
+        $unitUsahas = $this->getUnitUsahasForUser();
         $kategoris = Kategori::orderBy('nama_kategori')->get();
-
         return view('usaha.produk.create', compact('unitUsahas', 'kategoris'));
     }
 
     /**
      * Store a newly created product in storage.
      */
-    public function store(Request $request)
-    {
-        $currentUser = Auth::user();
+   public function store(Request $request)
+{
+    $currentUser = Auth::user();
 
-        $validationRules = [
-            'nama_produk' => 'required|string|max:255',
-            'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0',
-            'satuan_unit' => 'required|string|max:50',
-            'deskripsi_produk' => 'nullable|string|max:1000',
-            'kategori_id' => 'nullable|exists:kategoris,id',
-            'stok_minimum' => 'nullable|integer|min:0',
-            'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
-            'stok_awal' => 'required|numeric|min:0',
-        ];
+    // Definisikan aturan validasi dasar.
+    // Pastikan 'unit_usaha_id' didefinisikan sebagai ARRAY dari awal.
+    $validationRules = [
+        'nama_produk' => 'required|string|max:255',
+        'harga_beli' => 'required|numeric|min:0',
+        'harga_jual' => 'required|numeric|min:0|gt:harga_beli',
+        'satuan_unit' => 'required|string|max:50',
+        'deskripsi_produk' => 'nullable|string|max:1000',
+        'kategori_id' => 'nullable|exists:kategoris,id',
+        'stok_minimum' => 'nullable|integer|min:0',
+        'unit_usaha_id' => [
+            'required',
+            'exists:unit_usahas,unit_usaha_id',
+        ],
+        'stok_awal' => 'required|numeric|min:0',
+    ];
 
-        // Jika manajer unit usaha, pastikan hanya memilih unit usaha miliknya
-        if ($currentUser->role === 'manajer_unit_usaha') {
-            $validationRules['unit_usaha_id'][] = function ($attribute, $value, $fail) use ($currentUser) {
-                if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
-                    $fail('Anda tidak memiliki izin untuk mengelola unit usaha ini.');
-                }
-            };
-        }
-
-        $request->validate($validationRules);
-
-        try {
-            DB::beginTransaction();
-
-            $produk = Produk::create($request->all());
-
-            Stok::create([
-                'produk_id' => $produk->produk_id,
-                'unit_usaha_id' => $request->unit_usaha_id,
-                'jumlah_stok' => $request->stok_awal,
-                'tanggal_perbarui' => now(),
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('produk.index')
-                             ->with('success', 'Produk baru berhasil ditambahkan beserta stok awalnya.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                             ->with('error', 'Gagal menyimpan produk: ' . $e->getMessage())
-                             ->withInput();
-        }
+    // Jika manajer unit usaha, tambahkan aturan kustom ke array 'unit_usaha_id'
+    // Menggunakan array push seperti ini sekarang akan berhasil.
+    if ($currentUser->role === 'manajer_unit_usaha') {
+        $validationRules['unit_usaha_id'][] = function ($attribute, $value, $fail) use ($currentUser) {
+            if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
+                $fail('Anda tidak memiliki izin untuk mengelola unit usaha ini.');
+            }
+        };
     }
+
+    $request->validate($validationRules);
+
+    try {
+        DB::beginTransaction();
+
+        $produk = Produk::create($request->all());
+
+        Stok::create([
+            'produk_id' => $produk->produk_id,
+            'unit_usaha_id' => $request->unit_usaha_id,
+            'jumlah_stok' => $request->stok_awal,
+            'tanggal_perbarui' => now(),
+        ]);
+
+        DB::commit();
+
+        return redirect()->route('usaha.produk.index')
+                         ->with('success', 'Produk baru berhasil ditambahkan beserta stok awalnya.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()
+                         ->with('error', 'Gagal menyimpan produk: ' . $e->getMessage())
+                         ->withInput();
+    }
+}
 
     public function show(Produk $produk)
     {
@@ -116,22 +113,29 @@ class ProdukController extends Controller
     public function edit(Produk $produk)
     {
         $unitUsahas = $this->getUnitUsahasForUser();
-        return view('usaha.produk.edit', compact('produk', 'unitUsahas'));
+        // PERBAIKAN: Tambahkan kategori ke view edit
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        return view('usaha.produk.edit', compact('produk', 'unitUsahas', 'kategoris'));
     }
 
     public function update(Request $request, Produk $produk)
     {
+        // PERBAIKAN: Tambahkan validasi untuk kategori_id
         $request->validate([
             'nama_produk' => 'required|string|max:255',
+            'deskripsi_produk' => 'nullable|string|max:1000',
             'harga_beli' => 'required|numeric|min:0',
-            'harga_jual' => 'required|numeric|min:0', // Tidak perlu validasi harga jual > beli
+            'harga_jual' => 'required|numeric|min:0|gt:harga_beli',
             'satuan_unit' => 'required|string|max:50',
+            'stok_minimum' => 'nullable|integer|min:0',
             'unit_usaha_id' => 'required|exists:unit_usahas,unit_usaha_id',
+            'kategori_id' => 'nullable|exists:kategoris,id',
         ]);
 
         $produk->update($request->all());
 
-        return redirect()->route('produk.index')
+        // PERBAIKAN: Menggunakan nama rute yang benar 'usaha.produk.index'
+        return redirect()->route('usaha.produk.index')
                          ->with('success', 'Data produk berhasil diperbarui.');
     }
 
@@ -141,7 +145,8 @@ class ProdukController extends Controller
             $produk->delete();
         });
 
-        return redirect()->route('produk.index')
+        // PERBAIKAN: Menggunakan nama rute yang benar 'usaha.produk.index'
+        return redirect()->route('usaha.produk.index')
                          ->with('success', 'Data produk berhasil dihapus.');
     }
 }

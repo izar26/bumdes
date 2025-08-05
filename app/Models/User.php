@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-// Import trait HasRoles dari Spatie
-use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Traits\HasRoles;
 use App\Models\UnitUsaha;
 
 class User extends Authenticatable
@@ -38,9 +37,6 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /**
-     * Get a list of available roles for selection.
-     */
     public static function getRolesOptions()
     {
         return [
@@ -48,7 +44,7 @@ class User extends Authenticatable
             'manajer_unit_usaha' => 'Manajer Unit Usaha',
             'bendahara_bumdes' => 'Bendahara BUMDes',
             'kepala_desa' => 'Kepala Desa',
-            'admin_unit_usaha' => 'Admin Unit Usaha'
+            'admin_unit_usaha' => 'Admin Unit Usaha',
         ];
     }
 
@@ -57,32 +53,32 @@ class User extends Authenticatable
         return $this->hasMany(UnitUsaha::class, 'user_id', 'user_id');
     }
 
-    // Fungsi pembantu untuk memeriksa peran menggunakan Spatie
+    // Fungsi pembantu untuk memeriksa peran menggunakan kolom role
     public function isAdminBumdes()
     {
-        return $this->hasRole('admin_bumdes');
+        return $this->role === 'admin_bumdes';
     }
 
     public function isManajerUnitUsaha()
     {
-        return $this->hasRole('manajer_unit_usaha');
+        return $this->role === 'manajer_unit_usaha';
     }
 
     public function isBendaharaBumdes()
     {
-        return $this->hasRole('bendahara_bumdes');
+        return $this->role === 'bendahara_bumdes';
     }
 
     public function isKepalaDesa()
     {
-        return $this->hasRole('kepala_desa');
-    }
-    public function isAdminUnitUsaha()
-    {
-        return $this->hasRole('admin_unit_usaha');
+        return $this->role === 'kepala_desa';
     }
 
-    // Scopes for active/inactive users
+    public function isAdminUnitUsaha()
+    {
+        return $this->role === 'admin_unit_usaha';
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -92,7 +88,8 @@ class User extends Authenticatable
     {
         return $query->where('is_active', false);
     }
-     public function adminlte_image()
+
+    public function adminlte_image()
     {
         if ($this->photo && Storage::disk('public')->exists('photos/' . $this->photo)) {
             return asset('storage/photos/' . $this->photo);
@@ -101,12 +98,6 @@ class User extends Authenticatable
         return asset('vendor/adminlte/dist/img/avatar.png');
     }
 
-    /**
-     * Metode kustom untuk mendapatkan peran pengguna AdminLTE.
-     * AdminLTE akan memanggil metode ini.
-     *
-     * @return string
-     */
     public function adminlte_desc()
     {
         $roles = self::getRolesOptions();

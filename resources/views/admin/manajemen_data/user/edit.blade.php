@@ -13,7 +13,7 @@
         </div>
         <form action="{{ route('admin.manajemen-data.user.update', $user->user_id) }}" method="POST">
             @csrf
-            @method('PUT') {{-- Penting: Gunakan method PUT untuk update --}}
+            @method('PUT')
 
             <div class="card-body">
                 @if (session('success'))
@@ -119,15 +119,15 @@
                         <label class="custom-control-label" for="is_active">Aktifkan Pengguna</label>
                     </div>
                     @error('is_active')
-                        <span class="invalid-feedback d-block" role="alert"> {{-- d-block agar pesan error tampil --}}
+                        <span class="invalid-feedback d-block" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
                     <small class="form-text text-muted">Nonaktifkan untuk mencegah pengguna login.</small>
                 </div>
 
-                {{-- Unit Usaha Assignment (initially hidden, shown if 'manajer_unit_usaha' is selected) --}}
-                <div class="form-group" id="unit_usaha_assignment_group" style="display: {{ (old('role') ?? $user->role) == 'manajer_unit_usaha' ? 'block' : 'none' }};">
+                {{-- Bagian ini sudah diperbaiki untuk konsisten dengan create.blade.php --}}
+                <div class="form-group" id="unit_usaha_assignment_group" style="display: {{ in_array(old('role', $user->role), ['manajer_unit_usaha', 'admin_unit_usaha']) ? 'block' : 'none' }};">
                     <label for="unit_usaha_ids">Unit Usaha yang Bertanggung Jawab</label>
                     <select name="unit_usaha_ids[]" id="unit_usaha_ids" class="form-control @error('unit_usaha_ids') is-invalid @enderror" multiple="multiple">
                         @foreach ($unitUsahas as $unitUsaha)
@@ -154,36 +154,28 @@
 @stop
 
 @section('css')
-    {{-- AdminLTE 3 usually includes Select2 CSS. If not, uncomment below. --}}
     <link rel="stylesheet" href="/vendor/select2/css/select2.min.css">
     <link rel="stylesheet" href="/vendor/select2-bootstrap4-theme/select2-bootstrap4.min.css">
 @stop
 
 @section('js')
-    {{-- AdminLTE 3 usually includes Select2 JS. If not, uncomment below. --}}
     <script src="/vendor/select2/js/select2.full.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Function to show/hide unit_usaha_assignment_group based on role selection
             function toggleUnitUsahaAssignment() {
-                if ($('#role').val() === 'manajer_unit_usaha') {
+                const selectedRole = $('#role').val();
+                const assignableRoles = ['manajer_unit_usaha', 'admin_unit_usaha'];
+
+                if (assignableRoles.includes(selectedRole)) {
                     $('#unit_usaha_assignment_group').show();
                 } else {
                     $('#unit_usaha_assignment_group').hide();
-                    $('#unit_usaha_ids').val(null).trigger('change'); // Clear selection to prevent sending hidden data
+                    $('#unit_usaha_ids').val(null).trigger('change');
                 }
             }
 
-            // Initial call on page load to set correct visibility based on old() value or current user's role
-            // Use (old('role') ?? '{{ $user->role }}') to correctly handle initial display and old input
-            const initialRole = $('#role').val();
-            if (initialRole === 'manajer_unit_usaha') {
-                $('#unit_usaha_assignment_group').show();
-            } else {
-                $('#unit_usaha_assignment_group').hide();
-            }
+            toggleUnitUsahaAssignment();
 
-            // Bind to change event of the role dropdown
             $('#role').on('change', function() {
                 toggleUnitUsahaAssignment();
             });
@@ -191,7 +183,7 @@
             $('#unit_usaha_ids').select2({
                 placeholder: "-- Pilih Unit Usaha --",
                 allowClear: true,
-                // dropdownCssClass: "bigdrop",
+                width: '100%'
             });
         });
     </script>

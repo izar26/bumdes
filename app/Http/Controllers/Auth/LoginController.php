@@ -39,6 +39,8 @@ class LoginController extends Controller
                 return '/admin/dashboard';
             case 'manajer_unit_usaha':
                 return '/admin/dashboard';
+            case 'admin_unit_usaha':
+                return '/admin/dashboard';
             default:
                 return '/home';
         }

@@ -15,7 +15,6 @@
             </div>
         </div>
         <div class="card-body">
-            {{-- Menggabungkan semua alert ke dalam satu blok --}}
             @if (session('success') || session('error') || $errors->any())
                 <div class="alert alert-{{ session('success') ? 'success' : (session('error') ? 'danger' : 'danger') }} alert-dismissible fade show" role="alert">
                     @if(session('success'))
@@ -66,7 +65,8 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if ($user->role === 'manajer_unit_usaha' && $user->unitUsahas->isNotEmpty())
+                                    {{-- PERBAIKAN: Periksa peran 'manajer_unit_usaha' ATAU 'admin_unit_usaha' --}}
+                                    @if (in_array($user->role, ['manajer_unit_usaha', 'admin_unit_usaha']) && $user->unitUsahas->isNotEmpty())
                                         <ul>
                                             @foreach ($user->unitUsahas as $unitUsaha)
                                                 <li>{{ $unitUsaha->nama_unit }}</li>

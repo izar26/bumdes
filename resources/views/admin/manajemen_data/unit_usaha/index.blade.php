@@ -59,7 +59,6 @@
                             <td>{{ optional($unitUsaha->tanggal_mulai_operasi)->format('d-m-Y') }}</td>
                             <td>{{ $unitUsaha->status_operasi }}</td>
                             <td>
-                                <a href="{{ route('admin.manajemen-data.unit_usaha.show', $unitUsaha->unit_usaha_id) }}" class="btn btn-info btn-xs">Detail</a>
                                 <a href="{{ route('admin.manajemen-data.unit_usaha.edit', $unitUsaha->unit_usaha_id) }}" class="btn btn-warning btn-xs">Edit</a>
                                 <form id="delete-form-{{ $unitUsaha->unit_usaha_id }}" action="{{ route('admin.manajemen-data.unit_usaha.destroy', $unitUsaha->unit_usaha_id) }}" method="POST" style="display: none;">
     @csrf
@@ -86,7 +85,7 @@
             </table>
         </div>
     </div>
-    
+
     @include('components.confirm-modal', [
     'modalId' => 'confirmDeleteModal',
     'title' => 'Konfirmasi Penghapusan',
