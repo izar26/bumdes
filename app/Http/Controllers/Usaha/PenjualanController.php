@@ -4,32 +4,52 @@ namespace App\Http\Controllers\Usaha;
 
 use App\Http\Controllers\Controller;
 use App\Models\Penjualan;
+use App\Models\DetailPenjualan;
 use App\Models\Produk;
 use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
+use App\Models\Stok;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class PenjualanController extends Controller
 {
     public function index()
     {
-        $penjualans = Penjualan::latest('tanggal_penjualan')->get();
+        $user = Auth::user();
+        $penjualanQuery = Penjualan::with('unitUsaha')->latest('tanggal_penjualan');
+
+        // Filter berdasarkan peran pengguna
+        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
+            $penjualanQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        }
+        // Bendahara dan peran di atasnya bisa melihat semua
+
+        $penjualans = $penjualanQuery->get();
         return view('usaha.penjualan.index', compact('penjualans'));
     }
 
     public function create()
     {
-        $produks = Produk::orderBy('nama_produk')->get();
+        $user = Auth::user();
+        $produkQuery = Produk::orderBy('nama_produk');
+
+        // Filter produk berdasarkan unit usaha yang dikelola pengguna
+        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
+            $produkQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        }
+
+        $produks = $produkQuery->get();
         return view('usaha.penjualan.create', compact('produks'));
     }
 
     public function store(Request $request)
     {
-        // 1. Validasi data yang masuk
         $request->validate([
             'tanggal_penjualan' => 'required|date',
             'status_penjualan' => 'required|in:Lunas,Belum Lunas',
@@ -39,11 +59,23 @@ class PenjualanController extends Controller
             'jumlah.*' => 'required|numeric|min:1',
         ]);
 
-        // Gunakan DB Transaction untuk memastikan semua proses berhasil
         try {
             DB::beginTransaction();
 
-            // 2. Hitung Total Penjualan & Siapkan Detail
+            // 1. Pengecekan Stok
+            foreach ($request->produk_id as $key => $id_produk) {
+                $produk = Produk::find($id_produk);
+                $stok = Stok::where('produk_id', $id_produk)->first();
+                $jumlahDiminta = $request->jumlah[$key];
+
+                if (!$stok || $stok->jumlah_stok < $jumlahDiminta) {
+                    throw ValidationException::withMessages([
+                        'produk_id' => 'Stok untuk produk "' . $produk->nama_produk . '" tidak mencukupi. Sisa stok: ' . ($stok->jumlah_stok ?? 0),
+                    ]);
+                }
+            }
+            
+            // 2. Hitung Total & Siapkan Detail
             $totalPenjualan = 0;
             $detailData = [];
             foreach ($request->produk_id as $key => $id_produk) {
@@ -59,104 +91,83 @@ class PenjualanController extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
+            
+            // Tentukan Unit Usaha dari produk pertama yang dijual
+            $unitUsahaId = Produk::find($request->produk_id[0])->unit_usaha_id;
 
             // 3. Buat Jurnal Akuntansi
-            $akunPendapatan = Akun::where('kode_akun', '4-10100')->firstOrFail(); // Pendapatan Usaha Toko
-            $deskripsiJurnal = 'Penjualan barang dagang dengan invoice sementara';
+            $akunPendapatan = Akun::where('kode_akun', '4.2.01.91')->firstOrFail();
+            $deskripsiJurnal = 'Penjualan barang dagang';
 
             if ($request->status_penjualan == 'Lunas') {
-                $akunDebit = Akun::where('kode_akun', '1-10101')->firstOrFail(); // Kas di Tangan
-            } else { // Kredit
-                $akunDebit = Akun::where('kode_akun', '1-10200')->firstOrFail(); // Piutang Usaha
+                $akunDebit = Akun::where('kode_akun', '1.1.01.01')->firstOrFail();
+            } else {
+                $akunDebit = Akun::where('kode_akun', '1.1.03.01')->firstOrFail();
             }
 
             $jurnal = JurnalUmum::create([
                 'user_id' => Auth::id(),
+                'unit_usaha_id' => $unitUsahaId,
                 'tanggal_transaksi' => $request->tanggal_penjualan,
                 'deskripsi' => $deskripsiJurnal,
                 'total_debit' => $totalPenjualan,
                 'total_kredit' => $totalPenjualan,
             ]);
 
-            // Debit: Kas atau Piutang
-            DetailJurnal::create([
-                'jurnal_id' => $jurnal->jurnal_id,
-                'akun_id' => $akunDebit->akun_id,
-                'debit' => $totalPenjualan,
-                'kredit' => 0,
-            ]);
-
-            // Kredit: Pendapatan
-            DetailJurnal::create([
-                'jurnal_id' => $jurnal->jurnal_id,
-                'akun_id' => $akunPendapatan->akun_id,
-                'debit' => 0,
-                'kredit' => $totalPenjualan,
-            ]);
-
+            DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunDebit->akun_id, 'debit' => $totalPenjualan, 'kredit' => 0]);
+            DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunPendapatan->akun_id, 'debit' => 0, 'kredit' => $totalPenjualan]);
+            
             // 4. Buat record Penjualan utama
             $penjualan = Penjualan::create([
-                'no_invoice' => 'INV-' . time(), // Buat nomor invoice sementara
+                'no_invoice' => 'INV-' . time(),
                 'tanggal_penjualan' => $request->tanggal_penjualan,
                 'total_penjualan' => $totalPenjualan,
                 'jurnal_id' => $jurnal->jurnal_id,
-                'unit_usaha_id' => Produk::find($request->produk_id[0])->unit_usaha_id, // Ambil unit usaha dari produk pertama
+                'unit_usaha_id' => $unitUsahaId,
                 'nama_pelanggan' => $request->nama_pelanggan,
                 'status_penjualan' => $request->status_penjualan,
             ]);
-
-            // 5. Simpan detail penjualan
+            
+            // 5. Simpan detail & kurangi stok
             $penjualan->detailPenjualans()->createMany($detailData);
-
-            // Jika semua berhasil, konfirmasi transaksi
-            DB::commit();
-
-            return redirect()->route('usaha.penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan.');
-
-        } catch (\Exception $e) {
-            // Jika ada error, batalkan semua proses
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage())->withInput();
-        }
-    }
-
-    /**
-     * ==========================================================
-     * LENGKAPI METHOD INI
-     * ==========================================================
-     */
-    public function show(Penjualan $penjualan)
-    {
-        // Load relasi agar data detail dan produknya bisa diakses di view
-        $penjualan->load('detailPenjualans.produk');
-        return view('usaha.penjualan.show', compact('penjualan'));
-    }
-
-     public function destroy(Penjualan $penjualan)
-    {
-        try {
-            DB::beginTransaction();
-
-            // 1. Ambil jurnal umum yang terkait dengan penjualan ini
-            $jurnal = JurnalUmum::find($penjualan->jurnal_id);
-
-            // 2. Hapus penjualan (detailnya akan terhapus otomatis karena cascade)
-            $penjualan->delete();
-
-            // 3. Hapus jurnal jika ada (detailnya juga akan terhapus otomatis)
-            if ($jurnal) {
-                $jurnal->delete();
+            foreach ($request->produk_id as $key => $id_produk) {
+                $jumlahDijual = $request->jumlah[$key];
+                $stok = Stok::where('produk_id', $id_produk)->first();
+                $stok->decrement('jumlah_stok', $jumlahDijual);
             }
 
             DB::commit();
+            return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan dan stok telah diperbarui.');
 
-            return redirect()->route('usaha.penjualan.index')
-                             ->with('success', 'Transaksi penjualan berhasil dibatalkan dan dihapus.');
-
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('usaha.penjualan.index')
-                             ->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function show(Penjualan $penjualan)
+    {
+        $penjualan->load('detailPenjualans.produk', 'unitUsaha');
+        return view('usaha.penjualan.show', compact('penjualan'));
+    }
+
+    public function destroy(Penjualan $penjualan)
+    {
+        try {
+            DB::beginTransaction();
+            $jurnal = JurnalUmum::find($penjualan->jurnal_id);
+            $penjualan->delete();
+            if ($jurnal) {
+                $jurnal->delete();
+            }
+            DB::commit();
+            return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('penjualan.index')->with('error', 'Gagal menghapus transaksi.');
         }
     }
 }
