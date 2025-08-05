@@ -391,8 +391,6 @@ return [
     ],
 
 
-    // --- KEUANGAN & LAPORAN ---
-    // Akses: Bendahara BUMDes, Manajer Unit Usaha, Admin Unit Usaha, Kepala Desa
     [
         'header' => 'KEUANGAN & LAPORAN',
         'can'    => 'bendahara_bumdes_or_kepala_desa', // Menggunakan gate yang lebih luas
@@ -401,7 +399,7 @@ return [
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => 'bendahara_bumdes_or_admin_unit_usaha',
+        // 'can'     => 'bendahara_bumdes_or_admin_unit_usaha',
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
@@ -411,7 +409,7 @@ return [
     [
         'text'    => 'Laporan',
         'icon'    => 'fas fa-fw fa-file-alt',
-        'can'     => 'bendahara_bumdes_or_kepala_desa_or_admin_unit_usaha',
+        'can'     => 'bendahara_bumdes',
         'submenu' => [
             ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book-open'],
             ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
@@ -444,19 +442,20 @@ return [
         'header' => 'MANAJEMEN USAHA',
         'can'    => 'manajer_unit_usaha_or_admin_unit_usaha',
     ],
-    [
-        'text'    => 'Manajemen Usaha',
-        'icon'    => 'fas fa-fw fa-store',
-        'can'     => 'manajer_unit_usaha_or_admin_unit_usaha',
-        'submenu' => [
-            ['text' => 'Pencatatan Aset', 'url' => 'bumdes/aset', 'icon' => 'fas fa-fw fa-clipboard-list'],
-            ['text' => 'Penyusutan Aset', 'url' => 'bumdes/aset/penyusutan', 'icon' => 'fas fa-fw fa-percent'],
-            // ['text' => 'Pemeliharaan Aset', 'url' => 'bumdes/aset/pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
-        ],
+ [
+    'text'    => 'Manajemen Usaha',
+    'icon'    => 'fas fa-fw fa-store',
+    'can'     => 'admin_unit_usaha',
+    'submenu' => [
+        ['text' => 'Kategori Produk', 'route' => 'usaha.kategori.index', 'icon' => 'fas fa-fw fa-tags'],
+        ['text' => 'Daftar Produk', 'route' => 'usaha.produk.index', 'icon' => 'fas fa-fw fa-boxes'],
+        ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
+        ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
+        ['text' => 'Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-cash-register'],
+        ['text' => 'Daftar Pemasok', 'route' => 'usaha.pemasok.index', 'icon' => 'fas fa-fw fa-truck'],
     ],
+],
 
-    // --- PENGATURAN UNIT USAHA ---
-    // Akses: Admin Unit Usaha
     [
         'header' => 'PENGATURAN UNIT USAHA',
         'can'    => 'admin_unit_usaha',

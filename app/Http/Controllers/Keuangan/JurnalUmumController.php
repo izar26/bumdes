@@ -15,7 +15,7 @@ class JurnalUmumController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Mulai query builder
         $jurnalQuery = JurnalUmum::with('detailJurnals.akun')
                                  ->latest('tanggal_transaksi');
@@ -54,7 +54,7 @@ class JurnalUmumController extends Controller
             'details.*.kredit' => 'required|numeric|min:0',
             'details.*.keterangan' => 'nullable|string|max:255',
         ]);
-        
+
         try {
             DB::beginTransaction();
 

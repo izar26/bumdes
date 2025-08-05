@@ -43,6 +43,9 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('manajer_unit_usaha_or_admin_unit_usaha', fn($user) =>
             in_array($user->role, ['manajer_unit_usaha', 'admin_unit_usaha'])
         );
+        Gate::define('bendahara_bumdes_or_manajer_unit_usaha_or_admin_unit_usaha', fn($user) =>
+            in_array($user->role, ['manajer_unit_usaha', 'manajer_unit_usaha', 'admin_unit_usaha'])
+        );
 
         // **PERBAIKAN & BARU**: Gate untuk semua yang mengelola unit usaha
         Gate::define('admin_unit_usaha_or_manajer_unit_usaha', fn($user) =>
