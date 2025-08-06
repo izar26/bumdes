@@ -12,7 +12,7 @@ class JurnalUmum extends Model
     use HasFactory;
     protected $table = 'jurnal_umums';
     protected $primaryKey = 'jurnal_id';
-    protected $fillable = ['tanggal_transaksi', 'deskripsi', 'user_id', 'total_debit', 'total_kredit'];
+    protected $fillable = ['tanggal_transaksi', 'deskripsi', 'user_id', 'unit_usaha_id', 'total_debit', 'total_kredit'];
 
     public function detailJurnals(): HasMany
     {
