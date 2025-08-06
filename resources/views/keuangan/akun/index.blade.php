@@ -11,7 +11,7 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="card-title">Chart of Accounts (COA)</h3>
-                <a href="{{ route('admin.manajemen-data.akun.create') }}"
+                <a href="{{ route('keuangan.akun.create') }}"
                    class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> Tambah Akun Baru
                 </a>
@@ -97,7 +97,7 @@
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
                                     <form id="delete-akun-form-{{ $akun->akun_id }}"
-                                        action="{{ route('admin.manajemen-data.akun.destroy', ['akun' => $akun->akun_id]) }}"
+                                        action="{{ route('keuangan.akun.destroy', ['akun' => $akun->akun_id]) }}"
                                         method="POST" class="delete-form" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
@@ -219,9 +219,6 @@
 
             // Store original values when entering edit mode
             let originalRowContent = {};
-            // Make sure these variables are passed from the controller (AkunController@index)
-            // Pastikan `tipeAkunOptions` dan `akuns` (untuk parentAkunsData) dilewatkan dari controller
-            // dengan benar agar JavaScript bisa mengaksesnya.
             const tipeAkunOptions = @json($tipeAkunOptions ?? []);
             // Perlu memastikan `$akuns` di sini adalah *semua* akun, bukan hanya topLevelAkuns
             const parentAkunsData = @json($akuns->filter(fn($a) => $a->is_header)->mapWithKeys(fn($a) => [$a->akun_id => $a->kode_akun . ' - ' . $a->nama_akun]) ?? []);
@@ -293,7 +290,7 @@
                 const $row = $(this).closest('tr');
                 const akunId = $row.data('akun-id');
                 const originalKodeAkun = $row.data('original-kode_akun');
-                const url = '{{ route('admin.manajemen-data.akun.update', ['akun' => ':akunId']) }}'.replace(':akunId', akunId);
+                const url = '{{ route('keuangan.akun.update', ['akun' => ':akunId']) }}'.replace(':akunId', akunId);
 
                 const data = {
                     _token: '{{ csrf_token() }}',
@@ -351,7 +348,7 @@
                             <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}" data-toggle="tooltip" title="Edit Akun">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <form id="delete-akun-form-${akunId}" action="${'{{ route('admin.manajemen-data.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
+                            <form id="delete-akun-form-${akunId}" action="${'{{ route('keuangan.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="button"
@@ -427,7 +424,7 @@
                     <button class="btn btn-warning btn-xs edit-akun" data-id="${akunId}" data-toggle="tooltip" title="Edit Akun">
                         <i class="fas fa-edit"></i> Edit
                     </button>
-                    <form id="delete-akun-form-${akunId}" action="${'{{ route('admin.manajemen-data.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
+                    <form id="delete-akun-form-${akunId}" action="${'{{ route('keuangan.akun.destroy', ['akun' => ':akunId']) }}'.replace(':akunId', akunId)}" method="POST" class="delete-form" style="display:inline;">
                         @csrf
                         @method('DELETE')
                         <button type="button"

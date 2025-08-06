@@ -376,7 +376,6 @@ return [
         'can'     => 'admin_bumdes',
         'submenu' => [
             ['text' => 'Data Bumdes', 'route' => 'admin.manajemen-data.bungdes.index'],
-            ['text' => 'Akun Keuangan', 'route' => 'admin.manajemen-data.akun.index'],
             ['text' => 'Manajemen User', 'route' => 'admin.manajemen-data.user.index'],
         ],
     ],
@@ -393,19 +392,19 @@ return [
 
     [
         'header' => 'KEUANGAN & LAPORAN',
-        'can'    => 'bendahara_bumdes_or_kepala_desa', // Menggunakan gate yang lebih luas
+        'can'    => 'bendahara_bumdes',
     ],
-    // Hanya untuk Bendahara BUMDes & Admin Unit Usaha
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        // 'can'     => 'bendahara_bumdes_or_admin_unit_usaha',
+        'can'     => 'bendahara_bumdes',
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
+            ['text' => 'Akun Keuangan', 'route' => 'keuangan.akun.index', 'icon'=> 'fas fa-fw fa-list'],
+
         ],
     ],
-    // Untuk Bendahara BUMDes, Kepala Desa, dan Admin Unit Usaha
     [
         'text'    => 'Laporan',
         'icon'    => 'fas fa-fw fa-file-alt',
@@ -463,8 +462,8 @@ return [
     [
         'text'   => 'Kelola Unit Usaha',
         'icon'   => 'fas fa-fw fa-building',
-        'route'  => 'admin.kelola_unit_usaha.edit',
-        'active' => ['admin/kelola-unit-usaha/*'],
+       'route'  => 'usaha.unit_setting.edit', // Perubahan di sini
+    'active' => ['usaha/unit-setting*'], 
         'can'    => 'admin_unit_usaha',
     ],
 

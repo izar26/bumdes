@@ -9,15 +9,15 @@ use App\Http\Controllers\Admin\HomepageSettingController;
 use App\Http\Controllers\Admin\SocialLinkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\BungdesController;
-use App\Http\Controllers\Admin\AkunController;
 use App\Http\Controllers\Admin\UserController;
 
 use App\Http\Controllers\Admin\UnitUsahaController;
 use App\Http\Controllers\Usaha\AdminUnitUsahaController;
-
 // Keuangan
 use App\Http\Controllers\Keuangan\JurnalUmumController;
 use App\Http\Controllers\Keuangan\JurnalManualController;
+use App\Http\Controllers\Keuangan\AkunController;
+
 
 // Laporan
 use App\Http\Controllers\Laporan\BukuBesarController;
@@ -55,7 +55,6 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('admin/manajemen-data')->name('admin.manajemen-data.')->group(function () {
             Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
             Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
-            Route::resource('akun', AkunController::class);
             Route::resource('user', UserController::class);
             Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
             Route::resource('unit-usaha', UnitUsahaController::class)->except(['show'])->names('unit_usaha');
@@ -102,6 +101,10 @@ Route::middleware(['auth'])->group(function () {
             'update' => 'bumdes.aset.update',
             'destroy' => 'bumdes.aset.destroy',
         ]);
+        Route::prefix('keuangan')->name('keuangan.')->group(function () {
+            Route::resource('akun', AkunController::class);
+        });
+
     });
 
     // =====================================================================================================================
@@ -119,8 +122,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware(['role:admin_unit_usaha'])->group(function () {
-        Route::get('admin/kelola-unit-usaha', [AdminUnitUsahaController::class, 'edit'])->name('admin.kelola_unit_usaha.edit');
-        Route::put('admin/kelola-unit-usaha', [AdminUnitUsahaController::class, 'update'])->name('admin.kelola_unit_usaha.update');
         Route::prefix('usaha')->name('usaha.')->group(function () {
             Route::resource('produk', ProdukController::class);
             Route::resource('stok', StokController::class);
@@ -128,6 +129,10 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('pembelian', PembelianController::class);
             Route::resource('pemasok', PemasokController::class);
             Route::resource('kategori', KategoriController::class)->except(['show']);
+            Route::get('unit-setting', [AdminUnitUsahaController::class, 'edit'])->name('unit_setting.edit');
+            Route::put('unit-setting', [AdminUnitUsahaController::class, 'update'])->name('unit_setting.update');
+            // Route::resource('unit_setting', AdminUnitUsahaController::class)->except(['index', 'show'])->names('unit_setting');
+
         });
     });
 
@@ -140,6 +145,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
             Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
             Route::resource('jurnal-umum', JurnalUmumController::class);
+
         });
     });
 
@@ -147,7 +153,7 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE LAPORAN
     // Akses: admin_bumdes, bendahara_bumdes, kepala_desa, admin_unit_usaha, manajer_unit_usaha
     // =====================================================================================================================
-    Route::middleware(['role:admin_bumdes|bendahara_bumdes|kepala_desa|admin_unit_usaha|manajer_unit_usaha'])->group(function () {
+    Route::middleware(['role:bendahara_bumdes'])->group(function () {
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
             Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');

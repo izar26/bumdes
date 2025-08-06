@@ -9,7 +9,6 @@
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item active">Kelola Unit Usaha</li>
             </ol>
         </div>
@@ -89,7 +88,6 @@
                     </div>
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                        <a href="{{ route('admin.dashboard') }}" class="btn btn-default">Batal</a>
                     </div>
                 </form>
             </div>

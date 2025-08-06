@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Keuangan;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -21,7 +21,7 @@ class AkunController extends Controller
         // Add this line to get tipeAkunOptions from your Akun model
         $tipeAkunOptions = Akun::getTipeAkunOptions(); // Assuming this static method exists in your Akun model
 
-        return view('admin.manajemen_data.akun.index', compact('akuns', 'topLevelAkuns', 'tipeAkunOptions'));
+        return view('keuangan.akun.index', compact('akuns', 'topLevelAkuns', 'tipeAkunOptions'));
     }
 
     /**
@@ -33,7 +33,7 @@ class AkunController extends Controller
         // Ambil semua akun yang bisa jadi parent (biasanya akun header)
         $parentAkuns = Akun::where('is_header', true)->orderBy('kode_akun')->get();
 
-        return view('admin.manajemen_data.akun.create', compact('tipeAkunOptions', 'parentAkuns'));
+        return view('keuangan.akun.create', compact('tipeAkunOptions', 'parentAkuns'));
     }
 
     /**
@@ -55,7 +55,7 @@ class AkunController extends Controller
 
         Akun::create($request->all());
 
-        return redirect()->route('admin.manajemen-data.akun.index')->with('success', 'Akun keuangan berhasil ditambahkan!');
+        return redirect()->route('keuangan.akun.index')->with('success', 'Akun keuangan berhasil ditambahkan!');
     }
 
     /**
@@ -65,7 +65,7 @@ class AkunController extends Controller
     {
         // Load parent dan children jika ingin menampilkan detail hierarki
         $akun->load(['parent', 'children']);
-        return view('admin.manajemen_data.akun.show', compact('akun'));
+        return view('keuangan.akun.show', compact('akun'));
     }
 
     /**
@@ -83,7 +83,7 @@ class AkunController extends Controller
                             ->orderBy('kode_akun')
                             ->get();
 
-        return view('admin.manajemen_data.akun.edit', compact('akun', 'tipeAkunOptions', 'parentAkuns'));
+        return view('keuangan.akun.edit', compact('akun', 'tipeAkunOptions', 'parentAkuns'));
     }
 
     /**
@@ -102,7 +102,6 @@ class AkunController extends Controller
                     if ($value !== null && $value == $akun->akun_id) { // Use == for comparison, not ===
                         $fail('Akun induk tidak bisa akun itu sendiri.');
                     }
-                    // Optional: More complex logic to prevent circular references in a real app
                 },
             ],
         ]);
@@ -132,6 +131,6 @@ class AkunController extends Controller
         // Tambahkan cek transaksi jika sudah ada modul transaksi
 
         $akun->delete();
-        return redirect()->route('admin.manajemen-data.akun.index')->with('success', 'Akun keuangan berhasil dihapus!');
+        return redirect()->route('keuangan.akun.index')->with('success', 'Akun keuangan berhasil dihapus!');
     }
 }

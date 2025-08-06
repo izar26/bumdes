@@ -1,7 +1,7 @@
 @php
     $akunId = $akun->akun_id;
-    $routeUpdate = route('admin.manajemen-data.akun.update', $akunId);
-    $routeDestroy = route('admin.manajemen-data.akun.destroy', $akunId);
+    $routeUpdate = route('keuangan.akun.update', $akunId);
+    $routeDestroy = route('keuangan.akun.destroy', $akunId);
     $parentInfo = $akun->parent
         ? $akun->parent->kode_akun . ' - ' . $akun->parent->nama_akun
         : '-';

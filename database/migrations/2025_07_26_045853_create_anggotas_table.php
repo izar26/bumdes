@@ -20,6 +20,7 @@ return new class extends Migration
             $table->date('tanggal_daftar');
             $table->unsignedBigInteger('unit_usaha_id');
             $table->string('status_anggota', 50);
+            
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
 
