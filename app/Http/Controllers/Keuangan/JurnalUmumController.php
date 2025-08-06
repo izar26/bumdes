@@ -13,19 +13,19 @@ use Illuminate\Support\Facades\Auth;
 
 class JurnalUmumController extends Controller
 {
-    public function index(Request $request)
+public function index(Request $request)
 {
     $user = Auth::user();
 
     $jurnalQuery = JurnalUmum::with('detailJurnals.akun')->latest('tanggal_transaksi');
 
-    // Filter untuk role tertentu
+    // Filter role
     if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
         $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
         $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
     }
 
-    // Filter tambahan (tanggal, status, unit usaha)
+    // Filter tambahan
     if ($request->filled('start_date')) {
         $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
     }
@@ -40,17 +40,25 @@ class JurnalUmumController extends Controller
     if ($request->filled('unit_usaha_id')) {
         $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
     }
+    if ($request->filled('year')) {
+        $jurnalQuery->whereYear('tanggal_transaksi', $request->year);
+    }
 
     $jurnals = $jurnalQuery->paginate(10);
 
-    // Ambil Unit Usaha hanya untuk role yang bisa melihat semua
-    $unitUsahas = [];
-    if ($user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
-        $unitUsahas = \App\Models\UnitUsaha::orderBy('nama_unit')->get();
-    }
+    // Data tambahan
+    $unitUsahas = $user->hasRole(['admin_bumdes', 'bendahara_bumdes']) 
+        ? \App\Models\UnitUsaha::orderBy('nama_unit')->get() 
+        : collect();
 
-    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas'));
+    $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
+        ->distinct()
+        ->orderBy('year', 'desc')
+        ->pluck('year');
+
+    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas', 'years'));
 }
+
 
 
     public function edit(JurnalUmum $jurnalUmum)

@@ -28,42 +28,56 @@
     </div>
     <div class="card-body">
         {{-- Filter Section --}}
-        <form method="GET" class="mb-3">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Tanggal Mulai</label>
-                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Tanggal Akhir</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-control">
-                        <option value="">Semua</option>
-                        <option value="seimbang" {{ request('status')=='seimbang'?'selected':'' }}>Seimbang</option>
-                        <option value="tidak_seimbang" {{ request('status')=='tidak_seimbang'?'selected':'' }}>Tidak Seimbang</option>
-                    </select>
-                </div>
-                @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
-                <div class="col-md-2">
-                    <label class="form-label">Unit Usaha</label>
-                    <select name="unit_usaha_id" class="form-control">
-                        <option value="">Semua</option>
-                        @foreach($unitUsahas as $unit)
-                            <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id')==$unit->unit_usaha_id?'selected':'' }}>
-                                {{ $unit->nama_unit }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filter</button>
-                </div>
-            </div>
-        </form>
+<form method="GET" class="mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">Tahun</label>
+            <select name="year" class="form-control">
+                <option value="">Semua</option>
+                @foreach($years as $year)
+                    <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
+                        {{ $year }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tanggal Mulai</label>
+            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tanggal Akhir</label>
+            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control">
+                <option value="">Semua</option>
+                <option value="seimbang" {{ request('status')=='seimbang'?'selected':'' }}>Seimbang</option>
+                <option value="tidak_seimbang" {{ request('status')=='tidak_seimbang'?'selected':'' }}>Tidak Seimbang</option>
+            </select>
+        </div>
+        @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
+        <div class="col-md-2">
+            <label class="form-label">Unit Usaha</label>
+            <select name="unit_usaha_id" class="form-control">
+                <option value="">Semua</option>
+                @foreach($unitUsahas as $unit)
+                    <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id')==$unit->unit_usaha_id?'selected':'' }}>
+                        {{ $unit->nama_unit }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+    </div>
+</form>
+
 
         {{-- Export Buttons --}}
         <div class="mb-3">
