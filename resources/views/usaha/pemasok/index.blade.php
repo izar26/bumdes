@@ -80,12 +80,12 @@
 
 {{-- MODAL INI DIPERBAIKI: ID modal --}}
 @include('components.confirm-modal', [
-    'modalId' => 'confirmDeleteModal', {{-- Ini adalah ID yang benar --}}
-    'title' => 'Konfirmasi Penghapusan Pemasok', {{-- Perbarui judul default --}}
-    'body' => 'Apakah Anda yakin ingin menghapus data ini?', {{-- Perbarui body default --}}
+    'modalId' => 'confirmDeleteModal', 
+    'title' => 'Konfirmasi Penghapusan Pemasok', 
+    'body' => 'Apakah Anda yakin ingin menghapus data ini?',
     'confirmButtonText' => 'Hapus',
     'confirmButtonClass' => 'btn-danger',
-    'actionFormId' => '' {{-- Ini akan diisi oleh JavaScript modal --}}
+    'actionFormId' => ''
 ])
 @stop
 

@@ -22,7 +22,6 @@ return new class extends Migration
     $table->dateTime('last_login')->nullable();
     $table->timestamps();
 
-    // Relasi FK
 });
 
 

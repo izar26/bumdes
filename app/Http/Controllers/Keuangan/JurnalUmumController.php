@@ -6,46 +6,76 @@ use App\Http\Controllers\Controller;
 use App\Models\JurnalUmum;
 use App\Models\Akun;
 use App\Models\DetailJurnal;
+use App\Models\UnitUsaha;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth; // <-- Pastikan ini ada
+use Illuminate\Support\Facades\Auth;
 
 class JurnalUmumController extends Controller
 {
-    public function index()
-    {
-        $user = Auth::user();
+    public function index(Request $request)
+{
+    $user = Auth::user();
 
-        // Mulai query builder
-        $jurnalQuery = JurnalUmum::with('detailJurnals.akun')
-                                 ->latest('tanggal_transaksi');
+    $jurnalQuery = JurnalUmum::with('detailJurnals.akun')->latest('tanggal_transaksi');
 
-        // Terapkan filter berdasarkan peran
-        if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
-            // 1. Ambil ID semua unit usaha yang dikelola oleh user ini
-            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
-
-            // 2. Filter jurnal agar hanya menampilkan yang unit_usaha_id-nya cocok
-            $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
-        }
-        // Jika user adalah bendahara atau peran lain yang lebih tinggi, tidak ada filter yang diterapkan (melihat semua)
-
-        // Eksekusi query untuk mendapatkan hasilnya
-        $jurnals = $jurnalQuery->get();
-
-        return view('keuangan.jurnal.index', compact('jurnals'));
+    // Filter untuk role tertentu
+    if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
+        $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
+        $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
     }
+
+    // Filter tambahan (tanggal, status, unit usaha)
+    if ($request->filled('start_date')) {
+        $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
+    }
+    if ($request->filled('end_date')) {
+        $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
+    }
+    if ($request->filled('status')) {
+        $jurnalQuery->whereRaw('ROUND(total_debit,2) ' . 
+            ($request->status === 'seimbang' ? '=' : '!=') . 
+            ' ROUND(total_kredit,2)');
+    }
+    if ($request->filled('unit_usaha_id')) {
+        $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
+    }
+
+    $jurnals = $jurnalQuery->paginate(10);
+
+    // Ambil Unit Usaha hanya untuk role yang bisa melihat semua
+    $unitUsahas = [];
+    if ($user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+        $unitUsahas = \App\Models\UnitUsaha::orderBy('nama_unit')->get();
+    }
+
+    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas'));
+}
+
 
     public function edit(JurnalUmum $jurnalUmum)
     {
         $jurnal = $jurnalUmum->load('detailJurnals');
+
+        // Ambil akun
         $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get();
-        return view('keuangan.jurnal.edit', compact('jurnal', 'akuns'));
+
+        // Ambil unit usaha untuk dropdown jika role Bendahara/Admin BUMDes
+        $unitUsahas = collect();
+        $user = Auth::user();
+        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+            $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        }
+
+        return view('keuangan.jurnal.edit', compact('jurnal', 'akuns', 'unitUsahas'));
     }
 
     public function update(Request $request, JurnalUmum $jurnalUmum)
     {
-        $request->validate([
+        $user = Auth::user();
+
+        // Validasi umum
+        $rules = [
             'tanggal_transaksi' => 'required|date',
             'deskripsi' => 'required|string|max:500',
             'details' => 'required|array|min:2',
@@ -53,27 +83,56 @@ class JurnalUmumController extends Controller
             'details.*.debit' => 'required|numeric|min:0',
             'details.*.kredit' => 'required|numeric|min:0',
             'details.*.keterangan' => 'nullable|string|max:255',
-        ]);
+        ];
+
+        // Validasi unit usaha jika role bendahara/admin
+        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+            $rules['unit_usaha_id'] = 'nullable|exists:unit_usahas,unit_usaha_id';
+        }
+
+        $request->validate($rules);
 
         try {
             DB::beginTransaction();
 
-            $totalDebit = 0; $totalKredit = 0;
+            // Hitung total debit & kredit
+            $totalDebit = 0;
+            $totalKredit = 0;
             foreach ($request->details as $detail) {
-                if ($detail['debit'] > 0 && $detail['kredit'] > 0) throw new \Exception('Satu baris tidak boleh memiliki Debit dan Kredit sekaligus.');
-                if ($detail['debit'] == 0 && $detail['kredit'] == 0) throw new \Exception('Setiap baris harus memiliki nilai Debit atau Kredit.');
+                if ($detail['debit'] > 0 && $detail['kredit'] > 0) {
+                    throw new \Exception('Satu baris tidak boleh memiliki Debit dan Kredit sekaligus.');
+                }
+                if ($detail['debit'] == 0 && $detail['kredit'] == 0) {
+                    throw new \Exception('Setiap baris harus memiliki nilai Debit atau Kredit.');
+                }
                 $totalDebit += $detail['debit'];
                 $totalKredit += $detail['kredit'];
             }
-            if (round($totalDebit, 2) !== round($totalKredit, 2)) throw new \Exception('Total Debit dan Kredit tidak seimbang.');
+            if (round($totalDebit, 2) !== round($totalKredit, 2)) {
+                throw new \Exception('Total Debit dan Kredit tidak seimbang.');
+            }
 
+            // Tentukan unit usaha ID
+            $unitUsahaId = $jurnalUmum->unit_usaha_id; // default tidak berubah
+            if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+                $unitUsahaId = $request->unit_usaha_id ?: null;
+            } elseif ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
+                $unitUsaha = UnitUsaha::where('user_id', $user->user_id)->first();
+                if ($unitUsaha) {
+                    $unitUsahaId = $unitUsaha->unit_usaha_id;
+                }
+            }
+
+            // Update jurnal
             $jurnalUmum->update([
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
                 'total_debit' => $totalDebit,
                 'total_kredit' => $totalKredit,
+                'unit_usaha_id' => $unitUsahaId,
             ]);
 
+            // Hapus detail lama dan buat ulang
             $jurnalUmum->detailJurnals()->delete();
             foreach ($request->details as $detail) {
                 DetailJurnal::create([

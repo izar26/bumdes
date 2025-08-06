@@ -19,19 +19,46 @@
             </div>
         </div>
         <div class="card-body">
-            {{-- Isian Tanggal dan Deskripsi --}}
             <div class="row">
+                {{-- Tanggal Transaksi --}}
                 <div class="form-group col-md-4">
-                    <label for="tanggal_transaksi">Tanggal Transaksi</label>
-                    <input type="date" class="form-control" name="tanggal_transaksi" value="{{ date('Y-m-d') }}" required>
+                    <label>Tanggal Transaksi</label>
+                    <input type="date" class="form-control" name="tanggal_transaksi"
+                           value="{{ old('tanggal_transaksi', date('Y-m-d')) }}" required>
                 </div>
-                <div class="form-group col-md-8">
-                    <label for="deskripsi">Deskripsi Utama</label>
-                    <input type="text" class="form-control" name="deskripsi" placeholder="Deskripsi atau keterangan jurnal" required>
+
+                {{-- Unit Usaha --}}
+                <div class="form-group col-md-4">
+                    <label>Untuk Unit Usaha</label>
+                    @php $user = auth()->user(); @endphp
+                    @if($user->hasRole(['bendahara_bumdes','admin_bumdes']))
+                        <select name="unit_usaha_id" class="form-control">
+                            <option value="">-- BUMDes Pusat --</option>
+                            @foreach($unitUsahas as $unit)
+                                <option value="{{ $unit->unit_usaha_id }}" 
+                                    {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
+                                    {{ $unit->nama_unit }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @else
+                        @php $unit = $unitUsahas->first(); @endphp
+                        <input type="text" class="form-control" value="{{ $unit->nama_unit ?? 'BUMDes Pusat' }}" disabled>
+                        <input type="hidden" name="unit_usaha_id" value="{{ $unit->unit_usaha_id ?? '' }}">
+                    @endif
+                </div>
+
+                {{-- Deskripsi --}}
+                <div class="form-group col-md-4">
+                    <label>Deskripsi Utama</label>
+                    <input type="text" class="form-control" name="deskripsi"
+                           placeholder="Deskripsi atau keterangan jurnal"
+                           value="{{ old('deskripsi') }}" required>
                 </div>
             </div>
             <hr>
 
+            {{-- Detail Jurnal --}}
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -42,9 +69,7 @@
                         <th style="width: 5%">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="jurnal-details">
-                    {{-- Baris akan ditambahkan oleh JavaScript --}}
-                </tbody>
+                <tbody id="jurnal-details"></tbody>
                 <tfoot>
                     <tr>
                         <th colspan="2" class="text-right">Total</th>
@@ -54,7 +79,9 @@
                     </tr>
                     <tr>
                         <th colspan="2" class="text-right">Status</th>
-                        <th colspan="2"><span id="status-jurnal" class="badge badge-danger">Tidak Seimbang</span></th>
+                        <th colspan="2">
+                            <span id="status-jurnal" class="badge badge-danger">Tidak Seimbang</span>
+                        </th>
                         <th></th>
                     </tr>
                 </tfoot>
@@ -68,86 +95,85 @@
 @stop
 
 @section('plugins.Select2', true)
-
 @section('js')
 <script>
 $(document).ready(function() {
     let rowIndex = 0;
 
-    // Fungsi untuk menambah baris baru
-    $('#tambah-baris').on('click', function() {
+    function addRow() {
         let newRow = `
             <tr id="row-${rowIndex}">
                 <td>
                     <select name="details[${rowIndex}][akun_id]" class="form-control akun-select" required>
                         <option value="">-- Pilih Akun --</option>
                         @foreach($akuns as $akun)
-                        <option value="{{ $akun->akun_id }}">[ {{ $akun->kode_akun }} ] {{ $akun->nama_akun }}</option>
+                        <option value="{{ $akun->akun_id }}">
+                            [ {{ $akun->kode_akun }} ] {{ $akun->nama_akun }}
+                        </option>
                         @endforeach
                     </select>
                 </td>
                 <td><input type="text" name="details[${rowIndex}][keterangan]" class="form-control" placeholder="Ket. baris (opsional)"></td>
-                <td><input type="number" name="details[${rowIndex}][debit]" class="form-control debit" value="0" min="0" step="any"></td>
-                <td><input type="number" name="details[${rowIndex}][kredit]" class="form-control kredit" value="0" min="0" step="any"></td>
-                <td class="text-center"><button type="button" class="btn btn-danger btn-sm hapus-baris">Hapus</button></td>
+                <td><input type="text" name="details[${rowIndex}][debit]" class="form-control debit" value="0"></td>
+                <td><input type="text" name="details[${rowIndex}][kredit]" class="form-control kredit" value="0"></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-danger btn-sm hapus-baris">Hapus</button>
+                </td>
             </tr>
         `;
         $('#jurnal-details').append(newRow);
-        // Inisialisasi Select2 untuk baris baru
         $('#row-' + rowIndex + ' .akun-select').select2();
         rowIndex++;
-    });
+    }
 
-    // Tambahkan 2 baris awal saat halaman dimuat
-    $('#tambah-baris').click();
-    $('#tambah-baris').click();
+    $('#tambah-baris').on('click', function() { addRow(); });
 
-    // Fungsi untuk menghapus baris
+    addRow(); addRow();
+
     $(document).on('click', '.hapus-baris', function() {
         $(this).closest('tr').remove();
         calculateTotals();
     });
 
-    // Fungsi untuk menghitung total & memeriksa keseimbangan
+    function parseNumber(value) {
+        return parseInt(value.replace(/\./g, '')) || 0;
+    }
+
     function calculateTotals() {
-        let totalDebit = 0;
-        let totalKredit = 0;
-
+        let totalDebit = 0, totalKredit = 0;
         $('#jurnal-details tr').each(function() {
-            totalDebit += parseFloat($(this).find('.debit').val()) || 0;
-            totalKredit += parseFloat($(this).find('.kredit').val()) || 0;
+            totalDebit += parseNumber($(this).find('.debit').val());
+            totalKredit += parseNumber($(this).find('.kredit').val());
         });
+        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
+        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
 
-        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
-        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
-
-        let statusBadge = $('#status-jurnal');
-        let saveButton = $('#simpan-jurnal');
-
-        // Gunakan perbandingan dengan toleransi kecil untuk angka desimal
-        if (Math.abs(totalDebit - totalKredit) < 0.01 && totalDebit > 0) {
-            statusBadge.removeClass('badge-danger').addClass('badge-success').text('Seimbang');
-            saveButton.prop('disabled', false);
+        if (totalDebit === totalKredit && totalDebit > 0) {
+            $('#status-jurnal').removeClass('badge-danger').addClass('badge-success').text('Seimbang');
+            $('#simpan-jurnal').prop('disabled', false);
         } else {
-            statusBadge.removeClass('badge-success').addClass('badge-danger').text('Tidak Seimbang');
-            saveButton.prop('disabled', true);
+            $('#status-jurnal').removeClass('badge-success').addClass('badge-danger').text('Tidak Seimbang');
+            $('#simpan-jurnal').prop('disabled', true);
         }
     }
 
-    // Panggil fungsi hitung saat nilai debit/kredit berubah
+    function formatInput(input) {
+        let value = input.value.replace(/\D/g, '');
+        input.value = value ? parseInt(value).toLocaleString('id-ID') : '';
+    }
+
     $(document).on('input', '.debit, .kredit', function() {
+        formatInput(this);
         let row = $(this).closest('tr');
-        let debitInput = row.find('.debit');
-        let kreditInput = row.find('.kredit');
-
-        // Pastikan hanya salah satu yang bisa diisi
-        if ($(this).hasClass('debit') && $(this).val() > 0) {
-            kreditInput.val(0);
-        } else if ($(this).hasClass('kredit') && $(this).val() > 0) {
-            debitInput.val(0);
-        }
-
+        if ($(this).hasClass('debit') && parseNumber($(this).val()) > 0) row.find('.kredit').val('');
+        if ($(this).hasClass('kredit') && parseNumber($(this).val()) > 0) row.find('.debit').val('');
         calculateTotals();
+    });
+
+    $('form').on('submit', function() {
+        $('.debit, .kredit').each(function() {
+            this.value = parseNumber(this.value);
+        });
     });
 });
 </script>
