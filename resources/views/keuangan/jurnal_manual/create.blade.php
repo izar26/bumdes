@@ -35,7 +35,7 @@
                         <select name="unit_usaha_id" class="form-control">
                             <option value="">-- BUMDes Pusat --</option>
                             @foreach($unitUsahas as $unit)
-                                <option value="{{ $unit->unit_usaha_id }}" 
+                                <option value="{{ $unit->unit_usaha_id }}"
                                     {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
                                     {{ $unit->nama_unit }}
                                 </option>

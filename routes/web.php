@@ -88,7 +88,7 @@ Route::middleware(['auth'])->group(function () {
     // =====================================================================================================================
     // ROUTE UNTUK BENDHARA BUMDES
     // =====================================================================================================================
-    Route::middleware(['role:bendahara_bumdes'])->group(function () {
+    Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes'])->group(function () {
         // Bendahara mengelola aset
         Route::get('/bumdes/aset/penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('bumdes.aset.penyusutan');
         Route::get('/bumdes/aset/pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('bumdes.aset.pemeliharaan');
@@ -140,12 +140,11 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE KEUANGAN (Jurnal Umum & Manual)
     // Akses: admin_bumdes, bendahara_bumdes, admin_unit_usaha
     // =====================================================================================================================
-    Route::middleware(['role:admin_bumdes|bendahara_bumdes|admin_unit_usaha'])->group(function () {
+    Route::middleware(['role:admin_bumdes|bendahara_bumdes|admin_unit_usaha|sekretaris_bumdes'])->group(function () {
         Route::prefix('keuangan')->group(function () {
             Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
             Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
             Route::resource('jurnal-umum', JurnalUmumController::class);
-
         });
     });
 
@@ -153,7 +152,7 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE LAPORAN
     // Akses: admin_bumdes, bendahara_bumdes, kepala_desa, admin_unit_usaha, manajer_unit_usaha
     // =====================================================================================================================
-    Route::middleware(['role:bendahara_bumdes'])->group(function () {
+    Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes'])->group(function () {
         Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
             Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');

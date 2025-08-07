@@ -24,70 +24,78 @@ class UserSeeder extends Seeder
 
         // 1. Hapus semua data pengguna yang ada untuk menghindari duplikasi saat seeding
         User::truncate();
+        Role::truncate();
+        Permission::truncate();
 
         // 2. Buat Roles jika belum ada (gunakan Role::firstOrCreate)
-        $adminBumdesRole = Role::firstOrCreate(['name' => 'admin_bumdes']);
+        $direkturBumdesRole = Role::firstOrCreate(['name' => 'admin_bumdes']);
+        $sekretarisBumdesRole = Role::firstOrCreate(['name' => 'sekretaris_bumdes']);
         $manajerUnitUsahaRole = Role::firstOrCreate(['name' => 'manajer_unit_usaha']);
         $bendaharaBumdesRole = Role::firstOrCreate(['name' => 'bendahara_bumdes']);
         $kepdesRole = Role::firstOrCreate(['name' => 'kepala_desa']);
-        
-        // --- Perubahan #1: Tambahkan Peran 'admin_unit_usaha' ---
         $adminUnitUsahaRole = Role::firstOrCreate(['name' => 'admin_unit_usaha']);
-        // --- Akhir Perubahan #1 ---
 
-        // 3. Buat Permissions jika belum ada (gunakan Permission::firstOrCreate)
+        // 3. Buat Permissions jika belum ada
         $viewUsersPermission = Permission::firstOrCreate(['name' => 'view users']);
         $createUsersPermission = Permission::firstOrCreate(['name' => 'create users']);
         $editUsersPermission = Permission::firstOrCreate(['name' => 'edit users']);
         $deleteUsersPermission = Permission::firstOrCreate(['name' => 'delete users']);
-        $verifyJurnalPermission = Permission::firstOrCreate(['name' => 'verify jurnal']);
+        $approveTransaksiBendaharaPermission = Permission::firstOrCreate(['name' => 'approve transaksi bendahara']);
         $approveLaporanPermission = Permission::firstOrCreate(['name' => 'approve laporan']);
         $inputJurnalPermission = Permission::firstOrCreate(['name' => 'input jurnal']);
         $viewLaporanKeuanganPermission = Permission::firstOrCreate(['name' => 'view laporan keuangan']);
-
-        // --- Perubahan #2: Tambahkan Permissions baru dan kaitkan dengan peran ---
-        $editUnitUsahaProfilePermission = Permission::firstOrCreate(['name' => 'edit unit_usaha profile']);
-        // --- Akhir Perubahan #2 ---
+        $editLaporanKeseluruhanPermission = Permission::firstOrCreate(['name' => 'edit laporan keseluruhan']);
 
         // 4. Assign Permissions ke Roles
-        $adminBumdesRole->syncPermissions([
+        $direkturBumdesRole->syncPermissions([
             $viewUsersPermission,
             $createUsersPermission,
             $editUsersPermission,
-            $deleteUsersPermission
+            $deleteUsersPermission,
+            $approveTransaksiBendaharaPermission,
+            $viewLaporanKeuanganPermission
+        ]);
+        $sekretarisBumdesRole->syncPermissions([
+            $viewLaporanKeuanganPermission,
+            $editLaporanKeseluruhanPermission // Hanya jika sudah diverifikasi dan ditolak direktur
         ]);
         $manajerUnitUsahaRole->syncPermissions([
-            $viewUsersPermission,
-            $verifyJurnalPermission
+            $inputJurnalPermission,
+            $approveLaporanPermission
         ]);
         $bendaharaBumdesRole->syncPermissions([
-            $viewUsersPermission,
             $inputJurnalPermission,
-            $verifyJurnalPermission,
             $viewLaporanKeuanganPermission
         ]);
         $kepdesRole->syncPermissions([
             $approveLaporanPermission
         ]);
-
-        // --- Perubahan #3: Assign permissions ke Peran 'admin_unit_usaha' ---
         $adminUnitUsahaRole->syncPermissions([
             $inputJurnalPermission,
-            $editUnitUsahaProfilePermission
+            $viewLaporanKeuanganPermission
         ]);
-        // --- Akhir Perubahan #3 ---
 
 
         // 5. Buat pengguna (users) dan tetapkan peran (role)
-        $adminBumdes = User::create([
-            'name' => 'Admin BUMDes',
-            'email' => 'admin.bumdes@example.com',
+        $direkturBumdes = User::create([
+            'name' => 'Direktur BUMDes',
+            'email' => 'direktur.bumdes@example.com',
             'username' => 'admin_bumdes',
             'password' => Hash::make('password'),
             'role' => 'admin_bumdes',
             'is_active' => true,
         ]);
-        $adminBumdes->assignRole($adminBumdesRole);
+        $direkturBumdes->assignRole($direkturBumdesRole);
+
+        $sekretarisBumdes = User::create([
+            'name' => 'Sekretaris BUMDes',
+            'email' => 'sekretaris.bumdes@example.com',
+            'username' => 'sekretaris_bumdes',
+            'password' => Hash::make('password'),
+            'role' => 'sekretaris_bumdes',
+            'is_active' => true,
+        ]);
+        $sekretarisBumdes->assignRole($sekretarisBumdesRole);
 
         $manajerUnit = User::create([
             'name' => 'Manajer Unit Wisata',
@@ -128,7 +136,6 @@ class UserSeeder extends Seeder
             'is_active' => true,
         ]);
         $adminUnitUsaha->assignRole($adminUnitUsahaRole);
-        // --- Akhir Perubahan #4 ---
 
         // Mengaktifkan kembali pemeriksaan foreign key
         Schema::enableForeignKeyConstraints();

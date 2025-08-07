@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View; // Import facade View
 use Illuminate\Support\Facades\Auth;  // Import facade Auth
 use App\View\Components\ConfirmModal;
+use Illuminate\Support\Facades\Schema;;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
 
         $view->with('logo_img', $photo);
     });
+    //   Schema::disableForeignKeyConstraints();
 }
 
 }

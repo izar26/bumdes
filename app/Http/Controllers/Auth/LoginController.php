@@ -33,14 +33,22 @@ class LoginController extends Controller
         \Log::info('User role: ' . $user->role);
 
         switch ($user->role) {
-            case 'admin_bumdes':
-            case 'bendahara_bumdes':
             case 'kepala_desa':
                 return '/admin/dashboard';
             case 'manajer_unit_usaha':
                 return '/admin/dashboard';
             case 'admin_unit_usaha':
                 return '/admin/dashboard';
+            case 'sekretaris_bumdes':
+                return '/admin/dashboard';
+            case 'bendahara_bumdes':
+                return '/admin/dashboard';
+            case 'admin_bumdes':
+                return '/admin/dashboard';
+            case 'anggota_baru':
+                return '/profile';
+            case 'anggota':
+                return '/profile';
             default:
                 return '/home';
         }

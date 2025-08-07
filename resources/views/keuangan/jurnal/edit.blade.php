@@ -24,7 +24,7 @@
                 {{-- Tanggal Transaksi --}}
                 <div class="form-group col-md-4">
                     <label>Tanggal Transaksi</label>
-                    <input type="date" class="form-control" name="tanggal_transaksi" 
+                    <input type="date" class="form-control" name="tanggal_transaksi"
                         value="{{ old('tanggal_transaksi', \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('Y-m-d')) }}" required>
                 </div>
 
@@ -36,7 +36,7 @@
                         <select name="unit_usaha_id" class="form-control">
                             <option value="">-- BUMDes Pusat --</option>
                             @foreach($unitUsahas as $unit)
-                                <option value="{{ $unit->unit_usaha_id }}" 
+                                <option value="{{ $unit->unit_usaha_id }}"
                                     {{ old('unit_usaha_id', $jurnal->unit_usaha_id) == $unit->unit_usaha_id ? 'selected' : '' }}>
                                     {{ $unit->nama_unit }}
                                 </option>
@@ -51,8 +51,8 @@
                 {{-- Deskripsi --}}
                 <div class="form-group col-md-4">
                     <label>Deskripsi Utama</label>
-                    <input type="text" class="form-control" name="deskripsi" 
-                        placeholder="Deskripsi atau keterangan jurnal" 
+                    <input type="text" class="form-control" name="deskripsi"
+                        placeholder="Deskripsi atau keterangan jurnal"
                         value="{{ old('deskripsi', $jurnal->deskripsi) }}" required>
                 </div>
             </div>
@@ -106,7 +106,7 @@ $(document).ready(function() {
     );
 
     function generateAkunOptions(selectedId = null) {
-        return akunOptions.map(opt => 
+        return akunOptions.map(opt =>
             `<option value="${opt.id}" ${selectedId == opt.id ? 'selected' : ''}>${opt.text}</option>`
         ).join('');
     }
