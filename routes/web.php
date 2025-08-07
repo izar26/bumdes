@@ -13,11 +13,12 @@ use App\Http\Controllers\Admin\UserController;
 
 use App\Http\Controllers\Admin\UnitUsahaController;
 use App\Http\Controllers\Usaha\AdminUnitUsahaController;
+
 // Keuangan
 use App\Http\Controllers\Keuangan\JurnalUmumController;
 use App\Http\Controllers\Keuangan\JurnalManualController;
 use App\Http\Controllers\Keuangan\AkunController;
-
+use App\Http\Controllers\Keuangan\ApprovalJurnalController;
 
 // Laporan
 use App\Http\Controllers\Laporan\BukuBesarController;

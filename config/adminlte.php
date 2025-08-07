@@ -402,6 +402,13 @@ return [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
             ['text' => 'Akun Keuangan', 'route' => 'keuangan.akun.index', 'icon'=> 'fas fa-fw fa-list'],
+            [
+                'text'    => 'Approval Jurnal',
+                'icon'    => 'fas fa-fw fa-check-circle',
+                'route'   => 'approval-jurnal.index',
+                'can'     => ['admin_bumdes', 'bendahara_bumdes', 'manajer_unit_usaha'], 
+            ],
+
 
         ],
     ],
@@ -453,7 +460,7 @@ return [
         ['text' => 'Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-cash-register'],
         ['text' => 'Daftar Pemasok', 'route' => 'usaha.pemasok.index', 'icon' => 'fas fa-fw fa-truck'],
     ],
-],
+    ],
 
     [
         'header' => 'PENGATURAN UNIT USAHA',
