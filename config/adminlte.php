@@ -303,7 +303,6 @@ return [
 
     // ... konfigurasi lainnya
   // config/adminlte.php
-
 'menu' => [
 
     // Navbar items
@@ -341,7 +340,7 @@ return [
     ],
 
     // --- ADMIN PROFIL DESA ---
-    // Akses: Admin BUMDes & Kepala Desa
+    // Akses: Direktur BUMDes & Kepala Desa
     [
         'header' => 'ADMIN PROFIL DESA',
         'can'    => 'admin_bumdes_or_kepala_desa',
@@ -365,7 +364,7 @@ return [
     ],
 
     // --- ADMINISTRASI BUMDES ---
-    // Akses: Admin BUMDes
+    // Akses: Direktur BUMDes
     [
         'header' => 'ADMINISTRASI BUMDES',
         'can'    => 'admin_bumdes',
@@ -377,6 +376,7 @@ return [
         'submenu' => [
             ['text' => 'Data Bumdes', 'route' => 'admin.manajemen-data.bungdes.index'],
             ['text' => 'Manajemen User', 'route' => 'admin.manajemen-data.user.index'],
+
         ],
     ],
     [
@@ -386,10 +386,12 @@ return [
         'submenu' => [
             ['text' => 'Daftar Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.index'],
             ['text' => 'Tambah Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.create'],
+            ['text' => 'Pengaturan Akun', 'route' => 'keuangan.akun.index'],
         ],
     ],
 
-
+    // --- KEUANGAN & LAPORAN ---
+    // Akses: Direktur, Bendahara, Sekretaris
     [
         'header' => 'KEUANGAN & LAPORAN',
         'can'    => 'bendahara_bumdes',
@@ -415,13 +417,13 @@ return [
     [
         'text'    => 'Laporan',
         'icon'    => 'fas fa-fw fa-file-alt',
-        'can'     => 'bendahara_bumdes',
+        'can'     => 'direktur_or_sekretaris_bumdes',
         'submenu' => [
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book-open'],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
-            ['text' => 'Neraca', 'route' => 'laporan.neraca.index', 'icon' => 'fas fa-fw fa-balance-scale'],
-            ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index', 'icon' => 'fas fa-fw fa-balance-scale-right'],
-            ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-chart-pie'],
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index'],
+            ['text' => 'Neraca', 'route' => 'laporan.neraca.index'],
+            ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index'],
+            ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index'],
         ],
     ],
 
@@ -436,9 +438,9 @@ return [
         'icon'    => 'fas fa-fw fa-boxes',
         'can'     => 'bendahara_bumdes',
         'submenu' => [
-            ['text' => 'Pencatatan Aset', 'route' => 'bumdes.aset.index', 'icon' => 'fas fa-fw fa-clipboard-list'],
-            ['text' => 'Penyusutan Aset', 'route' => 'bumdes.aset.penyusutan', 'icon' => 'fas fa-fw fa-percent'],
-            ['text' => 'Pemeliharaan Aset', 'route' => 'bumdes.aset.pemeliharaan', 'icon' => 'fas fa-fw fa-tools'],
+            ['text' => 'Pencatatan Aset', 'route' => 'bumdes.aset.index'],
+            ['text' => 'Penyusutan Aset', 'route' => 'bumdes.aset.penyusutan'],
+            ['text' => 'Pemeliharaan Aset', 'route' => 'bumdes.aset.pemeliharaan'],
         ],
     ],
 
@@ -469,12 +471,21 @@ return [
     [
         'text'   => 'Kelola Unit Usaha',
         'icon'   => 'fas fa-fw fa-building',
-       'route'  => 'usaha.unit_setting.edit', // Perubahan di sini
-    'active' => ['usaha/unit-setting*'], 
+        'route'  => 'usaha.unit_setting.edit',
+        'active' => ['usaha/unit-setting*'],
         'can'    => 'admin_unit_usaha',
     ],
-
 ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Filters
+    |--------------------------------------------------------------------------
+    |
+    | Here we can modify the menu filters of the admin panel.
+    |
+    | For detailed instructions you can look the menu filters section here:
+    |
 //     [
 //         'text' => 'Kelola Unit Usaha',
 //         'url'  => 'admin/unit_usaha',

@@ -39,7 +39,7 @@ class JurnalManualController extends Controller
      */
     public function store(Request $request)
 {
-    
+
     $request->validate([
         'tanggal_transaksi' => 'required|date',
         'deskripsi' => 'required|string|max:500',

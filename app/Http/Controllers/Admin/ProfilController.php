@@ -16,7 +16,7 @@ class ProfilController extends Controller
     {
         // Ambil data pertama, atau gagal jika tidak ada.
         // Ini memastikan seeder sudah dijalankan.
-        $profil = Profil::firstOrFail(); 
+        $profil = Profil::firstOrFail();
         return view('admin.profil.edit', compact('profil'));
     }
 
@@ -26,7 +26,7 @@ class ProfilController extends Controller
     public function update(Request $request)
     {
         $profil = Profil::firstOrFail();
-        
+
         // Validasi input dari form
         $request->validate([
             'nama_desa' => 'required|string|max:255',
@@ -39,7 +39,7 @@ class ProfilController extends Controller
             'email' => 'required|email',
             'telepon' => 'required|string',
         ]);
-        
+
         // Ambil semua data dari request, kecuali 'logo'
         $data = $request->except('logo');
 
@@ -49,7 +49,7 @@ class ProfilController extends Controller
             if ($profil->logo) {
                 Storage::disk('public')->delete($profil->logo);
             }
-            
+
             // Simpan logo baru ke folder 'logo-desa' di dalam 'storage/app/public'
             $path = $request->file('logo')->store('logo-desa', 'public');
             $data['logo'] = $path;

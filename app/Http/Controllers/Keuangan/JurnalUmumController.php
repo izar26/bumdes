@@ -33,8 +33,8 @@ public function index(Request $request)
         $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
     }
     if ($request->filled('status')) {
-        $jurnalQuery->whereRaw('ROUND(total_debit,2) ' . 
-            ($request->status === 'seimbang' ? '=' : '!=') . 
+        $jurnalQuery->whereRaw('ROUND(total_debit,2) ' .
+            ($request->status === 'seimbang' ? '=' : '!=') .
             ' ROUND(total_kredit,2)');
     }
     if ($request->filled('unit_usaha_id')) {
@@ -47,8 +47,8 @@ public function index(Request $request)
     $jurnals = $jurnalQuery->paginate(10);
 
     // Data tambahan
-    $unitUsahas = $user->hasRole(['admin_bumdes', 'bendahara_bumdes']) 
-        ? \App\Models\UnitUsaha::orderBy('nama_unit')->get() 
+    $unitUsahas = $user->hasRole(['admin_bumdes', 'bendahara_bumdes'])
+        ? \App\Models\UnitUsaha::orderBy('nama_unit')->get()
         : collect();
 
     $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
