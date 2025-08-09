@@ -19,6 +19,7 @@
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
             <div class="small mt-1">
+                <br>
                 <strong>Total Debit:</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
                 <strong>Total Kredit:</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
             </div>
