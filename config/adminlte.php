@@ -393,12 +393,20 @@ return [
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => ['bendahara_bumdes', 'sekretaris_bumdes', 'admin_bumdes', 'manajer_unit_usaha', 'admin_unit_usaha'],
+        'can'     => ['admin_bumdes', 'bendahara_bumdes', 'manajer_unit_usaha'],
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'keuangan.jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'keuangan.jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
             ['text' => 'Akun Keuangan', 'route' => 'keuangan.akun.index', 'icon'=> 'fas fa-fw fa-list'],
+
+
         ],
+    ],
+    [
+        'text'    => 'Approval Jurnal',
+        'icon'    => 'fas fa-fw fa-check-circle',
+        'route'   => 'approval-jurnal.index',
+        'can' => ['manajer_unit_usaha','admin_bumdes']
     ],
     [
         'text'    => 'Laporan',

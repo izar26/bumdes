@@ -12,10 +12,33 @@ class JurnalUmum extends Model
     use HasFactory;
     protected $table = 'jurnal_umums';
     protected $primaryKey = 'jurnal_id';
-    protected $fillable = ['tanggal_transaksi', 'deskripsi', 'user_id', 'unit_usaha_id', 'total_debit', 'total_kredit'];
+    protected $fillable = [
+    'user_id',
+    'unit_usaha_id',
+    'tanggal_transaksi',
+    'deskripsi',
+    'total_debit',
+    'total_kredit',
+    'status',
+    'approved_at',
+    'approved_by',
+    'rejected_reason',
+];
+
 
     public function detailJurnals(): HasMany
     {
         return $this->hasMany(DetailJurnal::class, 'jurnal_id', 'jurnal_id');
     }
+
+    public function unitUsaha()
+{
+    return $this->belongsTo(\App\Models\UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
+}
+
+public function user()
+{
+    return $this->belongsTo(\App\Models\User::class, 'user_id', 'user_id');
+}
+
 }
