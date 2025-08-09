@@ -388,12 +388,12 @@ return [
     // Akses: Direktur, Bendahara, Sekretaris, Admin Unit Usaha, Manajer Unit Usaha
     [
         'header' => 'KEUANGAN & LAPORAN',
-        'can'    => ['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes', 'admin_unit_usaha', 'manajer_unit_usaha'],
+        'can'    => ['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes' ],
     ],
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => [ 'bendahara_bumdes', 'admin_unit_usaha'],
+        'can'     => [ 'bendahara_bumdes', 'sekretaris_bumdes'],
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
@@ -405,20 +405,20 @@ return [
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => 'admin_bumdes',
+        'can'     => ['admin_unit_usaha', ],
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
-
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
 
         ],
     ],
-    // [
-    //     'text'    => 'Approval Jurnal',
-    //     'icon'    => 'fas fa-fw fa-check-circle',
-    //     'route'   => 'keuangan.approval-jurnal.index',
-    //     'can' => ['manajer_unit_usaha','admin_unit_usaha'],
-    // ],
+    [
+        'text'    => 'Approval Jurnal',
+        'icon'    => 'fas fa-fw fa-check-circle',
+        'route'   => 'approval-jurnal.index',
+        'can' => ['manajer_unit_usaha' ],
+    ],
     [
         'text'    => 'Laporan',
         'icon'    => 'fas fa-fw fa-file-alt',
@@ -432,8 +432,7 @@ return [
         ],
     ],
 
-    // --- MANAJEMEN ASET ---
-    // Akses: Bendahara BUMDes
+
     [
         'header' => 'MANAJEMEN ASET',
         'can'    => 'bendahara_bumdes',
@@ -453,12 +452,12 @@ return [
     // Akses: Manajer Unit Usaha & Admin Unit Usaha
     [
         'header' => 'MANAJEMEN USAHA',
-        'can'    => ['manajer_unit_usaha', 'admin_unit_usaha'],
+        'can'    => [ 'admin_unit_usaha'],
     ],
     [
         'text'    => 'Manajemen Usaha',
         'icon'    => 'fas fa-fw fa-store',
-        'can'     => ['manajer_unit_usaha', 'admin_unit_usaha'],
+        'can'     => ['admin_unit_usaha'],
         'submenu' => [
             ['text' => 'Kategori Produk', 'route' => 'usaha.kategori.index', 'icon' => 'fas fa-fw fa-tags'],
             ['text' => 'Daftar Produk', 'route' => 'usaha.produk.index', 'icon' => 'fas fa-fw fa-boxes'],

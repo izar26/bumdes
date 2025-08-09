@@ -13,71 +13,68 @@ use Illuminate\Support\Facades\Auth;
 
 class JurnalUmumController extends Controller
 {
-public function index(Request $request)
-{
-    $user = Auth::user();
+    public function index(Request $request)
+    {
+        $user = Auth::user();
 
-    $jurnalQuery = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')
-        ->latest('tanggal_transaksi'); // Pengurutan utama untuk paginasi
+        $jurnalQuery = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')
+            ->latest('tanggal_transaksi');
 
-    // Filter role
-    if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
-        $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
-        $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        // Filter role
+        if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
+            // --- PERBAIKAN DI SINI ---
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id'); // Menambahkan nama tabel 'unit_usahas'
+            $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        }
+
+        // Filter tahun
+        $tahun = $request->year ?? date('Y');
+        $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
+
+        // Filter status
+        $statusJurnal = $request->approval_status;
+        if ($request->filled('approval_status') && $request->approval_status != 'semua') {
+            $jurnalQuery->where('status', $statusJurnal);
+        }
+
+        // Filter tanggal
+        if ($request->filled('start_date')) {
+            $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
+        }
+
+        // Filter unit usaha
+        if ($request->filled('unit_usaha_id')) {
+            $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
+        }
+        // --- PERBAIKAN DI SINI (kode sudah benar, tidak perlu diubah) ---
+        $totalQuery = clone $jurnalQuery;
+        $totalQuery->reorder();
+
+        $totals = $totalQuery->select(
+            DB::raw('SUM(total_debit) as total_debit_all'),
+            DB::raw('SUM(total_kredit) as total_kredit_all')
+        )->first();
+
+        $totalDebitAll = $totals->total_debit_all ?? 0;
+        $totalKreditAll = $totals->total_kredit_all ?? 0;
+        // --- AKHIR PERBAIKAN ---
+
+        $jurnals = $jurnalQuery->paginate(10);
+
+        $unitUsahas = $user->hasRole(['admin_bumdes', 'bendahara_bumdes'])
+            ? UnitUsaha::orderBy('nama_unit')->get()
+            : collect();
+
+        $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas', 'years', 'tahun', 'statusJurnal', 'totalDebitAll', 'totalKreditAll'));
     }
-
-    // Filter tahun
-    $tahun = $request->year ?? date('Y');
-    $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
-
-    // Filter status
-    $statusJurnal = $request->approval_status;
-    if ($request->filled('approval_status') && $request->approval_status != 'semua') {
-        $jurnalQuery->where('status', $statusJurnal);
-    }
-
-    // Filter tanggal
-    if ($request->filled('start_date')) {
-        $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
-    }
-    if ($request->filled('end_date')) {
-        $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
-    }
-
-    // Filter unit usaha
-    if ($request->filled('unit_usaha_id')) {
-        $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
-    }
-
-    // --- PERBAIKAN DI SINI ---
-    // Buat kloning query TANPA pengurutan untuk menghitung total
-    $totalQuery = clone $jurnalQuery;
-    $totalQuery->reorder(); // Menghapus semua klausa order by
-
-    $totals = $totalQuery->select(
-        DB::raw('SUM(total_debit) as total_debit_all'),
-        DB::raw('SUM(total_kredit) as total_kredit_all')
-    )->first();
-
-    $totalDebitAll = $totals->total_debit_all ?? 0;
-    $totalKreditAll = $totals->total_kredit_all ?? 0;
-    // --- AKHIR PERBAIKAN ---
-
-    // Lakukan paginasi pada query asli yang memiliki pengurutan
-    $jurnals = $jurnalQuery->paginate(10);
-
-    $unitUsahas = $user->hasRole(['admin_bumdes', 'bendahara_bumdes'])
-        ? UnitUsaha::orderBy('nama_unit')->get()
-        : collect();
-
-    $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
-        ->distinct()
-        ->orderBy('year', 'desc')
-        ->pluck('year');
-
-    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas', 'years', 'tahun', 'statusJurnal', 'totalDebitAll', 'totalKreditAll'));
-}
-
 
 public function edit(JurnalUmum $jurnalUmum)
 {
