@@ -17,19 +17,14 @@ return new class extends Migration
     $table->string('email')->unique();
     $table->string('username', 100)->unique();
     $table->string('password', 255);
-    $table->string('role', 50);
     $table->boolean('is_active');
+     $table->boolean('is_profile_complete')->default(false);
     $table->dateTime('last_login')->nullable();
     $table->timestamps();
 
 });
 
 
-        // Schema::create('password_reset_tokens', function (Blueprint $table) {
-        //     $table->string('email')->primary();
-        //     $table->string('token');
-        //     $table->timestamp('created_at')->nullable();
-        // });
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();

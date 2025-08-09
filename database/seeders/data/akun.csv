@@ -223,7 +223,7 @@ akun_id,kode_akun,nama_akun,tipe_akun,is_header,parent_id
 222,6.1.01.99,Beban Pegawai Bag. Adum Lainnya,Beban,false,214
 223,6.1.02.00,Beban Perlengkapan,Beban,true,213
 224,6.1.02.01,Beban Alat Tulis Kantor (ATK),Beban,false,223
-225,6.1.02.02,Beban Foto Copy,Beban,false,223
+225,6.1.02.02,Beban photo Copy,Beban,false,223
 226,6.1.02.03,Beban Konsumsi Rapat,Beban,false,223
 227,6.1.02.04,Beban Cetak dan Dekorasi,Beban,false,223
 228,6.1.02.99,Beban Perlengkapan Lainnya,Beban,false,223

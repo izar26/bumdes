@@ -17,8 +17,6 @@ return new class extends Migration
             $table->integer('bulan_anggaran')->nullable();
             $table->decimal('jumlah_anggaran', 18, 2);
             $table->timestamps();
-            // $table->unsignedBigInteger('user_id')->nullable();
-            // $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
         }); 
     }
 

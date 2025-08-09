@@ -125,14 +125,16 @@
                             <td></td>
                             <td></td>
                             <td class="text-center">
-                                @if($jurnal->status !== 'disetujui')
-                                    <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs"><i class="fas fa-edit"></i></a>
-                                    <form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                @endif
+                                <a href="{{ route('keuangan.jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ route('keuangan.jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus Jurnal">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         @foreach ($jurnal->detailJurnals as $detail)

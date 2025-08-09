@@ -2,27 +2,26 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * @return void
      */
-    public function run(): void
+    public function run()
     {
-        // Panggil UserSeeder
         $this->call([
+            PermissionSeeder::class,
             UserSeeder::class,
+            UnitUsahaSeeder::class,
+            AkunSeeder::class,
+            JurnalSeeder::class,
             ProfilSeeder::class,
             HomepageSettingSeeder::class,
             BungdesSeeder::class,
-            PermissionSeeder::class,
-            AkunSeeder::class,
-            UnitUsahaSeeder::class,
-            JurnalSeeder::class,
         ]);
     }
 }

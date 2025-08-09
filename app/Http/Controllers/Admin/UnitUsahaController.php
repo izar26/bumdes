@@ -13,17 +13,22 @@ use Illuminate\Support\Facades\DB;
 
 class UnitUsahaController extends Controller
 {
+    /**
+     * Menampilkan daftar semua unit usaha.
+     * Manajer Unit Usaha hanya bisa melihat unit yang dia kelola.
+     * Admin BUMDes melihat semua unit usaha.
+     */
     public function index()
     {
         $user = Auth::user();
-        $query = UnitUsaha::with(['user']);
+        $query = UnitUsaha::with(['users']);
 
-        // Manajer unit usaha hanya bisa melihat unit usaha yang dia kelola
-        if ($user->isManajerUnitUsaha()) {
-            $query->where('user_id', $user->user_id);
+        if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            $unitUsahas = $user->unitUsahas()->with('users')->latest()->get();
+        } else {
+            $unitUsahas = $query->latest()->get();
         }
 
-        $unitUsahas = $query->latest()->get();
         return view('admin.manajemen_data.unit_usaha.index', compact('unitUsahas'));
     }
 
@@ -32,9 +37,8 @@ class UnitUsahaController extends Controller
      */
     public function create()
     {
-        // Pemeriksaan di sini dihapus karena sudah ada middleware di rute
-        // Hanya tampilkan user dengan role manajer_unit_usaha untuk pilihan penanggung jawab
-        $users = User::where('role', 'manajer_unit_usaha')->get();
+        // Hanya tampilkan user dengan role manajer_unit_usaha & admin_unit_usaha untuk pilihan penanggung jawab
+        $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->orderBy('name')->get();
         return view('admin.manajemen_data.unit_usaha.create', compact('users'));
     }
 
@@ -43,13 +47,13 @@ class UnitUsahaController extends Controller
      */
     public function store(Request $request)
     {
-        // Pemeriksaan di sini dihapus karena sudah ada middleware di rute
         $rules = [
             'nama_unit' => 'required|string|max:255|unique:unit_usahas,nama_unit',
             'jenis_usaha' => 'required|string|max:100',
             'tanggal_mulai_operasi' => 'nullable|date',
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
-            'user_id' => 'nullable|exists:users,user_id',
+            'penanggung_jawab_ids' => 'nullable|array',
+            'penanggung_jawab_ids.*' => ['exists:users,user_id', Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id'))],
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -58,31 +62,29 @@ class UnitUsahaController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only([
-            'nama_unit',
-            'jenis_usaha',
-            'tanggal_mulai_operasi',
-            'status_operasi',
-            'user_id'
-        ]);
+        DB::beginTransaction();
+        try {
+            $unitUsaha = UnitUsaha::create($request->only([
+                'nama_unit',
+                'jenis_usaha',
+                'tanggal_mulai_operasi',
+                'status_operasi'
+            ]));
 
-        if ($request->filled('user_id')) {
-            $selectedUser = User::find($request->user_id);
-            if (!$selectedUser || !$selectedUser->isManajerUnitUsaha()) {
-                return redirect()->back()->withErrors(['user_id' => 'Penanggung Jawab harus memiliki peran Manajer Unit Usaha.'])->withInput();
-            }
-        } else {
-            $data['user_id'] = null;
+            // Sinkronisasi penanggung jawab menggunakan tabel pivot
+            $unitUsaha->users()->sync($request->input('penanggung_jawab_ids', []));
+
+            DB::commit();
+            return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menambahkan unit usaha: ' . $e->getMessage())->withInput();
         }
-
-        UnitUsaha::create($data);
-
-        return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil ditambahkan!');
     }
 
     public function show(UnitUsaha $unitUsaha)
     {
-        $unitUsaha->load(['user']);
+        $unitUsaha->load(['users']);
         return view('admin.manajemen_data.unit_usaha.show', compact('unitUsaha'));
     }
 
@@ -90,25 +92,24 @@ class UnitUsahaController extends Controller
     {
         $user = Auth::user();
 
-        // Pemeriksaan ini sudah benar karena membedakan hak edit antara Manajer & Admin
-        if ($user->isManajerUnitUsaha() && $unitUsaha->user_id !== $user->user_id) {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit unit usaha ini.');
+        // Admin BUMDes bisa mengedit semua unit usaha.
+        // Manajer/Admin Unit Usaha hanya bisa mengedit unit yang dia kelola.
+        if (!$user->hasRole('admin_bumdes') && !$unitUsaha->users->contains($user->user_id)) {
+             abort(403, 'Anda tidak memiliki akses untuk mengedit unit usaha ini.');
         }
 
-        if ($user->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
-            $users = User::where('role', 'manajer_unit_usaha')->get();
-        } else {
-            $users = collect([]);
-        }
+        $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->orderBy('name')->get();
+        $assignedUserIds = $unitUsaha->users->pluck('user_id')->toArray();
 
-        return view('admin.manajemen_data.unit_usaha.edit', compact('unitUsaha', 'users'));
+        return view('admin.manajemen_data.unit_usaha.edit', compact('unitUsaha', 'users', 'assignedUserIds'));
     }
 
     public function update(Request $request, UnitUsaha $unitUsaha)
     {
         $loggedInUser = Auth::user();
 
-        if ($loggedInUser->isManajerUnitUsaha() && $unitUsaha->user_id !== $loggedInUser->user_id) {
+        // Validasi hak akses
+        if (!$loggedInUser->hasRole('admin_bumdes') && !$unitUsaha->users->contains($loggedInUser->user_id)) {
             abort(403, 'Anda tidak memiliki akses untuk memperbarui unit usaha ini.');
         }
 
@@ -117,14 +118,9 @@ class UnitUsahaController extends Controller
             'jenis_usaha' => 'required|string|max:100',
             'tanggal_mulai_operasi' => 'nullable|date',
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
+            'penanggung_jawab_ids' => 'nullable|array',
+            'penanggung_jawab_ids.*' => ['exists:users,user_id', Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id'))],
         ];
-
-        // Tambahkan aturan validasi user_id hanya jika yang login adalah admin_bumdes
-        if ($loggedInUser->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
-            $rules['user_id'] = 'nullable|exists:users,user_id';
-        } else {
-            $rules['user_id'] = ['nullable', Rule::in([$unitUsaha->user_id])];
-        }
 
         $validator = Validator::make($request->all(), $rules);
 
@@ -132,41 +128,43 @@ class UnitUsahaController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only([
-            'nama_unit',
-            'jenis_usaha',
-            'tanggal_mulai_operasi',
-            'status_operasi',
-        ]);
+        DB::beginTransaction();
+        try {
+            $unitUsaha->update($request->only([
+                'nama_unit',
+                'jenis_usaha',
+                'tanggal_mulai_operasi',
+                'status_operasi',
+            ]));
 
-        if ($loggedInUser->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha() ke isAdminBumdes()
-            if ($request->filled('user_id')) {
-                $selectedUser = User::find($request->user_id);
-                if (!$selectedUser || !$selectedUser->isManajerUnitUsaha()) {
-                    return redirect()->back()->withErrors(['user_id' => 'Penanggung Jawab harus memiliki peran Manajer Unit Usaha.'])->withInput();
-                }
-                $data['user_id'] = $request->user_id;
-            } else {
-                $data['user_id'] = null;
+            // Sinkronisasi penanggung jawab menggunakan tabel pivot
+            if ($loggedInUser->hasRole('admin_bumdes')) {
+                 $unitUsaha->users()->sync($request->input('penanggung_jawab_ids', []));
             }
-        } else {
-            $data['user_id'] = $unitUsaha->user_id;
+
+            DB::commit();
+            return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil diperbarui!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memperbarui unit usaha: ' . $e->getMessage())->withInput();
         }
-
-        $unitUsaha->update($data);
-
-        return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil diperbarui!');
     }
 
     public function destroy(UnitUsaha $unitUsaha)
     {
-        // <-- INI JUGA MASALAHNYA -->
-        // Harusnya admin_bumdes yang bisa menghapus
-        if (!Auth::user()->isAdminBumdes()) { // PERBAIKI: Ganti dari isAdminUnitUsaha()
+        // Hanya Admin BUMDes yang bisa menghapus unit usaha
+        if (!Auth::user()->hasRole('admin_bumdes')) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus Unit Usaha.');
         }
 
-        $unitUsaha->delete();
-        return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil dihapus!');
+        DB::beginTransaction();
+        try {
+            $unitUsaha->delete();
+            DB::commit();
+            return redirect()->route('admin.manajemen-data.unit_usaha.index')->with('success', 'Unit usaha berhasil dihapus!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menghapus unit usaha: ' . $e->getMessage());
+        }
     }
 }

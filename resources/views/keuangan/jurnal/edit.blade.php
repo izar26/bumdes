@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-<form action="{{ route('jurnal-umum.update', $jurnal->jurnal_id) }}" method="POST">
+<form action="{{ route('keuangan.jurnal-umum.update', $jurnal->jurnal_id) }}" method="POST">
     @csrf
     @method('PUT')
     <div class="card">

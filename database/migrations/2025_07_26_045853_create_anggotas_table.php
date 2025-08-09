@@ -14,16 +14,17 @@ return new class extends Migration
             Schema::create('anggotas', function (Blueprint $table) {
                 $table->id('anggota_id');
                 $table->string('nama_lengkap', 255);
-                $table->string('nik', 20)->unique();
+                $table->string('nik', 16)->unique();
                 $table->string('alamat', 500)->nullable();
                 $table->string('no_telepon', 50)->nullable();
                 $table->date('tanggal_daftar');
-                $table->unsignedBigInteger('unit_usaha_id');
+                $table->unsignedBigInteger('unit_usaha_id')->nullable();
                 $table->string('status_anggota', 50);
                 $table->string('jenis_kelamin', 10)->nullable();
-                $table->string('foto', 255)->nullable();
+                $table->string('photo', 255)->nullable();
                 $table->string('email', 255)->nullable();
                 $table->string('jabatan', 100)->nullable();
+                $table->boolean('is_profile_complete')->default(false);
 
                 $table->unsignedBigInteger('user_id')->nullable();
                 $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');
