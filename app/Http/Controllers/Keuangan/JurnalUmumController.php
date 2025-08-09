@@ -20,13 +20,26 @@ public function index(Request $request)
     $jurnalQuery = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')
         ->latest('tanggal_transaksi');
 
-    // Filter role
+    // Filter role: hanya jurnal dari unit usaha yang di-manage user
     if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
         $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
         $jurnalQuery->whereIn('unit_usaha_id', $unitUsahaIds);
     }
 
-    // Filter tanggal
+    // Default tahun sekarang jika tidak diisi
+    $tahun = $request->year ?? date('Y');
+    $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
+
+    // --- PERBAIKAN LOGIKA FILTER STATUS ---
+    $statusJurnal = $request->approval_status;
+
+    // Terapkan filter HANYA JIKA status yang dipilih bukan "semua" dan tidak kosong.
+    if ($request->filled('approval_status') && $request->approval_status != 'semua') {
+        $jurnalQuery->where('status', $statusJurnal);
+    }
+    // Jika user memilih "semua", tidak ada filter status yang ditambahkan.
+
+    // Filter tanggal (opsional)
     if ($request->filled('start_date')) {
         $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
     }
@@ -34,26 +47,9 @@ public function index(Request $request)
         $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
     }
 
-    // Filter status approval
-    if ($request->filled('approval_status')) {
-        $jurnalQuery->where('status', $request->approval_status);
-    }
-
-    // Filter status balance (seimbang/tidak)
-    if ($request->filled('balance_status')) {
-        $jurnalQuery->whereRaw('ROUND(total_debit,2) ' .
-            ($request->balance_status === 'seimbang' ? '=' : '!=') .
-            ' ROUND(total_kredit,2)');
-    }
-
-    // Filter unit usaha
+    // Filter unit usaha (opsional)
     if ($request->filled('unit_usaha_id')) {
         $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
-    }
-
-    // Filter tahun
-    if ($request->filled('year')) {
-        $jurnalQuery->whereYear('tanggal_transaksi', $request->year);
     }
 
     $jurnals = $jurnalQuery->paginate(10);
@@ -67,8 +63,9 @@ public function index(Request $request)
         ->orderBy('year', 'desc')
         ->pluck('year');
 
-    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas', 'years'));
+    return view('keuangan.jurnal.index', compact('jurnals', 'unitUsahas', 'years', 'tahun', 'statusJurnal'));
 }
+
 
 public function edit(JurnalUmum $jurnalUmum)
 {

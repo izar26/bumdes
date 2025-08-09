@@ -28,48 +28,60 @@
     <div class="card-body">
         {{-- Filter Section --}}
         <form method="GET" class="mb-3">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label">Tahun</label>
-                    <select name="year" class="form-control">
-                        <option value="">Semua</option>
-                        @foreach($years as $year)
-                            <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Tanggal Mulai</label>
-                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Tanggal Akhir</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Status Balance</label>
-                    <select name="status" class="form-control">
-                        <option value="">Semua</option>
-                        <option value="seimbang" {{ request('status')=='seimbang'?'selected':'' }}>Seimbang</option>
-                        <option value="tidak_seimbang" {{ request('status')=='tidak_seimbang'?'selected':'' }}>Tidak Seimbang</option>
-                    </select>
-                </div>
-                @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
-                <div class="col-md-2">
-                    <label class="form-label">Unit Usaha</label>
-                    <select name="unit_usaha_id" class="form-control">
-                        <option value="">Semua</option>
-                        @foreach($unitUsahas as $unit)
-                            <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id')==$unit->unit_usaha_id?'selected':'' }}>{{ $unit->nama_unit }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filter</button>
-                </div>
-            </div>
-        </form>
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">Tahun</label>
+            <select name="year" class="form-control">
+                @foreach($years as $year)
+                    <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
+                        {{ $year }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Tanggal Mulai</label>
+            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Tanggal Akhir</label>
+            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Status Jurnal</label>
+            <select name="approval_status" class="form-control">
+                <option value="semua">Semua</option>
+                <option value="menunggu" {{ $statusJurnal == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
+                <option value="disetujui" {{ $statusJurnal == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                <option value="ditolak" {{ $statusJurnal == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+            </select>
+        </div>
+
+        @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
+        <div class="col-md-2">
+            <label class="form-label">Unit Usaha</label>
+            <select name="unit_usaha_id" class="form-control">
+                <option value="">Semua</option>
+                @foreach($unitUsahas as $unit)
+                    <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
+                        {{ $unit->nama_unit }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+    </div>
+</form>
+
 
         {{-- Table Section --}}
         <div class="table-responsive">
@@ -87,7 +99,7 @@
                     @forelse ($jurnals as $jurnal)
                         <tr class="table-primary">
                             <td><strong>{{ \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('d M Y') }}</strong></td>
-                            <td>
+<td>
     <strong>{{ $jurnal->deskripsi }}</strong>
     <br>
     @switch($jurnal->status)
@@ -98,17 +110,16 @@
             <span class="badge badge-success">Disetujui</span>
             @break
         @case('ditolak')
-            <span class="badge badge-danger" 
-                  @if($jurnal->rejected_reason) 
-                      data-toggle="tooltip" 
-                      data-placement="top" 
-                      title="Alasan: {{ $jurnal->rejected_reason }}"
-                  @endif>
-                Ditolak
-            </span>
+            <span class="badge badge-danger">Ditolak</span>
+            @if($jurnal->rejected_reason)
+                <div class="mt-1 text-danger small">
+                    <strong>Alasan:</strong> {{ $jurnal->rejected_reason }}
+                </div>
+            @endif
             @break
     @endswitch
 </td>
+
 
                             <td></td>
                             <td></td>
