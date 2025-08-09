@@ -37,6 +37,7 @@ use App\Http\Controllers\Laporan\LabaRugiController;
 use App\Http\Controllers\Laporan\NeracaController;
 use App\Http\Controllers\Laporan\NeracaSaldoController;
 use App\Http\Controllers\Laporan\PerubahanEkuitasController;
+use App\Http\Controllers\Laporan\ArusKasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -193,3 +194,6 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
     ->name('home')
     ->middleware('auth');
+
+     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
+        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
