@@ -25,10 +25,10 @@ class UnitUsaha extends Model
         'tanggal_mulai_operasi' => 'date',
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id', 'user_id');
-    }
+public function users()
+{
+    return $this->belongsToMany(User::class, 'unit_usaha_user', 'unit_usaha_id', 'user_id');
+}
 
     public function produks()
     {

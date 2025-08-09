@@ -50,7 +50,7 @@ class LoginController extends Controller
             case 'anggota':
                 return '/profile';
             default:
-                return '/home';
+                return '/login';
         }
     }
 

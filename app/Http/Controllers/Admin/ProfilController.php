@@ -34,7 +34,7 @@ class ProfilController extends Controller
             'deskripsi' => 'required|string',
             'jumlah_penduduk' => 'required|integer',
             'jumlah_kk' => 'required|integer',
-            'luas_wilayah' => 'required|string',
+        'luas_wilayah' => 'required|string',
             'alamat' => 'required|string',
             'email' => 'required|email',
             'telepon' => 'required|string',

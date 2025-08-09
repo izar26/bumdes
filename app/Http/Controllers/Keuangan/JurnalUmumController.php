@@ -37,6 +37,7 @@ public function index(Request $request)
             ($request->status === 'seimbang' ? '=' : '!=') .
             ' ROUND(total_kredit,2)');
     }
+    
     if ($request->filled('unit_usaha_id')) {
         $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
     }

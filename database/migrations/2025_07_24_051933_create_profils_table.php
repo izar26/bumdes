@@ -16,8 +16,7 @@ return new class extends Migration
             $table->text('deskripsi');
             $table->integer('jumlah_penduduk');
             $table->integer('jumlah_kk');
-            $table->string('luas_wilayah'); // Pakai string, misal "500 Ha"
-
+            $table->string('luas_wilayah'); 
             // Untuk bagian #kontak di footer
             $table->string('alamat');
             $table->string('email');

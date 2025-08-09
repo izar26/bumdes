@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
 
         $view->with('logo_img', $photo);
     });
-    //   Schema::disableForeignKeyConstraints();
+//   Schema::disableForeignKeyConstraints();
 }
 
 }

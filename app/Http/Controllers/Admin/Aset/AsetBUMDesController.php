@@ -47,7 +47,7 @@ class AsetBUMDesController extends Controller
 
         try {
             AsetBUMDes::create($validatedData);
-            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil ditambahkan!');
+            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil ditambahkan!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal menambahkan aset: ' . $e->getMessage());
         }
@@ -88,7 +88,7 @@ class AsetBUMDesController extends Controller
 
         try {
             $aset->update($validatedData);
-            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil diperbarui!');
+            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil diperbarui!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal memperbarui aset: ' . $e->getMessage());
         }
@@ -101,7 +101,7 @@ class AsetBUMDesController extends Controller
     {
         try {
             $aset->delete();
-            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil dihapus!');
+            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil dihapus!');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menghapus aset: ' . $e->getMessage());
         }
