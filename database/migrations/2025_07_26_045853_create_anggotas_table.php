@@ -22,7 +22,6 @@ return new class extends Migration
                 $table->string('status_anggota', 50);
                 $table->string('jenis_kelamin', 10)->nullable();
                 $table->string('photo', 255)->nullable();
-                $table->string('email', 255)->nullable();
                 $table->string('jabatan', 100)->nullable();
                 $table->boolean('is_profile_complete')->default(false);
 

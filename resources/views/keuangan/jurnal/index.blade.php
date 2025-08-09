@@ -91,10 +91,10 @@
                             <td></td>
                             <td></td>
                             <td class="text-center">
-                                <a href="{{ route('keuangan.jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
+                                <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('keuangan.jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
+                                <form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-xs" title="Hapus Jurnal">

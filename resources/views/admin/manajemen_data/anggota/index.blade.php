@@ -54,22 +54,30 @@
                                 <td>{{ $user->anggota->no_telepon ?? '-' }}</td>
                                 <td>{{ $user->anggota->unitUsaha->nama_unit_usaha ?? '-' }}</td>
                                 <td>
-                                    <form action="{{ route('admin.manajemen-data.anggota.updateRole', $user->user_id) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="input-group">
-                                            <select name="role" class="form-control">
-                                                @foreach($rolesOptions as $role)
-                                                    <option value="{{ $role }}" @if($user->hasRole($role)) selected @endif>
-                                                        {{ Str::title(str_replace('_', ' ', $role)) }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <div class="input-group-append">
-                                                <button type="submit" class="btn btn-success">Ubah</button>
+                                    @if ($user->hasRole('admin_bumdes'))
+                                        {{-- Jika user adalah admin_bumdes, tampilkan role sebagai teks biasa --}}
+                                        <span class="badge badge-warning">
+                                            {{ Str::title(str_replace('_', ' ', $user->getRoleNames()->first())) }}
+                                        </span>
+                                    @else
+                                        {{-- Jika bukan admin_bumdes, tampilkan form untuk mengubah role --}}
+                                        <form action="{{ route('admin.manajemen-data.anggota.updateRole', $user->user_id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="input-group">
+                                                <select name="role" class="form-control">
+                                                    @foreach($rolesOptions as $role)
+                                                        <option value="{{ $role }}" @if($user->hasRole($role)) selected @endif>
+                                                            {{ Str::title(str_replace('_', ' ', $role)) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <div class="input-group-append">
+                                                    <button type="submit" class="btn btn-success">Ubah</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </form>
+                                        </form>
+                                    @endif
                                 </td>
                                 <td>
                                      <a href="{{ route('admin.manajemen-data.anggota.edit', $user->user_id) }}" class="btn btn-sm btn-info">
@@ -100,4 +108,4 @@
             });
         });
     </script>
-@endpush
+@endpush    

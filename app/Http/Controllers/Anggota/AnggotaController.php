@@ -59,7 +59,6 @@ class AnggotaController extends Controller
             ],
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             // Validasi untuk user account dibuat opsional
-            'email' => 'nullable|string|email|max:255|unique:users',
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'is_profile_complete' => 'boolean', // Pastikan ini ada di form jika ingin digunakan

@@ -24,7 +24,10 @@ class UnitUsahaController extends Controller
         $query = UnitUsaha::with(['users']);
 
         if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $unitUsahas = $user->unitUsahas()->with('users')->latest()->get();
+            // Menggunakan whereHas untuk memastikan relasi users tidak kosong
+            $unitUsahas = $query->whereHas('users', function ($q) use ($user) {
+                $q->where('user_id', $user->user_id);
+            })->latest()->get();
         } else {
             $unitUsahas = $query->latest()->get();
         }
@@ -37,8 +40,11 @@ class UnitUsahaController extends Controller
      */
     public function create()
     {
-        // Hanya tampilkan user dengan role manajer_unit_usaha & admin_unit_usaha untuk pilihan penanggung jawab
-        $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->orderBy('name')->get();
+        // Ambil user yang berhak menjadi penanggung jawab dan belum terhubung ke unit usaha manapun
+        $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])
+                    ->whereDoesntHave('unitUsahas')
+                    ->orderBy('name')
+                    ->get();
         return view('admin.manajemen_data.unit_usaha.create', compact('users'));
     }
 
@@ -53,11 +59,14 @@ class UnitUsahaController extends Controller
             'tanggal_mulai_operasi' => 'nullable|date',
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
             'penanggung_jawab_ids' => 'nullable|array',
-            'penanggung_jawab_ids.*' => ['exists:users,user_id', Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id'))],
+            'penanggung_jawab_ids.*' => [
+                'exists:users,user_id',
+                Rule::unique('unit_usaha_user', 'user_id'),
+                Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id')),
+            ],
         ];
 
         $validator = Validator::make($request->all(), $rules);
-
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
@@ -70,8 +79,6 @@ class UnitUsahaController extends Controller
                 'tanggal_mulai_operasi',
                 'status_operasi'
             ]));
-
-            // Sinkronisasi penanggung jawab menggunakan tabel pivot
             $unitUsaha->users()->sync($request->input('penanggung_jawab_ids', []));
 
             DB::commit();
@@ -82,33 +89,41 @@ class UnitUsahaController extends Controller
         }
     }
 
-    public function show(UnitUsaha $unitUsaha)
-    {
-        $unitUsaha->load(['users']);
-        return view('admin.manajemen_data.unit_usaha.show', compact('unitUsaha'));
+    /**
+     * Menampilkan form untuk mengedit unit usaha.
+     */
+
+public function edit(UnitUsaha $unitUsaha)
+{
+    $user = Auth::user();
+
+    if (!$user->hasRole('admin_bumdes') && !$unitUsaha->users->contains($user->user_id)) {
+        abort(403, 'Anda tidak memiliki akses untuk mengedit unit usaha ini.');
     }
 
-    public function edit(UnitUsaha $unitUsaha)
-    {
-        $user = Auth::user();
+    // Ambil user yang berhak menjadi penanggung jawab.
+    // FIX: Menambahkan nama tabel 'unit_usaha_user' di depan kolom 'unit_usaha_id'
+    $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])
+                ->where(function($query) use ($unitUsaha) {
+                    $query->whereDoesntHave('unitUsahas')
+                          ->orWhereHas('unitUsahas', function($query) use ($unitUsaha) {
+                              $query->where('unit_usaha_user.unit_usaha_id', $unitUsaha->unit_usaha_id);
+                          });
+                })
+                ->orderBy('name')
+                ->get();
 
-        // Admin BUMDes bisa mengedit semua unit usaha.
-        // Manajer/Admin Unit Usaha hanya bisa mengedit unit yang dia kelola.
-        if (!$user->hasRole('admin_bumdes') && !$unitUsaha->users->contains($user->user_id)) {
-             abort(403, 'Anda tidak memiliki akses untuk mengedit unit usaha ini.');
-        }
+    $assignedUserIds = $unitUsaha->users->pluck('user_id')->toArray();
+    return view('admin.manajemen_data.unit_usaha.edit', compact('unitUsaha', 'users', 'assignedUserIds'));
+}
 
-        $users = User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->orderBy('name')->get();
-        $assignedUserIds = $unitUsaha->users->pluck('user_id')->toArray();
-
-        return view('admin.manajemen_data.unit_usaha.edit', compact('unitUsaha', 'users', 'assignedUserIds'));
-    }
-
+    /**
+     * Memperbarui unit usaha di database.
+     */
     public function update(Request $request, UnitUsaha $unitUsaha)
     {
         $loggedInUser = Auth::user();
 
-        // Validasi hak akses
         if (!$loggedInUser->hasRole('admin_bumdes') && !$unitUsaha->users->contains($loggedInUser->user_id)) {
             abort(403, 'Anda tidak memiliki akses untuk memperbarui unit usaha ini.');
         }
@@ -119,7 +134,11 @@ class UnitUsahaController extends Controller
             'tanggal_mulai_operasi' => 'nullable|date',
             'status_operasi' => ['required', 'string', Rule::in(['Aktif', 'Tidak Aktif', 'Dalam Pengembangan'])],
             'penanggung_jawab_ids' => 'nullable|array',
-            'penanggung_jawab_ids.*' => ['exists:users,user_id', Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id'))],
+            'penanggung_jawab_ids.*' => [
+                'exists:users,user_id',
+                Rule::unique('unit_usaha_user', 'user_id')->ignore($unitUsaha->unit_usaha_id, 'unit_usaha_id'),
+                Rule::in(User::role(['manajer_unit_usaha', 'admin_unit_usaha'])->pluck('user_id')),
+            ],
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -137,7 +156,6 @@ class UnitUsahaController extends Controller
                 'status_operasi',
             ]));
 
-            // Sinkronisasi penanggung jawab menggunakan tabel pivot
             if ($loggedInUser->hasRole('admin_bumdes')) {
                  $unitUsaha->users()->sync($request->input('penanggung_jawab_ids', []));
             }
