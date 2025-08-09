@@ -36,7 +36,7 @@ class ApprovalJurnalController extends Controller
             });
         }
         // Jika admin BUMDes: hanya jurnal yang dibuat oleh bendahara_bumdes
-        elseif ($user->hasRole('admin_bumdes')) {
+        elseif ($user->hasRole('direktur_bumdes')) {
             $query->whereHas('user', function ($q) {
                 // FIX: Menggunakan whereHas untuk role
                 $q->whereHas('roles', function ($q2) {
@@ -89,7 +89,7 @@ class ApprovalJurnalController extends Controller
             return true;
         }
 
-        if ($user->hasRole('admin_bumdes')) {
+        if ($user->hasRole('direktur_bumdes')) {
             // Cek role user pembuat jurnal
             if (!$jurnal->user->hasRole('bendahara_bumdes')) abort(403, 'Hanya jurnal yang dibuat oleh bendahara yang bisa diapprove di sini.');
             return true;

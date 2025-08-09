@@ -63,20 +63,20 @@ class UserController extends Controller
                 'is_profile_complete' => false,
             ]);
 
-            $role = $request->role ? $request->role : 'anggota_baru';
+            $role = $request->role ? $request->role : 'anggota';
             $user->assignRole($role);
 
-            if ($role === 'anggota' || $role === 'anggota_baru') {
-                Anggota::firstOrCreate(
-                    ['user_id' => $user->user_id],
-                    [
-                        'nama_lengkap' => $request->name,
-                        'tanggal_daftar' => now(),
-                        'status_anggota' => 'aktif',
-                        'is_profile_complete' => false,
-                    ]
-                );
-            }
+            // if ($role === 'anggota' || $role === 'anggota') {
+            //     Anggota::firstOrCreate(
+            //         ['user_id' => $user->user_id],
+            //         [
+            //             'nama_lengkap' => $request->name,
+            //             'tanggal_daftar' => now(),
+            //             'status_anggota' => 'aktif',
+            //             'is_profile_complete' => false,
+            //         ]
+            //     );
+            // }
 
             DB::commit();
             return redirect()->route('admin.manajemen-data.user.index')->with('success', 'Akun pengguna berhasil dibuat. Silakan informasikan pengguna untuk melengkapi profilnya.');

@@ -338,7 +338,7 @@ return [
     // Akses: Admin BUMDes & Direktur BUMDes
     [
         'header' => 'ADMIN PROFIL DESA',
-        'can'    => ['admin_bumdes', 'direktur_bumdes'], // Menggunakan array untuk Gate
+        'can'    => ['admin_bumdes'], // Menggunakan array untuk Gate
     ],
     [
         'text'  => 'Profil Desa',
@@ -407,7 +407,7 @@ return [
         'icon'    => 'fas fa-fw fa-wallet',
         'can'     => ['admin_unit_usaha', ],
         'submenu' => [
-            ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
+            ['text' => 'Buat Jurnal Baf', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
             ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
 
@@ -417,25 +417,26 @@ return [
         'text'    => 'Approval Jurnal',
         'icon'    => 'fas fa-fw fa-check-circle',
         'route'   => 'approval-jurnal.index',
-        'can' => ['manajer_unit_usaha' ],
+        'can' => ['manajer_unit_usaha' ,'direktur_bumdes' ],
     ],
     [
         'text'    => 'Laporan',
         'icon'    => 'fas fa-fw fa-file-alt',
-        'can'     => ['direktur_bumdes', 'bendahara_bumdes', 'sekretaris_bumdes'],
+        'can'     => ['bendahara_bumdes', 'sekretaris_bumdes'],
         'submenu' => [
             ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
             ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index'],
             ['text' => 'Neraca', 'route' => 'laporan.neraca.index'],
             ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index'],
             ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index'],
-        ],
-    ],
-    [
+              [
         'text' => 'Arus Kas',
         'route'  => 'laporan.arus-kas.index',
         'icon' => 'fas fa-fw fa-exchange-alt',
     ],
+        ],
+    ],
+
 
 
     [

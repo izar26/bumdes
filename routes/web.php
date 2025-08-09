@@ -158,7 +158,7 @@ Route::middleware(['auth'])->group(function () {
         });
 
     });
-    Route::middleware(['role:manajer_unit_usaha'])->group(function () {
+    Route::middleware(['role:manajer_unit_usaha|direktur_bumdes'])->group(function () {
             Route::get('keuangan/approval-jurnal', [ApprovalJurnalController::class, 'index'])->name('approval-jurnal.index');
             Route::post('keuangan/approval-jurnal/{jurnal}/approve', [ApprovalJurnalController::class, 'approve'])->name('approval-jurnal.approve');
     Route::post('keuangan/approval-jurnal/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('approval-jurnal.reject');
@@ -183,6 +183,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('neraca-saldo', [NeracaSaldoController::class, 'generate'])->name('neraca-saldo.generate');
             Route::get('perubahan-ekuitas', [PerubahanEkuitasController::class, 'index'])->name('perubahan-ekuitas.index');
             Route::post('perubahan-ekuitas', [PerubahanEkuitasController::class, 'generate'])->name('perubahan-ekuitas.generate');
+
+     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
+        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
         });
     });
 
@@ -194,6 +197,3 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
     ->name('home')
     ->middleware('auth');
-
-     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
-        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');

@@ -39,7 +39,6 @@ class SyncUsersToAnggotaSeeder extends Seeder
                     'status_anggota' => 'aktif',
                     'jabatan' => ucwords(str_replace('_', ' ', $role)),
                     'is_profile_complete' => false,
-                    'email' => $user->email,
                 ]);
 
                 $this->command->info("Data anggota berhasil dibuat untuk pengguna: " . $user->name);
