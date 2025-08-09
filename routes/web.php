@@ -173,6 +173,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
         Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
     });
+
+    Route::middleware(['role:manajer_unit_usaha|admin_bumdes'])->group(function () {
+    Route::get('keuangan/approval-jurnal', [ApprovalJurnalController::class, 'index'])->name('approval-jurnal.index');
+    Route::post('keuangan/approval-jurnal/{jurnal}/approve', [ApprovalJurnalController::class, 'approve'])->name('approval-jurnal.approve');
+    Route::post('keuangan/approval-jurnal/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('approval-jurnal.reject');
+});
 });
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])

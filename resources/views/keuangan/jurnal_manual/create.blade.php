@@ -30,8 +30,8 @@
                 {{-- Unit Usaha --}}
                 <div class="form-group col-md-4">
                     <label>Untuk Unit Usaha</label>
-                    @php $user = auth()->user(); @endphp
-                    @if($user->hasRole(['bendahara_bumdes','admin_bumdes']))
+                    @php $unit = $unitUsahas->first(); @endphp
+                    @if(auth()->user()->hasRole(['bendahara_bumdes','admin_bumdes']))
                         <select name="unit_usaha_id" class="form-control">
                             <option value="">-- BUMDes Pusat --</option>
                             @foreach($unitUsahas as $unit)
@@ -42,7 +42,6 @@
                             @endforeach
                         </select>
                     @else
-                        @php $unit = $unitUsahas->first(); @endphp
                         <input type="text" class="form-control" value="{{ $unit->nama_unit ?? 'BUMDes Pusat' }}" disabled>
                         <input type="hidden" name="unit_usaha_id" value="{{ $unit->unit_usaha_id ?? '' }}">
                     @endif
@@ -145,8 +144,8 @@ $(document).ready(function() {
             totalDebit += parseNumber($(this).find('.debit').val());
             totalKredit += parseNumber($(this).find('.kredit').val());
         });
-        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
-        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
+        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
+        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
 
         if (totalDebit === totalKredit && totalDebit > 0) {
             $('#status-jurnal').removeClass('badge-danger').addClass('badge-success').text('Seimbang');

@@ -18,7 +18,6 @@
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
-            <br>
             <div class="small mt-1">
                 <strong>Total Debit:</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
                 <strong>Total Kredit:</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
@@ -28,62 +27,49 @@
     </div>
     <div class="card-body">
         {{-- Filter Section --}}
-<form method="GET" class="mb-3">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-2">
-            <label class="form-label">Tahun</label>
-            <select name="year" class="form-control">
-                <option value="">Semua</option>
-                @foreach($years as $year)
-                    <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
-                        {{ $year }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Tanggal Mulai</label>
-            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Tanggal Akhir</label>
-            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Status</label>
-            <select name="status" class="form-control">
-                <option value="">Semua</option>
-                <option value="seimbang" {{ request('status')=='seimbang'?'selected':'' }}>Seimbang</option>
-                <option value="tidak_seimbang" {{ request('status')=='tidak_seimbang'?'selected':'' }}>Tidak Seimbang</option>
-            </select>
-        </div>
-        @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
-        <div class="col-md-2">
-            <label class="form-label">Unit Usaha</label>
-            <select name="unit_usaha_id" class="form-control">
-                <option value="">Semua</option>
-                @foreach($unitUsahas as $unit)
-                    <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id')==$unit->unit_usaha_id?'selected':'' }}>
-                        {{ $unit->nama_unit }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        @endif
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-filter"></i> Filter
-            </button>
-        </div>
-    </div>
-</form>
-
-
-        {{-- Export Buttons --}}
-        <div class="mb-3">
-            <a href="#" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export Excel</a>
-            <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf"></i> Export PDF</a>
-        </div>
+        <form method="GET" class="mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Tahun</label>
+                    <select name="year" class="form-control">
+                        <option value="">Semua</option>
+                        @foreach($years as $year)
+                            <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Mulai</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Akhir</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status Balance</label>
+                    <select name="status" class="form-control">
+                        <option value="">Semua</option>
+                        <option value="seimbang" {{ request('status')=='seimbang'?'selected':'' }}>Seimbang</option>
+                        <option value="tidak_seimbang" {{ request('status')=='tidak_seimbang'?'selected':'' }}>Tidak Seimbang</option>
+                    </select>
+                </div>
+                @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
+                <div class="col-md-2">
+                    <label class="form-label">Unit Usaha</label>
+                    <select name="unit_usaha_id" class="form-control">
+                        <option value="">Semua</option>
+                        @foreach($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id')==$unit->unit_usaha_id?'selected':'' }}>{{ $unit->nama_unit }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filter</button>
+                </div>
+            </div>
+        </form>
 
         {{-- Table Section --}}
         <div class="table-responsive">
@@ -101,20 +87,40 @@
                     @forelse ($jurnals as $jurnal)
                         <tr class="table-primary">
                             <td><strong>{{ \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('d M Y') }}</strong></td>
-                            <td><strong>{{ $jurnal->deskripsi }}</strong></td>
+                            <td>
+    <strong>{{ $jurnal->deskripsi }}</strong>
+    <br>
+    @switch($jurnal->status)
+        @case('menunggu')
+            <span class="badge badge-warning">Menunggu</span>
+            @break
+        @case('disetujui')
+            <span class="badge badge-success">Disetujui</span>
+            @break
+        @case('ditolak')
+            <span class="badge badge-danger" 
+                  @if($jurnal->rejected_reason) 
+                      data-toggle="tooltip" 
+                      data-placement="top" 
+                      title="Alasan: {{ $jurnal->rejected_reason }}"
+                  @endif>
+                Ditolak
+            </span>
+            @break
+    @endswitch
+</td>
+
                             <td></td>
                             <td></td>
                             <td class="text-center">
-                                <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus Jurnal">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                @if($jurnal->status !== 'disetujui')
+                                    <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs"><i class="fas fa-edit"></i></a>
+                                    <form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                         @foreach ($jurnal->detailJurnals as $detail)
@@ -139,9 +145,15 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">
-            {{ $jurnals->links() }}
-        </div>
+        <div class="mt-3">{{ $jurnals->links() }}</div>
     </div>
 </div>
+@stop
+
+@section('js')
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>
 @stop

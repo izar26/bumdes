@@ -16,7 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('approved_by')->nullable()->after('status');
             $table->timestamp('approved_at')->nullable()->after('approved_by');
             $table->text('rejected_reason')->nullable()->after('approved_at');
-
             $table->foreign('approved_by')
                   ->references('user_id')->on('users')
                   ->onDelete('set null');
