@@ -26,7 +26,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ session('tab') === 'personal' ? 'active' : '' }}" href="#personal" data-toggle="tab">
-                                <i class="fas fa-id-card mr-2"></i>Data Diri 
+                                <i class="fas fa-id-card mr-2"></i>Data Diri
                             </a>
                         </li>
                     </ul>
@@ -256,5 +256,7 @@
                  $('a[href="#' + invalidTabId + '"]').focus();
             }
         });
+    console.log(@json($user->anggota?->photo ? asset('storage/' . $user->anggota->photo) : asset('vendor/adminlte/dist/img/avatar.png')));
+
     </script>
 @stop

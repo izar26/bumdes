@@ -80,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('bungdes', [BungdesController::class, 'index'])->name('bungdes.index');
             Route::put('bungdes', [BungdesController::class, 'update'])->name('bungdes.update');
             Route::resource('user', UserController::class)->names('user');
+            Route::resource('manajemen-data/user', UserController::class)->names('admin.manajemen-data.user');
             Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
             Route::resource('unit-usaha', UnitUsahaController::class)->except(['show'])->names('unit_usaha');
             Route::resource('anggota', AnggotaController::class)->except(['show'])->names('anggota');

@@ -37,6 +37,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 5%">No.</th>
+                                <th>Foto</th>
                                 <th>Nama Lengkap</th>
                                 <th>Email Akun</th>
                                 <th>NIK</th>
@@ -46,50 +47,58 @@
                                 <th style="width: 5%">Edit</th>
                             </tr>
                         </thead>
-                       <tbody>
-    @foreach ($anggotas as $index => $anggota)
-        <tr>
-            <td>{{ $index + 1 }}</td>
-            <td>{{ $anggota->nama_lengkap }}</td>
-            <td>{{ optional($anggota->user)->email ?? '-' }}</td>
-            <td>{{ $anggota->nik ?? '-' }}</td>
-            <td>{{ $anggota->no_telepon ?? '-' }}</td>
-            <td>{{ optional($anggota->unitUsaha)->nama_unit ?? '-' }}</td>
-            <td>
-                @if ($anggota->user && $anggota->user->hasRole('admin_bumdes'))
-                    <span class="badge badge-warning">
-                        {{ Str::title(str_replace('_', ' ', $anggota->user->getRoleNames()->first())) }}
-                    </span>
-                @elseif ($anggota->user)
-                    <form action="{{ route('admin.manajemen-data.anggota.updateRole', $anggota->user->user_id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="input-group">
-                            <select name="role" class="form-control">
-                                @foreach($rolesOptions as $role)
-                                    <option value="{{ $role }}" @if($anggota->user->hasRole($role)) selected @endif>
-                                        {{ Str::title(str_replace('_', ' ', $role)) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-success">Ubah</button>
-                            </div>
-                        </div>
-                    </form>
-                @else
-                    <span class="text-danger">Tidak ada akun</span>
-                @endif
-            </td>
-            <td>
-                      <a href="{{ route('admin.manajemen-data.anggota.edit', $anggota->anggota_id) }}" class="btn btn-sm btn-info">
-        <i class="fas fa-edit"></i>
-    </a>
-            </td>
-        </tr>
-    @endforeach
-</tbody>
-
+                        <tbody>
+                            @foreach ($anggotas as $index => $anggota)
+                            <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td class="text-center">
+                                    @php
+                                        // REVISI DI SINI: Mendapatkan URL gambar
+                                        $photoUrl = $anggota->photo
+                                                    ? Storage::url($anggota->photo)
+                                                    : 'https://ui-avatars.com/api/?name=' . urlencode($anggota->nama_lengkap) . '&background=007bff&color=fff&size=50';
+                                    @endphp
+                                    <img src="{{ $photoUrl }}" alt="Foto Profil" class="img-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                </td>
+                                <td>{{ $anggota->nama_lengkap ?? '-' }}</td>
+                                <td>{{ optional($anggota->user)->email ?? '-' }}</td>
+                                <td>{{ $anggota->nik ?? '-' }}</td>
+                                <td>{{ $anggota->no_telepon ?? '-' }}</td>
+                                <td>{{ optional($anggota->unitUsaha)->nama_unit ?? '-' }}</td>
+                                <td>
+                                    @if ($anggota->user && $anggota->user->hasRole('admin_bumdes'))
+                                        <span class="badge badge-warning">
+                                            {{ Str::title(str_replace('_', ' ', $anggota->user->getRoleNames()->first())) }}
+                                        </span>
+                                    @elseif ($anggota->user)
+                                        <form action="{{ route('admin.manajemen-data.anggota.updateRole', $anggota->user->user_id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="input-group">
+                                                <select name="role" class="form-control">
+                                                    @foreach($rolesOptions as $role)
+                                                        <option value="{{ $role }}" @if($anggota->user->hasRole($role)) selected @endif>
+                                                            {{ Str::title(str_replace('_', ' ', $role)) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <div class="input-group-append">
+                                                    <button type="submit" class="btn btn-success">Ubah</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    @else
+                                        <span class="text-danger">Tidak ada akun</span>
+                                    @endif
+                                </td>
+                                <td>
+                                     <a href="{{ route('admin.manajemen-data.anggota.edit', $anggota->anggota_id) }}" class="btn btn-sm btn-info">
+                                         <i class="fas fa-edit"></i>
+                                     </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -103,7 +112,7 @@
             $('#manajemen-anggota-table').DataTable({
                 "paging": true,
                 "lengthChange": true,
-                "searching": true,
+                "searching": false,
                 "ordering": true,
                 "info": true,
                 "autoWidth": false,
@@ -112,4 +121,5 @@
         });
     </script>
 @endpush
+
 @section('plugins.Datatables', true)

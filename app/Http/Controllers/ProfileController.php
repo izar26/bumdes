@@ -76,7 +76,7 @@ class ProfileController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.profile.edit')->with(['success' => 'Informasi akun berhasil diperbarui.', 'tab' => 'account']);
+            return redirect()->route('profile.edit')->with(['success' => 'Informasi akun berhasil diperbarui.', 'tab' => 'account']);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with(['error' => 'Gagal memperbarui akun: ' . $e->getMessage(), 'tab' => 'account']);
@@ -120,7 +120,7 @@ class ProfileController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.profile.edit')->with(['success' => 'Informasi personal berhasil diperbarui.', 'tab' => 'personal']);
+            return redirect()->route('profile.edit')->with(['success' => 'Informasi personal berhasil diperbarui.', 'tab' => 'personal']);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with(['error' => 'Gagal memperbarui informasi personal: ' . $e->getMessage(), 'tab' => 'personal']);

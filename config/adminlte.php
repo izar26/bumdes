@@ -401,7 +401,9 @@ return [
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
+
 
         ],
     ],
@@ -428,6 +430,23 @@ return [
     ],
         ],
     ],
+
+
+    [
+        'header' => 'MANAJEMEN ASET',
+        'can'    => 'manajer_unit_usaha',
+    ],
+    [
+        'text' => 'Laporan',
+        'icon' => 'fas fa-fw fa-file-alt',
+        'can'  => 'manajer_unit_usaha',
+        'submenu' => [
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
+            ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
+            ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
+        ]
+        ],
 
 
 
