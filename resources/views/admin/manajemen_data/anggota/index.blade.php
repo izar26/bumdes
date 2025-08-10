@@ -25,9 +25,11 @@
                 <div class="card-header">
                     <h3 class="card-title">Daftar Anggota</h3>
                     <div class="card-tools">
-                        <a href="{{ route('admin.manajemen-data.anggota.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Tambah Anggota Baru
-                        </a>
+                        @can('admin_bumdes')
+                            <a href="{{ route('admin.manajemen-data.anggota.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Tambah Anggota Baru
+                            </a>
+                        @endcan
                     </div>
                 </div>
                 <div class="card-body">
@@ -44,49 +46,50 @@
                                 <th style="width: 5%">Edit</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach ($users as $index => $user)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $user->anggota->nama_lengkap ?? $user->name }}</td>
-                                <td>{{ $user->email }}</td>
-                                <td>{{ $user->anggota->nik ?? '-' }}</td>
-                                <td>{{ $user->anggota->no_telepon ?? '-' }}</td>
-                                <td>{{ $user->anggota->unitUsaha->nama_unit_usaha ?? '-' }}</td>
-                                <td>
-                                    @if ($user->hasRole('admin_bumdes'))
-                                        {{-- Jika user adalah admin_bumdes, tampilkan role sebagai teks biasa --}}
-                                        <span class="badge badge-warning">
-                                            {{ Str::title(str_replace('_', ' ', $user->getRoleNames()->first())) }}
-                                        </span>
-                                    @else
-                                        {{-- Jika bukan admin_bumdes, tampilkan form untuk mengubah role --}}
-                                        <form action="{{ route('admin.manajemen-data.anggota.updateRole', $user->user_id) }}" method="POST">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="input-group">
-                                                <select name="role" class="form-control">
-                                                    @foreach($rolesOptions as $role)
-                                                        <option value="{{ $role }}" @if($user->hasRole($role)) selected @endif>
-                                                            {{ Str::title(str_replace('_', ' ', $role)) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                <div class="input-group-append">
-                                                    <button type="submit" class="btn btn-success">Ubah</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    @endif
-                                </td>
-                                <td>
-                                     <a href="{{ route('admin.manajemen-data.anggota.edit', $user->user_id) }}" class="btn btn-sm btn-info">
-                                         <i class="fas fa-edit"></i>
-                                     </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
+                       <tbody>
+    @foreach ($anggotas as $index => $anggota)
+        <tr>
+            <td>{{ $index + 1 }}</td>
+            <td>{{ $anggota->nama_lengkap }}</td>
+            <td>{{ optional($anggota->user)->email ?? '-' }}</td>
+            <td>{{ $anggota->nik ?? '-' }}</td>
+            <td>{{ $anggota->no_telepon ?? '-' }}</td>
+            <td>{{ optional($anggota->unitUsaha)->nama_unit ?? '-' }}</td>
+            <td>
+                @if ($anggota->user && $anggota->user->hasRole('admin_bumdes'))
+                    <span class="badge badge-warning">
+                        {{ Str::title(str_replace('_', ' ', $anggota->user->getRoleNames()->first())) }}
+                    </span>
+                @elseif ($anggota->user)
+                    <form action="{{ route('admin.manajemen-data.anggota.updateRole', $anggota->user->user_id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="input-group">
+                            <select name="role" class="form-control">
+                                @foreach($rolesOptions as $role)
+                                    <option value="{{ $role }}" @if($anggota->user->hasRole($role)) selected @endif>
+                                        {{ Str::title(str_replace('_', ' ', $role)) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-success">Ubah</button>
+                            </div>
+                        </div>
+                    </form>
+                @else
+                    <span class="text-danger">Tidak ada akun</span>
+                @endif
+            </td>
+            <td>
+                      <a href="{{ route('admin.manajemen-data.anggota.edit', $anggota->anggota_id) }}" class="btn btn-sm btn-info">
+        <i class="fas fa-edit"></i>
+    </a>
+            </td>
+        </tr>
+    @endforeach
+</tbody>
+
                     </table>
                 </div>
             </div>
@@ -108,4 +111,5 @@
             });
         });
     </script>
-@endpush    
+@endpush
+@section('plugins.Datatables', true)

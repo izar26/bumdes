@@ -9,7 +9,7 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        {{-- Alert Sukses / Error --}}
+        {{-- Alert --}}
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -29,36 +29,37 @@
 
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('admin.manajemen-data.anggota.update', $user->user_id) }}"
+                {{-- Perbaikan: form action menggunakan anggota_id --}}
+                <form action="{{ route('admin.manajemen-data.anggota.update', $anggota->anggota_id) }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
-                    {{-- Nama Lengkap --}}
                     <div class="form-group">
                         <label>Nama Lengkap</label>
                         <input type="text" name="nama_lengkap" class="form-control"
-                               value="{{ old('nama_lengkap', $user->anggota->nama_lengkap ?? $user->name) }}" required>
+                               value="{{ old('nama_lengkap', $anggota->nama_lengkap) }}" required>
                     </div>
+
 
                     {{-- NIK --}}
                     <div class="form-group">
                         <label>NIK</label>
                         <input type="text" name="nik" class="form-control"
-                               value="{{ old('nik', $user->anggota->nik) }}" required>
+                               value="{{ old('nik', $anggota->nik) }}" required>
                     </div>
 
                     {{-- Alamat --}}
                     <div class="form-group">
                         <label>Alamat</label>
-                        <textarea name="alamat" class="form-control" rows="3" required>{{ old('alamat', $user->anggota->alamat) }}</textarea>
+                        <textarea name="alamat" class="form-control" rows="3" required>{{ old('alamat', $anggota->alamat) }}</textarea>
                     </div>
 
                     {{-- No Telepon --}}
                     <div class="form-group">
                         <label>No Telepon</label>
                         <input type="text" name="no_telepon" class="form-control"
-                               value="{{ old('no_telepon', $user->anggota->no_telepon) }}" required>
+                               value="{{ old('no_telepon', $anggota->no_telepon) }}" required>
                     </div>
 
                     {{-- Jenis Kelamin --}}
@@ -66,22 +67,25 @@
                         <label>Jenis Kelamin</label>
                         <select name="jenis_kelamin" class="form-control" required>
                             <option value="">-- Pilih --</option>
-                            <option value="Laki-laki" {{ old('jenis_kelamin', $user->anggota->jenis_kelamin) == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
-                            <option value="Perempuan" {{ old('jenis_kelamin', $user->anggota->jenis_kelamin) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                            <option value="Laki-laki" {{ old('jenis_kelamin', $anggota->jenis_kelamin) == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                            <option value="Perempuan" {{ old('jenis_kelamin', $anggota->jenis_kelamin) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                         </select>
                     </div>
 
                     {{-- Role/Jabatan --}}
                     <div class="form-group">
                         <label>Jabatan / Role</label>
-                        <select name="role" class="form-control" required>
+                        <select name="role" class="form-control">
                             <option value="">-- Pilih Jabatan --</option>
                             @foreach ($roles as $role)
-                                <option value="{{ $role->name }}" {{ $user->roles->contains('name', $role->name) ? 'selected' : '' }}>
-                                    {{ ucwords(str_replace('_', ' ', $role->name)) }}
-                                </option>
+                               <option value="{{ $role->name }}"
+    {{ optional($anggota->user)->hasRole($role->name) ? 'selected' : '' }}>
+    {{ ucwords(str_replace('_', ' ', $role->name)) }}
+</option>
+
                             @endforeach
                         </select>
+                        <small class="text-muted">Kosongkan jika anggota belum memiliki akun.</small>
                     </div>
 
                     {{-- Unit Usaha --}}
@@ -90,7 +94,7 @@
                         <select name="unit_usaha_id" class="form-control">
                             <option value="">-- Tidak Ada --</option>
                             @foreach ($unitUsahas as $unit)
-                                <option value="{{ $unit->unit_usaha_id }}" {{ optional($user->anggota)->unit_usaha_id == $unit->unit_usaha_id ? 'selected' : '' }}>
+                                <option value="{{ $unit->unit_usaha_id }}" {{ $anggota->unit_usaha_id == $unit->unit_usaha_id ? 'selected' : '' }}>
                                     {{ $unit->nama_unit }}
                                 </option>
                             @endforeach
@@ -101,26 +105,27 @@
                     <div class="form-group">
                         <label>Status Anggota</label>
                         <select name="status_anggota" class="form-control" required>
-                            <option value="Aktif" {{ optional($user->anggota)->status_anggota == 'Aktif' ? 'selected' : '' }}>Aktif</option>
-                            <option value="Nonaktif" {{ optional($user->anggota)->status_anggota == 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                            <option value="Aktif" {{ $anggota->status_anggota == 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                            <option value="Nonaktif" {{ $anggota->status_anggota == 'Nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                         </select>
                     </div>
 
                     {{-- Foto --}}
                     <div class="form-group">
                         <label>Foto Profil</label><br>
-                        @if(optional($user->anggota)->photo)
-                            <img src="{{ asset('storage/' . $user->anggota->photo) }}" class="img-thumbnail mb-2" width="120">
+                        @if($anggota->photo)
+                            <img src="{{ asset('storage/' . $anggota->photo) }}" class="img-thumbnail mb-2" width="120">
                         @endif
                         <input type="file" name="photo" class="form-control">
                         <small class="text-muted">Kosongkan jika tidak ingin mengubah foto.</small>
                     </div>
 
-                    {{-- Email --}}
+                    {{-- Email (Opsional) --}}
                     <div class="form-group">
                         <label>Email Akun</label>
                         <input type="email" name="email" class="form-control"
-                               value="{{ old('email', $user->email) }}" required>
+                               value="{{ old('email', optional($anggota->user)->email) }}">
+                        <small class="text-muted">Isi jika ingin membuat/mengubah akun.</small>
                     </div>
 
                     {{-- Password (Opsional) --}}
@@ -135,11 +140,9 @@
                         <button type="submit" class="btn btn-success">Simpan Perubahan</button>
                         <a href="{{ route('admin.manajemen-data.anggota.index') }}" class="btn btn-secondary">Kembali</a>
                     </div>
-
                 </form>
             </div>
         </div>
     </div>
 </div>
 @stop
-    

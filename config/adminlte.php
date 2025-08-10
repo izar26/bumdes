@@ -134,10 +134,10 @@ return [
     |
     */
 
-    'usermenu_enabled' => true,
+    'usermenu_enabled' => false,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => true,
+    'usermenu_image' => false,
     'usermenu_desc' => false,
     'usermenu_profile_url' => false,
 
@@ -317,14 +317,6 @@ return [
         'icon'         => 'fas fa-fw fa-user-circle',
         'topnav_right' => true,
     ],
-    [
-        'text'         => 'Logout',
-        'url'          => 'logout',
-        'icon'         => 'fas fa-sign-out-alt',
-        'method'       => 'post',
-        'topnav_right' => true,
-        'classes'      => 'text-danger logout-trigger',
-    ],
 
     // Sidebar items
     // [
@@ -338,7 +330,7 @@ return [
     // Akses: Admin BUMDes & Direktur BUMDes
     [
         'header' => 'ADMIN PROFIL DESA',
-        'can'    => ['admin_bumdes'], // Menggunakan array untuk Gate
+        'can'    => 'admin_bumdes', // Menggunakan array untuk Gate
     ],
     [
         'text'  => 'Profil Desa',
@@ -405,9 +397,9 @@ return [
     [
         'text'    => 'Jurnal & Keuangan',
         'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => ['admin_unit_usaha', ],
+        'can'     => 'admin_unit_usaha',
         'submenu' => [
-            ['text' => 'Buat Jurnal Baf', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
+            ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
             ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index'],
 

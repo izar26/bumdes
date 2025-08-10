@@ -25,6 +25,8 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
+        'photo',
+        'is_profile_complete', // <-- Tambahkan ini
     ];
 
     protected $hidden = [
@@ -42,19 +44,16 @@ class User extends Authenticatable
         return $this->hasOne(Anggota::class, 'user_id', 'user_id');
     }
 
-// app/Models/User.php
+    public function unitUsahas()
+    {
+        return $this->belongsToMany(UnitUsaha::class, 'unit_usaha_user', 'user_id', 'unit_usaha_id');
+    }
 
-public function unitUsahas()
-{
-    // Parameter: Model yang terkait, nama tabel perantara, foreign key dari model ini di tabel perantara, foreign key dari model terkait di tabel perantara
-    return $this->belongsToMany(UnitUsaha::class, 'unit_usaha_user', 'user_id', 'unit_usaha_id');
-}// Tambahkan metode baru untuk peran direktur
     public function isDirekturBumdes()
     {
         return $this->hasRole('direktur_bumdes');
     }
 
-    // Metode isXXX() lainnya
     public function isAdminBumdes()
     {
         return $this->hasRole('admin_bumdes');
@@ -102,8 +101,9 @@ public function unitUsahas()
 
     public function adminlte_image()
     {
-        if ($this->anggota && $this->anggota->photo && Storage::disk('public')->exists('photos/' . $this->anggota->photo)) {
-            return asset('storage/photos/' . $this->anggota->photo);
+        $photoPath = $this->anggota->photo ?? null;
+        if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+            return asset('storage/' . $photoPath);
         }
 
         return asset('vendor/adminlte/dist/img/avatar.png');

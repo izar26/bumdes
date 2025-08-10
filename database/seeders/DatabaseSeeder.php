@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
             HomepageSettingSeeder::class,
             BungdesSeeder::class,
             SyncUsersToAnggotaSeeder::class,
-            AnggaranSeeder::class,
         ]);
     }
 }

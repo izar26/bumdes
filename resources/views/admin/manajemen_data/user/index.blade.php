@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    <a href="{{ route('admin.manajemen-data.user.create') }}" class="btn btn-primary mb-3">Tambah Anggota Baru</a>
+    <a href="{{ route('admin.manajemen-data.user.create') }}" class="btn btn-primary mb-3">Tambah User</a>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

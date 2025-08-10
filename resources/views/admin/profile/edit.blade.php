@@ -4,11 +4,13 @@
 
 @section('content_header')
     <h1>User Profile</h1>
-    <div class="float-right">
-        <span class="badge badge-{{ $user->is_profile_complete ? 'success' : 'warning' }}">
-            {{ $user->is_profile_complete ? 'Profile Complete' : 'Profile Incomplete' }}
-        </span>
-    </div>
+    @if ($user->anggota)
+        <div class="float-right">
+            <span class="badge badge-{{ $user->anggota->is_profile_complete ? 'success' : 'warning' }}">
+                {{ $user->anggota->is_profile_complete ? 'Profile Complete' : 'Profile Incomplete' }}
+            </span>
+        </div>
+    @endif
 @stop
 
 @section('content')
@@ -19,12 +21,12 @@
                     <ul class="nav nav-pills nav-fill">
                         <li class="nav-item">
                             <a class="nav-link {{ session('tab') === 'account' || !session('tab') ? 'active' : '' }}" href="#account" data-toggle="tab">
-                                <i class="fas fa-user-circle mr-2"></i>Account Settings
+                                <i class="fas fa-user-circle mr-2"></i>Akun Setting
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ session('tab') === 'personal' ? 'active' : '' }}" href="#personal" data-toggle="tab">
-                                <i class="fas fa-id-card mr-2"></i>Personal Information
+                                <i class="fas fa-id-card mr-2"></i>Data Diri 
                             </a>
                         </li>
                     </ul>
@@ -39,7 +41,8 @@
                                     @include('components.status-alerts', ['tab' => 'account'])
                                     <div class="text-center mb-4">
                                         <div class="position-relative d-inline-block">
-                                            <img src="{{ $user->photo ? asset('storage/photos/' . $user->photo) : asset('vendor/adminlte/dist/img/avatar.png') }}"
+                                            {{-- Path foto diperbaiki untuk mengambil dari relasi anggota --}}
+                                            <img src="{{ $user->anggota?->photo ? asset('storage/' . $user->anggota->photo) : asset('vendor/adminlte/dist/img/avatar.png') }}"
                                                  class="profile-user-img img-fluid img-circle shadow-lg"
                                                  alt="User Photo"
                                                  id="profileImagePreview"
@@ -119,7 +122,7 @@
                         </div>
                         {{-- Personal Information Tab --}}
                         <div class="tab-pane {{ session('tab') === 'personal' ? 'active' : '' }}" id="personal">
-                            <form action="{{ route('profile.update-personal') }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('profile.update-personal') }}" method="POST">
                                 @csrf
                                 <div class="card-body">
                                     @include('components.status-alerts', ['tab' => 'personal'])
@@ -131,7 +134,7 @@
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text bg-primary"><i class="fas fa-id-card text-white"></i></span>
                                                     </div>
-                                                    <input type="text" name="nik" id="nik" class="form-control @error('nik') is-invalid @enderror" value="{{ old('nik', $anggota->nik) }}" placeholder="Enter 16-digit National ID" required>
+                                                    <input type="text" name="nik" id="nik" class="form-control @error('nik') is-invalid @enderror" value="{{ old('nik', $user->anggota->nik ?? '') }}" placeholder="Enter 16-digit National ID" required>
                                                 </div>
                                                 @error('nik')
                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -146,8 +149,8 @@
                                                         <span class="input-group-text bg-primary"><i class="fas fa-venus-mars text-white"></i></span>
                                                     </div>
                                                     <select name="jenis_kelamin" id="jenis_kelamin" class="form-control @error('jenis_kelamin') is-invalid @enderror" required>
-                                                        <option value="Laki-laki" {{ old('jenis_kelamin', $anggota->jenis_kelamin) == 'Laki-laki' ? 'selected' : '' }}>Laki-Laki</option>
-                                                        <option value="Perempuan" {{ old('jenis_kelamin', $anggota->jenis_kelamin) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                                                        <option value="Laki-laki" {{ old('jenis_kelamin', $user->anggota->jenis_kelamin ?? '') == 'Laki-laki' ? 'selected' : '' }}>Laki-Laki</option>
+                                                        <option value="Perempuan" {{ old('jenis_kelamin', $user->anggota->jenis_kelamin ?? '') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                                                     </select>
                                                 </div>
                                                 @error('jenis_kelamin')
@@ -162,7 +165,7 @@
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text bg-primary"><i class="fas fa-map-marker-alt text-white"></i></span>
                                             </div>
-                                            <textarea name="alamat" id="alamat" class="form-control @error('alamat') is-invalid @enderror" placeholder="Enter complete address" required>{{ old('alamat', $anggota->alamat) }}</textarea>
+                                            <textarea name="alamat" id="alamat" class="form-control @error('alamat') is-invalid @enderror" placeholder="Enter complete address" required>{{ old('alamat', $user->anggota->alamat ?? '') }}</textarea>
                                         </div>
                                         @error('alamat')
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -171,12 +174,12 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="no_telepon" class="font-weight-bold">Nomber</label>
+                                                <label for="no_telepon" class="font-weight-bold">Nomor Telepon</label>
                                                 <div class="input-group">
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text bg-primary"><i class="fas fa-phone text-white"></i></span>
                                                     </div>
-                                                    <input type="text" name="no_telepon" id="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror" value="{{ old('no_telepon', $anggota->no_telepon) }}" placeholder="Example: 081234567890" required>
+                                                    <input type="text" name="no_telepon" id="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror" value="{{ old('no_telepon', $user->anggota->no_telepon ?? '') }}" placeholder="Example: 081234567890" required>
                                                 </div>
                                                 @error('no_telepon')
                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -194,51 +197,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    @if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha']))
-                                        <div class="form-group">
-                                            <label for="unit_usaha_id" class="font-weight-bold">Business Unit</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text bg-primary"><i class="fas fa-store text-white"></i></span>
-                                                </div>
-                                                <select name="unit_usaha_id" id="unit_usaha_id" class="form-control @error('unit_usaha_id') is-invalid @enderror" {{ $anggota->unit_usaha_id ? 'disabled' : '' }}>
-                                                    <option value="">Select Business Unit</option>
-                                                    @foreach($unitUsahas as $unitUsaha)
-                                                        <option value="{{ $unitUsaha->unit_usaha_id }}" {{ old('unit_usaha_id', $anggota->unit_usaha_id) == $unitUsaha->unit_usaha_id ? 'selected' : '' }}>
-                                                            {{ $unitUsaha->nama_unit }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            @if($anggota->unit_usaha_id)
-                                                <input type="hidden" name="unit_usaha_id" value="{{ $anggota->unit_usaha_id }}">
-                                            @endif
-                                            @error('unit_usaha_id')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    @endif
-                                    <div class="form-group">
-                                        <label for="foto" class="font-weight-bold">Profile Photo</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input @error('foto') is-invalid @enderror" id="foto" name="foto">
-                                            <label class="custom-file-label" for="foto">Choose file...</label>
-                                        </div>
-                                        @error('foto')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                        @if($anggota->foto)
-                                            <div class="mt-2">
-                                                <label>Current Photo:</label>
-                                                <div class="d-flex align-items-center">
-                                                    <a href="{{ asset('storage/photos/' . $anggota->foto) }}" target="_blank" class="btn btn-sm btn-outline-primary mr-2">
-                                                        <i class="fas fa-eye mr-1"></i> View
-                                                    </a>
-                                                    <span class="text-muted">{{ $anggota->foto }}</span>
-                                                </div>
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-footer text-right bg-white">
@@ -270,6 +228,11 @@
                 }
             });
 
+            $('#photo_personal').change(function() {
+                 let fileName = $(this).val().split('\\').pop();
+                 $(this).next('.custom-file-label').html(fileName);
+            });
+
             $('.toggle-password').click(function() {
                 const input = $(this).closest('.input-group').find('input');
                 const icon = $(this).find('i');
@@ -282,57 +245,16 @@
                 }
             });
 
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-                const activeTab = $(e.target).attr('href').substring(1);
-                sessionStorage.setItem('activeTab', activeTab);
-            });
-
-            const activeTab = sessionStorage.getItem('activeTab') || 'account';
+            // Handle tab switching based on session or validation errors
+            const activeTab = "{{ session('tab') }}" || 'account';
             $('a[href="#' + activeTab + '"]').tab('show');
 
-            const firstInvalid = $('.tab-pane.active .is-invalid').first();
-            if (firstInvalid.length) {
-                firstInvalid.focus();
+            // Handle invalid fields after form submission
+            if ($('.tab-pane.active .is-invalid').length) {
+                 const invalidTabId = $('.is-invalid').closest('.tab-pane').attr('id');
+                 $('a[href="#' + invalidTabId + '"]').tab('show');
+                 $('a[href="#' + invalidTabId + '"]').focus();
             }
-
-            $('.custom-file-input').on('change', function() {
-                let fileName = $(this).val().split('\\').pop();
-                $(this).next('.custom-file-label').addClass("selected").html(fileName);
-            });
         });
     </script>
-@stop
-
-@section('css')
-    <style>
-        .profile-user-img {
-            transition: all 0.3s ease;
-        }
-        .profile-user-img:hover {
-            transform: scale(1.05);
-            border-color: #007bff !important;
-        }
-        .card-primary.card-outline {
-            border-top: 3px solid #007bff;
-        }
-        .nav-pills .nav-link.active {
-            background-color: #007bff;
-            font-weight: 600;
-        }
-        .input-group-text.bg-primary {
-            border-color: #007bff;
-        }
-        .btn-primary {
-            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
-        }
-        .toggle-password {
-            border-color: #ced4da;
-        }
-        .toggle-password:hover {
-            background-color: #e9ecef;
-        }
-        .custom-file-label::after {
-            content: "Browse";
-        }
-    </style>
 @stop

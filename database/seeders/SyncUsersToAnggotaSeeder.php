@@ -31,7 +31,7 @@ class SyncUsersToAnggotaSeeder extends Seeder
                 Anggota::create([
                     'user_id' => $user->user_id,
                     'nama_lengkap' => $user->name,
-                    'nik' => Str::random(16), // Atur NIK default atau acak jika belum ada
+                    'nik' => str_pad(strval(random_int(0, 9999999999999999)), 16, '0', STR_PAD_LEFT), 
                     'alamat' => 'Belum diisi',
                     'no_telepon' => 'Belum diisi',
                     'tanggal_daftar' => now(),
