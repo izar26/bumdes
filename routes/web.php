@@ -164,7 +164,12 @@ Route::middleware(['auth'])->group(function () {
             Route::post('keuangan/approval-jurnal/{jurnal}/approve', [ApprovalJurnalController::class, 'approve'])->name('approval-jurnal.approve');
     Route::post('keuangan/approval-jurnal/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('approval-jurnal.reject');
 
-
+ Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+            Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+            Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
+            Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
+        });
     });
 
 
@@ -172,10 +177,8 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE LAPORAN
     // Akses: admin_bumdes, bendahara_bumdes, kepala_desa, admin_unit_usaha, manajer_unit_usaha
     // =====================================================================================================================
-    Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes|admin_unit_usaha'])->group(function () {
+    Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes'])->group(function () {
         Route::prefix('laporan')->name('laporan.')->group(function () {
-            Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
-            Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
             Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
             Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
             Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');

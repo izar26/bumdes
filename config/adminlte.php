@@ -439,12 +439,12 @@ return [
     [
         'text' => 'Laporan',
         'icon' => 'fas fa-fw fa-file-alt',
-        'can'  => 'manajer_unit_usaha',
+
         'submenu' => [
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
-            ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
-            ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => ['manejer_unit_usaha', 'direktur_bumdes']],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => ['manejer_unit_usaha', 'direktur_bumdes']],
+            ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes','can' => 'manejer_unit_usaha'],
+            ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart', 'can' => 'manejer_unit_usaha'],
         ]
         ],
 
