@@ -24,16 +24,31 @@
                 </div>
             @endif
 
-            <div class="form-group">
-                <label for="akun_id">Pilih Akun</label>
-                <select class="form-control" id="akun_id" name="akun_id" required>
-                    <option value="">-- Pilih Akun --</option>
-                    @foreach ($akuns as $akun)
-                        <option value="{{ $akun->akun_id }}">
-                            [{{ $akun->kode_akun }}] {{ $akun->nama_akun }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label for="akun_id">Pilih Akun</label>
+                    <select class="form-control" id="akun_id" name="akun_id" required>
+                        <option value="">-- Pilih Akun --</option>
+                        @foreach ($akuns as $akun)
+                            <option value="{{ $akun->akun_id }}">
+                                [{{ $akun->kode_akun }}] {{ $akun->nama_akun }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- HANYA TAMPILKAN FILTER INI UNTUK BENDAHARA --}}
+                @if(auth()->user()->hasRole('bendahara_bumdes'))
+                <div class="form-group col-md-6">
+                    <label for="unit_usaha_id">Filter Unit Usaha</label>
+                    <select class="form-control" id="unit_usaha_id" name="unit_usaha_id">
+                        <option value="">-- Semua Unit Usaha --</option>
+                        @foreach ($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}">{{ $unit->nama_unit }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
             </div>
 
             <div class="row">
@@ -49,19 +64,19 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-eye"></i> Tampilkan Laporan
+                <i class="fas fa-filter"></i> Tampilkan Laporan
             </button>
         </div>
     </form>
 </div>
 @stop
 
-{{-- Tambahkan script untuk Select2 jika Anda menggunakannya agar dropdown lebih interaktif --}}
 @section('plugins.Select2', true)
 @section('js')
 <script>
     $(document).ready(function() {
         $('#akun_id').select2();
+        $('#unit_usaha_id').select2();
     });
 </script>
 @stop

@@ -186,11 +186,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
         Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
     });
+    
+    Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
+    Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
 });
 
 Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
     ->name('home')
     ->middleware('auth');
-
-     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
-        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
