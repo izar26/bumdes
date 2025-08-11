@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    <a href="{{ route('admin.manajemen-data.user.create') }}" class="btn btn-primary mb-3">Tambah Anggota Baru</a>
+    <a href="{{ route('admin.manajemen-data.user.create') }}" class="btn btn-primary mb-3">Tambah User</a>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -24,6 +24,7 @@
                 <th>Email</th>
                 <th>Jabatan</th>
                 <th>Status</th>
+                <th>Terakhir Kali Login</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -51,7 +52,10 @@
                     </form>
                 </td>
                 <td>
-                    <a href="{{ route('admin.manajemen-data.user.edit', $user->user_id) }}" class="btn btn-sm btn-warning">Edit Data Diri</a>
+                    {{ $user->last_login ? $user->last_login->format('d-m-Y H:i') : 'Belum pernah login' }}
+                </td>
+                <td>
+                    <a href="{{ route('admin.manajemen-data.user.edit', $user->user_id) }}" class="btn btn-sm btn-warning">Edit</a>
                     <form action="{{ route('admin.manajemen-data.user.destroy', $user->user_id) }}" method="POST" style="display:inline-block;">
                         @csrf
                         @method('DELETE')

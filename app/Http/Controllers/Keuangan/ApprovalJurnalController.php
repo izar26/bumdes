@@ -4,9 +4,14 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Http\Controllers\Controller;
 use App\Models\JurnalUmum;
+use App\Models\Akun;
+use App\Models\DetailJurnal;
+use App\Models\UnitUsaha;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Str;
 
 class ApprovalJurnalController extends Controller
 {
@@ -20,16 +25,23 @@ class ApprovalJurnalController extends Controller
 
         // Jika manajer unit: hanya jurnal dari admin_unit_usaha di unit yg dikelolanya
         if ($user->hasRole('manajer_unit_usaha')) {
-            $unitIds = $user->unitUsahas()->pluck('unit_usaha_id')->toArray();
+            // FIX: Menambahkan nama tabel 'unit_usahas' untuk menghilangkan ambiguitas
+            $unitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             $query->whereIn('unit_usaha_id', $unitIds);
             $query->whereHas('user', function ($q) {
-                $q->where('role', 'admin_unit_usaha');
+                // FIX: Menggunakan whereHas untuk role
+                $q->whereHas('roles', function ($q2) {
+                    $q2->where('name', 'admin_unit_usaha');
+                });
             });
         }
         // Jika admin BUMDes: hanya jurnal yang dibuat oleh bendahara_bumdes
-        elseif ($user->hasRole('admin_bumdes')) {
+        elseif ($user->hasRole('direktur_bumdes')) {
             $query->whereHas('user', function ($q) {
-                $q->where('role', 'bendahara_bumdes');
+                // FIX: Menggunakan whereHas untuk role
+                $q->whereHas('roles', function ($q2) {
+                    $q2->where('name', 'bendahara_bumdes');
+                });
             });
         } else {
             abort(403);
@@ -51,7 +63,8 @@ class ApprovalJurnalController extends Controller
 
         $jurnals = $query->paginate(15);
 
-        $unitUsahas = $user->hasRole('admin_bumdes') ? \App\Models\UnitUsaha::orderBy('nama_unit')->get() : collect();
+        // FIX: Ambil daftar unit usaha dengan benar untuk dropdown filter
+        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
 
         return view('keuangan.approval.index', compact('jurnals', 'unitUsahas'));
     }
@@ -63,20 +76,22 @@ class ApprovalJurnalController extends Controller
     {
         $user = Auth::user();
 
-        // only menunggu can be actioned
         if ($jurnal->status !== 'menunggu') {
             abort(403, 'Jurnal bukan dalam status menunggu.');
         }
 
         if ($user->hasRole('manajer_unit_usaha')) {
-            $unitIds = $user->unitUsahas()->pluck('unit_usaha_id')->toArray();
+            $unitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             if (!in_array($jurnal->unit_usaha_id, $unitIds)) abort(403, 'Anda bukan bagian unit ini.');
-            if (($jurnal->user->role ?? null) !== 'admin_unit_usaha') abort(403, 'Hanya jurnal yang dibuat oleh admin unit yang bisa diapprove di sini.');
+
+            // Cek role user pembuat jurnal
+            if (!$jurnal->user->hasRole('admin_unit_usaha')) abort(403, 'Hanya jurnal yang dibuat oleh admin unit yang bisa diapprove di sini.');
             return true;
         }
 
-        if ($user->hasRole('admin_bumdes')) {
-            if (($jurnal->user->role ?? null) !== 'bendahara_bumdes') abort(403, 'Hanya jurnal yang dibuat oleh bendahara yang bisa diapprove di sini.');
+        if ($user->hasRole('direktur_bumdes')) {
+            // Cek role user pembuat jurnal
+            if (!$jurnal->user->hasRole('bendahara_bumdes')) abort(403, 'Hanya jurnal yang dibuat oleh bendahara yang bisa diapprove di sini.');
             return true;
         }
 

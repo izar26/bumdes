@@ -32,6 +32,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('sekretaris_bumdes', fn($user) => $user->hasRole('sekretaris_bumdes'));
         Gate::define('admin_unit_usaha', fn($user) => $user->hasRole('admin_unit_usaha'));
         Gate::define('anggota', fn($user) => $user->hasRole('anggota'));
+        Gate::define('direktur_bumdes', fn($user) => $user->hasRole('direktur_bumdes'));
 
         // Gates untuk kombinasi peran menggunakan Spatie
         Gate::define('admin_bumdes_or_kepala_desa', fn($user) =>

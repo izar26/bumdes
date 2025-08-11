@@ -22,8 +22,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('roles')->get();
-        return view('admin.manajemen_data.user.index', compact('users'));
+        $users = User::with('roles', 'anggota')->get();
+        $rolesOptions = Role::pluck('name');
+        return view('admin.manajemen_data.user.index', compact('users', 'rolesOptions'));
     }
 
     /**
@@ -31,8 +32,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Tetap biarkan form ini untuk membuat user
-        return view('admin.manajemen_data.user.create');
+        $rolesOptions = Role::pluck('name', 'name');
+        // Filter roles agar 'anggota' menjadi default dan tidak bisa dipilih
+        $rolesOptions = $rolesOptions->except(['anggota']);
+        return view('admin.manajemen_data.user.create', compact('rolesOptions'));
     }
 
     /**
@@ -45,7 +48,7 @@ class UserController extends Controller
             'username' => 'nullable|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['nullable', 'string', Rule::in(Role::pluck('name'))],
+            'role' => ['required', 'string', Rule::in(Role::pluck('name'))],
         ]);
 
         if ($validator->fails()) {
@@ -59,23 +62,20 @@ class UserController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'is_active' => true,
+                'is_active' => false,
                 'is_profile_complete' => false,
             ]);
 
-            $role = $request->role ? $request->role : 'anggota_baru';
-            $user->assignRole($role);
+            $user->assignRole($request->input('role'));
 
-            if ($role === 'anggota' || $role === 'anggota_baru') {
-                Anggota::firstOrCreate(
-                    ['user_id' => $user->user_id],
-                    [
-                        'nama_lengkap' => $request->name,
-                        'tanggal_daftar' => now(),
-                        'status_anggota' => 'aktif',
-                        'is_profile_complete' => false,
-                    ]
-                );
+            if ($user->hasRole(['anggota', 'anggota_baru'])) {
+                Anggota::create([
+                    'user_id' => $user->user_id,
+                    'nama_lengkap' => $request->name,
+                    'tanggal_daftar' => now(),
+                    'status_anggota' => 'aktif',
+                    'is_profile_complete' => false,
+                ]);
             }
 
             DB::commit();
@@ -92,6 +92,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $user->load('anggota', 'roles');
         return view('admin.manajemen_data.user.show', compact('user'));
     }
 
@@ -116,17 +117,20 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'is_active' => 'nullable|boolean',
             'is_profile_complete' => 'nullable|boolean',
+            // Validasi data anggota
+            'anggota.nama_lengkap' => 'nullable|string|max:255',
+            'anggota.nik' => ['nullable', 'string', 'digits:16', Rule::unique('anggotas', 'nik')->ignore(optional($user->anggota)->anggota_id, 'anggota_id')],
+            'anggota.alamat' => 'nullable|string|max:500',
+            'anggota.no_telepon' => 'nullable|string|max:50',
+            'anggota.jenis_kelamin' => 'nullable|string|in:Laki-laki,Perempuan',
+            'anggota.jabatan' => 'nullable|string|max:100',
+            'anggota.status_anggota' => 'nullable|string|in:Aktif,Nonaktif',
+            'anggota.unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
         ]);
 
         DB::beginTransaction();
         try {
-            $userData = [
-                'name' => $request->name,
-                'username' => $request->username,
-                'email' => $request->email,
-                'is_active' => $request->boolean('is_active'),
-                'is_profile_complete' => $request->boolean('is_profile_complete'),
-            ];
+            $userData = $request->only(['name', 'username', 'email', 'is_active', 'is_profile_complete']);
 
             if ($request->filled('password')) {
                 $userData['password'] = Hash::make($request->password);
@@ -134,12 +138,8 @@ class UserController extends Controller
 
             $user->update($userData);
 
-            if ($user->hasRole('anggota') || $user->hasRole('anggota_baru')) {
-                $anggotaData = $request->input('anggota', []);
-                Anggota::updateOrCreate(
-                    ['user_id' => $user->user_id],
-                    $anggotaData
-                );
+            if ($user->hasRole(['anggota', 'anggota_baru']) && $user->anggota) {
+                $user->anggota->update($request->input('anggota', []));
             }
 
             DB::commit();
@@ -161,8 +161,6 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
-            $user->unitUsahas()->detach();
-
             if ($user->anggota) {
                 $user->anggota->delete();
             }
@@ -173,6 +171,43 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus pengguna: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mengubah peran (role) user.
+     */
+    public function updateRole(Request $request, User $user)
+    {
+        $request->validate([
+            'role' => ['required', 'string', Rule::in(Role::pluck('name'))],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $user->syncRoles([$request->input('role')]);
+
+            if ($user->hasRole(['anggota', 'anggota_baru'])) {
+                Anggota::firstOrCreate(
+                    ['user_id' => $user->user_id],
+                    [
+                        'nama_lengkap' => $user->name,
+                        'tanggal_daftar' => now(),
+                        'status_anggota' => 'aktif',
+                        'is_profile_complete' => false,
+                    ]
+                );
+            } else {
+                if ($user->anggota) {
+                    $user->anggota->delete();
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Jabatan berhasil diperbarui!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memperbarui jabatan: ' . $e->getMessage());
         }
     }
 
