@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Akun;
 use App\Models\DetailJurnal;
+use App\Models\UnitUsaha;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class NeracaController extends Controller
@@ -15,7 +17,16 @@ class NeracaController extends Controller
      */
     public function index()
     {
-        return view('laporan.neraca.index');
+        $user = Auth::user();
+        $unitUsahas = collect();
+        if ($user->hasRole('bendahara_bumdes')) {
+            // Bendahara bisa filter semua unit usaha
+            $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
+        } else {
+            // Peran lain hanya melihat unit usahanya sendiri
+            $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->get();
+        }
+        return view('laporan.neraca.index', compact('unitUsahas'));
     }
 
     /**
@@ -25,20 +36,31 @@ class NeracaController extends Controller
     {
         $request->validate([
             'report_date' => 'required|date',
+            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id'
         ]);
 
+        $user = Auth::user();
         $reportDate = Carbon::parse($request->report_date);
+        $unitUsahaId = $request->unit_usaha_id;
 
-        // Helper function untuk menghitung saldo akun
-        $calculateBalance = function($akunId, $endDate) {
-            $debit = DetailJurnal::where('akun_id', $akunId)
-                        ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
-                        ->where('jurnal_umums.tanggal_transaksi', '<=', $endDate)
-                        ->sum('detail_jurnals.debit');
-            $kredit = DetailJurnal::where('akun_id', $akunId)
-                        ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
-                        ->where('jurnal_umums.tanggal_transaksi', '<=', $endDate)
-                        ->sum('detail_jurnals.kredit');
+        // Base query yang sudah difilter berdasarkan status jurnal dan unit usaha
+        $baseQuery = DetailJurnal::join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+            ->where('jurnal_umums.status', 'disetujui') // Filter utama
+            ->where('jurnal_umums.tanggal_transaksi', '<=', $reportDate);
+
+        // Terapkan filter unit usaha berdasarkan peran
+        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            $managedUnitIds = $user->unitUsahas()->pluck('unit_usaha_id');
+            $baseQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
+        } elseif ($user->hasRole('bendahara_bumdes') && !empty($unitUsahaId)) {
+            $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+        }
+        
+        // Helper function untuk menghitung saldo akun dengan base query
+        $calculateBalance = function($akunId) use ($baseQuery) {
+            $query = (clone $baseQuery)->where('akun_id', $akunId);
+            $debit = (clone $query)->sum('detail_jurnals.debit');
+            $kredit = (clone $query)->sum('detail_jurnals.kredit');
             return ['debit' => $debit, 'kredit' => $kredit];
         };
 
@@ -47,7 +69,7 @@ class NeracaController extends Controller
         $asets = [];
         $totalAset = 0;
         foreach ($akunAsets as $akun) {
-            $balances = $calculateBalance($akun->akun_id, $reportDate);
+            $balances = $calculateBalance($akun->akun_id);
             $saldo = $balances['debit'] - $balances['kredit']; // Saldo normal Aset di Debit
             if ($saldo != 0) {
                 $asets[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
@@ -60,7 +82,7 @@ class NeracaController extends Controller
         $kewajibans = [];
         $totalKewajiban = 0;
         foreach ($akunKewajibans as $akun) {
-            $balances = $calculateBalance($akun->akun_id, $reportDate);
+            $balances = $calculateBalance($akun->akun_id);
             $saldo = $balances['kredit'] - $balances['debit']; // Saldo normal Kewajiban di Kredit
             if ($saldo != 0) {
                 $kewajibans[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
@@ -73,7 +95,7 @@ class NeracaController extends Controller
         $ekuitas = [];
         $totalModalAwal = 0;
         foreach ($akunEkuitas as $akun) {
-            $balances = $calculateBalance($akun->akun_id, $reportDate);
+            $balances = $calculateBalance($akun->akun_id);
             $saldo = $balances['kredit'] - $balances['debit']; // Saldo normal Ekuitas di Kredit
             if ($saldo != 0) {
                 $ekuitas[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
@@ -82,15 +104,19 @@ class NeracaController extends Controller
         }
         
         // Hitung Laba Ditahan (Total Pendapatan - Total Beban) s/d tanggal laporan
-        $totalPendapatan = Akun::where('tipe_akun', 'Pendapatan')->get()->reduce(function ($carry, $akun) use ($calculateBalance, $reportDate) {
-            $balances = $calculateBalance($akun->akun_id, $reportDate);
-            return $carry + ($balances['kredit'] - $balances['debit']);
-        }, 0);
+        $akunPendapatans = Akun::where('tipe_akun', 'Pendapatan')->get();
+        $totalPendapatan = 0;
+        foreach ($akunPendapatans as $akun) {
+            $balances = $calculateBalance($akun->akun_id);
+            $totalPendapatan += ($balances['kredit'] - $balances['debit']);
+        }
 
-        $totalBeban = Akun::where('tipe_akun', 'Beban')->get()->reduce(function ($carry, $akun) use ($calculateBalance, $reportDate) {
-            $balances = $calculateBalance($akun->akun_id, $reportDate);
-            return $carry + ($balances['debit'] - $balances['kredit']);
-        }, 0);
+        $akunBebans = Akun::where('tipe_akun', 'Beban')->get();
+        $totalBeban = 0;
+        foreach ($akunBebans as $akun) {
+            $balances = $calculateBalance($akun->akun_id);
+            $totalBeban += ($balances['debit'] - $balances['kredit']);
+        }
         
         $labaDitahan = $totalPendapatan - $totalBeban;
         $totalEkuitas = $totalModalAwal + $labaDitahan;

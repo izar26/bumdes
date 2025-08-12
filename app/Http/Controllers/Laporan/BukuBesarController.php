@@ -53,7 +53,8 @@ class BukuBesarController extends Controller
 
         // Query dasar untuk detail jurnal
         $baseQuery = DetailJurnal::where('akun_id', $akunId)
-            ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id');
+    ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+    ->where('jurnal_umums.status', 'disetujui');
 
         // Terapkan filter unit usaha berdasarkan peran
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {

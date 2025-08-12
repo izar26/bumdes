@@ -147,7 +147,8 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('jurnal-umum', JurnalUmumController::class);
         });
     });
-
+    
+    
 
 
     Route::middleware(['role:admin_unit_usaha|bendahara_bumdes'])->group(function () {
@@ -188,8 +189,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('perubahan-ekuitas', [PerubahanEkuitasController::class, 'index'])->name('perubahan-ekuitas.index');
             Route::post('perubahan-ekuitas', [PerubahanEkuitasController::class, 'generate'])->name('perubahan-ekuitas.generate');
 
-     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
-        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
+            Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
+            Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
         });
     });
 
@@ -197,6 +198,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
         Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
     });
+
+     Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+            Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+            Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
+            Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
+        });
     
     Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
