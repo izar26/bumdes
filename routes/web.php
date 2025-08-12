@@ -104,10 +104,10 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes'])->group(function () {
-        Route::prefix('bumdes/aset')->name('bumdes.aset.')->group(function () {
-            Route::resource('aset', AsetBUMDesController::class)->names('aset');
-            Route::get('penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('penyusutan');
-            Route::get('pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('pemeliharaan');
+        Route::prefix('bumdes/aset')->name('bumdes.')->group(function () {
+            Route::resource('aset', AsetBUMDesController::class);
+            Route::get('penyusutan', [AsetBUMDesController::class, 'penyusutan'])->name('aset.penyusutan');
+            Route::get('pemeliharaan', [AsetBUMDesController::class, 'pemeliharaan'])->name('aset.pemeliharaan');
         });
 
         Route::prefix('keuangan')->name('keuangan.')->group(function () {
@@ -163,9 +163,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:manajer_unit_usaha|direktur_bumdes'])->group(function () {
             Route::get('keuangan/approval-jurnal', [ApprovalJurnalController::class, 'index'])->name('approval-jurnal.index');
             Route::post('keuangan/approval-jurnal/{jurnal}/approve', [ApprovalJurnalController::class, 'approve'])->name('approval-jurnal.approve');
-    Route::post('keuangan/approval-jurnal/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('approval-jurnal.reject');
+            Route::post('keuangan/approval-jurnal/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('approval-jurnal.reject');
 
- Route::prefix('laporan')->name('laporan.')->group(function () {
+             Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
             Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
             Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
@@ -189,16 +189,22 @@ Route::middleware(['auth'])->group(function () {
             Route::get('perubahan-ekuitas', [PerubahanEkuitasController::class, 'index'])->name('perubahan-ekuitas.index');
             Route::post('perubahan-ekuitas', [PerubahanEkuitasController::class, 'generate'])->name('perubahan-ekuitas.generate');
 
+<<<<<<< HEAD
             Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
             Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
+=======
+     Route::get('arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
+        Route::post('arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
+        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
+>>>>>>> edaa02145d48900a4bf5cf1dcb88f3eee68a58ab
         });
     });
 
     // Rute Buku Besar untuk Manajer Unit Usaha di luar grup laporan
-        Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
-        Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
     });
 
+<<<<<<< HEAD
      Route::prefix('laporan')->name('laporan.')->group(function () {
             Route::get('buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
             Route::post('buku-besar', [BukuBesarController::class, 'generate'])->name('buku-besar.generate');
@@ -206,6 +212,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
         });
     
+=======
+>>>>>>> edaa02145d48900a4bf5cf1dcb88f3eee68a58ab
     Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
 

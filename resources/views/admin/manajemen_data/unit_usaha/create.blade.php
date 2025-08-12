@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    <div class="row">
+    <div class="d-flex justify-content-center">
         <div class="col-md-8">
             <div class="card card-primary">
                 <div class="card-header">
