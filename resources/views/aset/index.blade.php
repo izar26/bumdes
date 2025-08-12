@@ -43,6 +43,12 @@
                         <th>Jenis Aset</th>
                         <th>Nilai Perolehan</th>
                         <th>Tanggal Perolehan</th>
+                        {{-- --- Kolom Baru untuk Penyusutan --- --}}
+                        <th>Metode Penyusutan</th>
+                        <th>Masa Manfaat</th>
+                        <th>Nilai Residu</th>
+                        <th>Nilai Saat Ini</th>
+                        {{-- --------------------------------- --}}
                         <th>Kondisi</th>
                         <th>Lokasi</th>
                         <th>Unit Usaha</th>
@@ -58,12 +64,16 @@
                             <td>{{ $item->jenis_aset }}</td>
                             <td>Rp {{ number_format($item->nilai_perolehan, 2, ',', '.') }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal_perolehan)->format('d M Y') }}</td>
+                            {{-- --- Menampilkan Data Penyusutan --- --}}
+                            <td>{{ $item->metode_penyusutan ?? '-' }}</td>
+                            <td>{{ $item->masa_manfaat ?? '-' }} tahun</td>
+                            <td>Rp {{ number_format($item->nilai_residu, 2, ',', '.') }}</td>
+                            <td>Rp {{ number_format($item->nilai_saat_ini, 2, ',', '.') }}</td>
+                            {{-- --------------------------------- --}}
                             <td><span class="badge badge-{{ $item->kondisi == 'Baik' ? 'success' : ($item->kondisi == 'Rusak Ringan' ? 'warning' : 'danger') }}">{{ $item->kondisi }}</span></td>
                             <td>{{ $item->lokasi ?? '-' }}</td>
-                            {{-- Baris ini telah diperbarui untuk menggunakan 'nama_unit_usaha' --}}
                             <td>{{ $item->unitUsaha->nama_unit ?? '-' }}</td>
                             <td class="text-nowrap">
-                                {{-- Tombol Show telah ditambahkan di sini --}}
                                 <a href="{{ route('bumdes.aset.show', $item->aset_id) }}" class="btn btn-xs btn-primary" title="Lihat Detail Aset">
                                     <i class="fas fa-eye"></i> Show
                                 </a>
@@ -81,7 +91,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center">Tidak ada data aset yang ditemukan.</td>
+                            <td colspan="14" class="text-center">Tidak ada data aset yang ditemukan.</td>
                         </tr>
                     @endforelse
                 </tbody>

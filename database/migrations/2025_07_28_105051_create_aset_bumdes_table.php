@@ -20,11 +20,10 @@ return new class extends Migration
             $table->date('tanggal_perolehan');
             $table->string('kondisi', 100);
             $table->string('lokasi', 255)->nullable();
-            // Kolom unik untuk nomor inventaris
             $table->string('nomor_inventaris', 100)->unique();
-            
+
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
-            
+
             // Kolom timestamps
             $table->timestamps();
 

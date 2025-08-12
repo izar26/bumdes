@@ -26,7 +26,8 @@ class AsetBUMDesController extends Controller
     public function create(): View
     {
         $unitUsahas = UnitUsaha::all();
-        return view('aset.create', compact('unitUsahas'));
+        $metodePenyusutan = ['Garis Lurus' => 'Garis Lurus', 'Saldo Menurun' => 'Saldo Menurun'];
+        return view('aset.create', compact('unitUsahas', 'metodePenyusutan'));
     }
 
     /**
@@ -43,11 +44,19 @@ class AsetBUMDesController extends Controller
             'kondisi' => 'required|string|in:Baik,Rusak Ringan,Rusak Berat',
             'lokasi' => 'nullable|string|max:255',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
+            // --- Kolom baru untuk penyusutan ---
+            'metode_penyusutan' => 'required|string|in:Garis Lurus,Saldo Menurun',
+            'masa_manfaat' => 'required|integer|min:1',
+            'nilai_residu' => 'nullable|numeric|min:0',
         ]);
 
         try {
+            // Hitung nilai awal saat ini (nilai buku awal)
+            $nilaiSaatIni = $validatedData['nilai_perolehan'];
+            $validatedData['nilai_saat_ini'] = $nilaiSaatIni;
+
             AsetBUMDes::create($validatedData);
-            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil ditambahkan!');
+            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil ditambahkan!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal menambahkan aset: ' . $e->getMessage());
         }
@@ -67,7 +76,8 @@ class AsetBUMDesController extends Controller
     public function edit(AsetBUMDes $aset): View
     {
         $unitUsahas = UnitUsaha::all();
-        return view('aset.edit', compact('aset', 'unitUsahas'));
+        $metodePenyusutan = ['Garis Lurus' => 'Garis Lurus', 'Saldo Menurun' => 'Saldo Menurun'];
+        return view('aset.edit', compact('aset', 'unitUsahas', 'metodePenyusutan'));
     }
 
     /**
@@ -81,14 +91,17 @@ class AsetBUMDesController extends Controller
             'jenis_aset' => 'required|string|max:100',
             'nilai_perolehan' => 'required|numeric|min:0',
             'tanggal_perolehan' => 'required|date',
-            'kondisi' => 'required|string|in:Baik,Rusak Ringan,Rusak Berat',
+            'kondisi' => 'required|string|in:,Baru,Baik,Rusak Ringan,Rusak Berat',
             'lokasi' => 'nullable|string|max:255',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
+            'metode_penyusutan' => 'required|string|in:Garis Lurus,Saldo Menurun',
+            'masa_manfaat' => 'required|integer|min:1',
+            'nilai_residu' => 'nullable|numeric|min:0',
         ]);
 
         try {
             $aset->update($validatedData);
-            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil diperbarui!');
+            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil diperbarui!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal memperbarui aset: ' . $e->getMessage());
         }
@@ -101,7 +114,7 @@ class AsetBUMDesController extends Controller
     {
         try {
             $aset->delete();
-            return redirect()->route('bumdes.aset.aset.index')->with('success', 'Aset berhasil dihapus!');
+            return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil dihapus!');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menghapus aset: ' . $e->getMessage());
         }
@@ -109,10 +122,31 @@ class AsetBUMDesController extends Controller
 
     /**
      * Menampilkan halaman penyusutan.
+     * Mengimplementasikan logika perhitungan penyusutan.
      */
     public function penyusutan(): View
     {
-        return view('aset.penyusutan');
+        // Ambil semua aset yang memiliki masa manfaat
+        $asets = AsetBUMDes::whereNotNull('masa_manfaat')->get();
+
+        // Hitung nilai buku saat ini untuk setiap aset
+        $asets->each(function ($aset) {
+            $tahunSekarang = now()->year;
+            $tahunPerolehan = $aset->tanggal_perolehan->year;
+            $umurAset = $tahunSekarang - $tahunPerolehan;
+
+            if ($aset->metode_penyusutan == 'Garis Lurus') {
+                $penyusutanPerTahun = ($aset->nilai_perolehan - $aset->nilai_residu) / $aset->masa_manfaat;
+                $akumulasiPenyusutan = $penyusutanPerTahun * $umurAset;
+                $nilaiSaatIni = $aset->nilai_perolehan - $akumulasiPenyusutan;
+
+                // Pastikan nilai buku tidak di bawah nilai residu
+                $aset->nilai_saat_ini = max($nilaiSaatIni, $aset->nilai_residu);
+                $aset->save(); // Simpan nilai saat ini ke database
+            }
+        });
+
+        return view('aset.penyusutan', compact('asets'));
     }
 
     /**
@@ -120,6 +154,8 @@ class AsetBUMDesController extends Controller
      */
     public function pemeliharaan(): View
     {
-        return view('aset.pemeliharaan');
+        $asets = AsetBUMDes::with('unitUsaha')->get();
+
+        return view('aset.pemeliharaan', compact('asets'));
     }
 }

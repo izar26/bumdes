@@ -17,21 +17,22 @@ use Illuminate\Validation\ValidationException;
 
 class PenjualanController extends Controller
 {
-    public function index()
-    {
-        $user = Auth::user();
-        $penjualanQuery = Penjualan::with('unitUsaha')->latest('tanggal_penjualan');
 
-        // Filter berdasarkan peran pengguna
-        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
-            $penjualanQuery->whereIn('unit_usaha_id', $unitUsahaIds);
-        }
-        // Bendahara dan peran di atasnya bisa melihat semua
+public function index()
+{
+    $user = Auth::user();
+    $penjualanQuery = Penjualan::with('unitUsaha')->latest('tanggal_penjualan');
 
-        $penjualans = $penjualanQuery->get();
-        return view('usaha.penjualan.index', compact('penjualans'));
+    // Filter berdasarkan peran pengguna
+    if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+        $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+        $penjualanQuery->whereIn('unit_usaha_id', $unitUsahaIds);
     }
+    // Bendahara dan peran di atasnya bisa melihat semua
+
+    $penjualans = $penjualanQuery->get();
+    return view('usaha.penjualan.index', compact('penjualans'));
+}
 
     public function create()
     {
@@ -74,7 +75,7 @@ class PenjualanController extends Controller
                     ]);
                 }
             }
-            
+
             // 2. Hitung Total & Siapkan Detail
             $totalPenjualan = 0;
             $detailData = [];
@@ -91,7 +92,7 @@ class PenjualanController extends Controller
                     'subtotal' => $subtotal,
                 ];
             }
-            
+
             // Tentukan Unit Usaha dari produk pertama yang dijual
             $unitUsahaId = Produk::find($request->produk_id[0])->unit_usaha_id;
 
@@ -116,7 +117,7 @@ class PenjualanController extends Controller
 
             DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunDebit->akun_id, 'debit' => $totalPenjualan, 'kredit' => 0]);
             DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunPendapatan->akun_id, 'debit' => 0, 'kredit' => $totalPenjualan]);
-            
+
             // 4. Buat record Penjualan utama
             $penjualan = Penjualan::create([
                 'no_invoice' => 'INV-' . time(),
@@ -127,7 +128,7 @@ class PenjualanController extends Controller
                 'nama_pelanggan' => $request->nama_pelanggan,
                 'status_penjualan' => $request->status_penjualan,
             ]);
-            
+
             // 5. Simpan detail & kurangi stok
             $penjualan->detailPenjualans()->createMany($detailData);
             foreach ($request->produk_id as $key => $id_produk) {
@@ -154,20 +155,43 @@ class PenjualanController extends Controller
         return view('usaha.penjualan.show', compact('penjualan'));
     }
 
-    public function destroy(Penjualan $penjualan)
-    {
-        try {
-            DB::beginTransaction();
-            $jurnal = JurnalUmum::find($penjualan->jurnal_id);
-            $penjualan->delete();
-            if ($jurnal) {
-                $jurnal->delete();
+public function destroy(Penjualan $penjualan)
+{
+    try {
+        DB::beginTransaction();
+
+        // 1. Load the sale details with the products
+        $penjualan->load('detailPenjualans.produk');
+
+        // 2. Restore stock for each product sold
+        foreach ($penjualan->detailPenjualans as $detail) {
+            // Check if the product still exists to avoid errors
+            if ($detail->produk) {
+                // Use first() to get the Stok model instance
+                $stok = Stok::where('produk_id', $detail->produk_id)->first();
+                if ($stok) {
+                    // Increment restores the stock count
+                    $stok->increment('jumlah_stok', $detail->jumlah);
+                }
             }
-            DB::commit();
-            return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil dihapus.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->route('penjualan.index')->with('error', 'Gagal menghapus transaksi.');
         }
+
+        // 3. Find and delete the associated journal
+        $jurnal = JurnalUmum::find($penjualan->jurnal_id);
+        if ($jurnal) {
+            // Deleting the journal will also cascade delete its details
+            $jurnal->delete();
+        }
+
+        // 4. Delete the sale record itself (this will also delete its details via model events/cascading)
+
+        DB::commit();
+        return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil dihapus dan stok telah dikembalikan.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        // Provide a more informative error message
+        return redirect()->route('penjualan.index')->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
     }
+}
 }
