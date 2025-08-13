@@ -203,6 +203,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
         });
 
+
     Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
 

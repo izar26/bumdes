@@ -3,19 +3,28 @@
 @section('title', 'Laporan Neraca')
 
 @section('content')
+@php
+    $bumdes = \App\Models\Bungdes::first();
+@endphp
 <div class="card">
     <div class="card-body">
-        <div class="text-center">
-            <h3>Laporan Posisi Keuangan (Neraca)</h3>
-            <h5>BUMDes Anda</h5>
-            <p><strong>Per Tanggal {{ $reportDate->format('d F Y') }}</strong></p>
+        <div class="text-center mb-4">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <img src="{{ asset('images/logo-bumdes.png') }}" alt="Logo BUMDes" style="height: 80px;">
+                <div>
+                    <h3 style="margin: 0;">Laporan Posisi Keuangan (Neraca)</h3>
+                    <h5 style="margin: 0;">{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h5>
+                    <p style="margin: 0;">{{ $bumdes->alamat ?? 'Alamat BUMDes' }}</p>
+                    <p><strong>Per Tanggal {{ $reportDate->format('d F Y') }}</strong></p>
+                </div>
+            </div>
         </div>
         <hr>
 
         <div class="row">
             {{-- KOLOM KIRI: ASET --}}
             <div class="col-md-6">
-                <table class="table table-sm">
+                <table class="table table-sm table-bordered">
                     <thead>
                         <tr class="table-active">
                             <th>ASET</th>
@@ -30,7 +39,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="2" style="padding-left: 20px;">Tidak ada data aset.</td>
+                            <td colspan="2" class="text-center">Tidak ada data aset.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -45,7 +54,7 @@
 
             {{-- KOLOM KANAN: KEWAJIBAN & EKUITAS --}}
             <div class="col-md-6">
-                <table class="table table-sm">
+                <table class="table table-sm table-bordered">
                     <thead>
                         <tr class="table-active">
                             <th>KEWAJIBAN DAN EKUITAS</th>
@@ -64,7 +73,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="2" style="padding-left: 20px;">Tidak ada data kewajiban.</td>
+                            <td colspan="2" class="text-center">Tidak ada data kewajiban.</td>
                         </tr>
                         @endforelse
                         <tr class="table-active">
