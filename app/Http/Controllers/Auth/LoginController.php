@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Bungdes; // 1. Tambahkan ini untuk memanggil model Bungdes
 
 class LoginController extends Controller
 {
@@ -29,22 +30,21 @@ class LoginController extends Controller
             return '/login';
         }
 
-        \Log::info('User attempting redirect: ' . $user->username);
-        \Log::info('User role: ' . $user->role);
+        // 2. Perbaikan: Mengambil nama peran menggunakan metode dari Spatie
+        $role = $user->getRoleNames()->first(); 
 
-        switch ($user->role) {
+        \Log::info('User attempting redirect: ' . $user->username);
+        \Log::info('User role: ' . $role);
+
+        switch ($role) {
             case 'kepala_desa':
-                return '/dashboard';
             case 'sekretaris_bumdes':
-                return '/dashboard';
             case 'bendahara_bumdes':
-                return '/dashboard';
             case 'admin_bumdes':
                 return '/dashboard';
             case 'anggota':
                 return '/profile';
-             case 'manajer_unit_usaha':
-            return '/usaha/dashboard';
+            case 'manajer_unit_usaha':
             case 'admin_unit_usaha':
                 return '/usaha/dashboard';
             default:
@@ -58,6 +58,19 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    /**
+     * 3. Tambahkan method ini untuk mengirim data ke halaman login
+     * Show the application's login form.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function showLoginForm()
+    {
+        $bumdes = Bungdes::first();
+        // Pastikan path view sesuai dengan lokasi file login Anda
+        return view('auth.login', compact('bumdes')); 
     }
 
     /**
