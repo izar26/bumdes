@@ -146,8 +146,8 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('jurnal-umum', JurnalUmumController::class);
         });
     });
-    
-    
+
+
 
 
     Route::middleware(['role:admin_unit_usaha|bendahara_bumdes'])->group(function () {
@@ -202,7 +202,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
             Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
         });
-    
+
+
     Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
 
