@@ -17,8 +17,8 @@
                 <p><strong>Periode Berakhir {{ $endDate->format('d F Y') }}</strong></p>
             </div>
         </div>
-        <hr>
-        
+        <hr style="border-top: 3px solid #000;">
+
         <table class="table table-borderless">
             <tbody>
                 {{-- Pendapatan --}}
@@ -27,8 +27,8 @@
                 </tr>
                 @forelse ($pendapatans as $pendapatan)
                     <tr>
-                        <td style="padding-left: 30px;">{{ $pendapatan['nama_akun'] }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($pendapatan['total'], 2, ',', '.') }}</td>
+                        <td style="padding-left: 30px; border-bottom: 1px solid #ddd;">{{ $pendapatan['nama_akun'] }}</td>
+                        <td class="text-right" style="border-bottom: 1px solid #ddd;">{{ 'Rp ' . number_format($pendapatan['total'], 2, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -36,7 +36,7 @@
                         <td class="text-right">Rp 0,00</td>
                     </tr>
                 @endforelse
-                <tr class="table-active">
+                <tr class="table-active" style="border-top: 2px solid #000;">
                     <td><strong>Total Pendapatan</strong></td>
                     <td class="text-right"><strong>{{ 'Rp ' . number_format($totalPendapatan, 2, ',', '.') }}</strong></td>
                 </tr>
@@ -48,8 +48,8 @@
                 </tr>
                 @forelse ($bebans as $beban)
                     <tr>
-                        <td style="padding-left: 30px;">{{ $beban['nama_akun'] }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($beban['total'], 2, ',', '.') }}</td>
+                        <td style="padding-left: 30px; border-bottom: 1px solid #ddd;">{{ $beban['nama_akun'] }}</td>
+                        <td class="text-right" style="border-bottom: 1px solid #ddd;">{{ 'Rp ' . number_format($beban['total'], 2, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -57,7 +57,7 @@
                         <td class="text-right">Rp 0,00</td>
                     </tr>
                 @endforelse
-                <tr class="table-active">
+                <tr class="table-active" style="border-top: 2px solid #000;">
                     <td><strong>Total Beban</strong></td>
                     <td class="text-right"><strong>{{ 'Rp ' . number_format($totalBeban, 2, ',', '.') }}</strong></td>
                 </tr>
@@ -68,7 +68,7 @@
                     $labaRugiClass = $labaRugi >= 0 ? 'text-success' : 'text-danger';
                     $labaRugiLabel = $labaRugi >= 0 ? 'Laba Bersih' : 'Rugi Bersih';
                 @endphp
-                <tr class="bg-light">
+                <tr class="bg-light" style="border-top: 3px double #000;">
                     <td><h4><strong>{{ $labaRugiLabel }}</strong></h4></td>
                     <td class="text-right"><h4 class="{{ $labaRugiClass }}"><strong>{{ 'Rp ' . number_format($labaRugi, 2, ',', '.') }}</strong></h4></td>
                 </tr>
