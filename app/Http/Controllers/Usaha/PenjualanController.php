@@ -18,21 +18,22 @@ use Illuminate\Validation\ValidationException;
 class PenjualanController extends Controller
 {
 
-public function index()
-{
-    $user = Auth::user();
-    $penjualanQuery = Penjualan::with('unitUsaha')->latest('tanggal_penjualan');
+    public function index()
+    {
+        $user = Auth::user();
+        $penjualanQuery = Penjualan::with('unitUsaha')->latest('tanggal_penjualan');
 
-    // Filter berdasarkan peran pengguna
-    if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-        $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-        $penjualanQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        // Filter berdasarkan peran pengguna
+        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            // Baris ini sudah benar
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            $penjualanQuery->whereIn('unit_usaha_id', $unitUsahaIds);
+        }
+        // Bendahara dan peran di atasnya bisa melihat semua
+
+        $penjualans = $penjualanQuery->get();
+        return view('usaha.penjualan.index', compact('penjualans'));
     }
-    // Bendahara dan peran di atasnya bisa melihat semua
-
-    $penjualans = $penjualanQuery->get();
-    return view('usaha.penjualan.index', compact('penjualans'));
-}
 
     public function create()
     {
@@ -41,7 +42,10 @@ public function index()
 
         // Filter produk berdasarkan unit usaha yang dikelola pengguna
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usaha_id');
+            // =======================================================
+            // PERBAIKAN DI SINI
+            // =======================================================
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $produkQuery->whereIn('unit_usaha_id', $unitUsahaIds);
         }
 
@@ -138,7 +142,7 @@ public function index()
             }
 
             DB::commit();
-            return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan dan stok telah diperbarui.');
+            return redirect()->route('usaha.penjualan.index')->with('success', 'Transaksi penjualan berhasil disimpan dan stok telah diperbarui.');
 
         } catch (ValidationException $e) {
             DB::rollBack();
@@ -155,43 +159,44 @@ public function index()
         return view('usaha.penjualan.show', compact('penjualan'));
     }
 
-public function destroy(Penjualan $penjualan)
-{
-    try {
-        DB::beginTransaction();
+    public function destroy(Penjualan $penjualan)
+    {
+        try {
+            DB::beginTransaction();
 
-        // 1. Load the sale details with the products
-        $penjualan->load('detailPenjualans.produk');
+            // 1. Load the sale details with the products
+            $penjualan->load('detailPenjualans.produk');
 
-        // 2. Restore stock for each product sold
-        foreach ($penjualan->detailPenjualans as $detail) {
-            // Check if the product still exists to avoid errors
-            if ($detail->produk) {
-                // Use first() to get the Stok model instance
-                $stok = Stok::where('produk_id', $detail->produk_id)->first();
-                if ($stok) {
-                    // Increment restores the stock count
-                    $stok->increment('jumlah_stok', $detail->jumlah);
+            // 2. Restore stock for each product sold
+            foreach ($penjualan->detailPenjualans as $detail) {
+                // Check if the product still exists to avoid errors
+                if ($detail->produk) {
+                    // Use first() to get the Stok model instance
+                    $stok = Stok::where('produk_id', $detail->produk_id)->first();
+                    if ($stok) {
+                        // Increment restores the stock count
+                        $stok->increment('jumlah_stok', $detail->jumlah);
+                    }
                 }
             }
+
+            // 3. Find and delete the associated journal
+            $jurnal = JurnalUmum::find($penjualan->jurnal_id);
+            if ($jurnal) {
+                // Deleting the journal will also cascade delete its details
+                $jurnal->delete();
+            }
+
+            // 4. Delete the sale record itself
+            $penjualan->delete();
+
+            DB::commit();
+            return redirect()->route('usaha.penjualan.index')->with('success', 'Transaksi penjualan berhasil dihapus dan stok telah dikembalikan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Provide a more informative error message
+            return redirect()->route('usaha.penjualan.index')->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
         }
-
-        // 3. Find and delete the associated journal
-        $jurnal = JurnalUmum::find($penjualan->jurnal_id);
-        if ($jurnal) {
-            // Deleting the journal will also cascade delete its details
-            $jurnal->delete();
-        }
-
-        // 4. Delete the sale record itself (this will also delete its details via model events/cascading)
-
-        DB::commit();
-        return redirect()->route('penjualan.index')->with('success', 'Transaksi penjualan berhasil dihapus dan stok telah dikembalikan.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        // Provide a more informative error message
-        return redirect()->route('penjualan.index')->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
     }
-}
 }
