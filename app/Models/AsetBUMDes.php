@@ -10,13 +10,12 @@ class AsetBUMDes extends Model
 {
     use HasFactory;
 
-    // Nama tabel di database
     protected $table = 'aset_bumdes';
-    
-    // Primary key custom
+
     protected $primaryKey = 'aset_id';
 
-    // Kolom yang bisa diisi secara massal
+    /**
+     */
     protected $fillable = [
         'nomor_inventaris',
         'nama_aset',
@@ -25,18 +24,23 @@ class AsetBUMDes extends Model
         'tanggal_perolehan',
         'kondisi',
         'lokasi',
-        'unit_usaha_id'
+        'unit_usaha_id',
+        'metode_penyusutan', // <-- Tambahkan ini
+        'masa_manfaat',      // <-- Tambahkan ini
+        'nilai_residu',      // <-- Tambahkan ini
+        'nilai_saat_ini',    // <-- Tambahkan ini
     ];
 
-    // Konversi kolom tanggal_perolehan menjadi objek Carbon
-    protected $dates = ['tanggal_perolehan'];
+protected $casts = [
+    'tanggal_perolehan' => 'date',
+    'nilai_perolehan'   => 'integer', // Ganti dari 'float' ke 'integer'
+    'nilai_residu'      => 'integer', // Ganti dari 'float' ke 'integer'
+    'nilai_saat_ini'    => 'integer', // Ganti juga ini ke 'integer'
+    'masa_manfaat'      => 'integer',
+];
 
-    /**
-     * Mendefinisikan relasi "many-to-one" dengan UnitUsaha.
-     * Satu Aset BUMDes hanya dimiliki oleh satu Unit Usaha.
-     */
     public function unitUsaha(): BelongsTo
     {
-        return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id');
+        return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
     }
 }

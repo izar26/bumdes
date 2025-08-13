@@ -195,7 +195,7 @@
                         <i class="fas fa-arrow-left me-2"></i> Kembali
                     </a>
                     <button type="submit" class="btn btn-success bg-gradient">
-                        <i class="fas fa-save me-2"></i> Simpan Perubahan
+                        <i class="fas fa-save me-2"></i> simpan
                     </button>
                 </div>
             </form>

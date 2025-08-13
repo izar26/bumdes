@@ -67,8 +67,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/personal', [ProfileController::class, 'updatePersonal'])->name('profile.update-personal');
 
     // Dashboard Admin
-    Route::get('/admin/dashboard', [DashboardController::class, 'index'])
-        ->name('admin.dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -83,7 +81,8 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('manajemen-data/user', UserController::class)->names('admin.manajemen-data.user');
             Route::put('user/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('user.toggleActive');
             Route::resource('unit-usaha', UnitUsahaController::class)->except(['show'])->names('unit_usaha');
-            Route::resource('anggota', AnggotaController::class)->except(['show'])->names('anggota');
+            Route::resource('anggota', AnggotaController::class)    ->names('anggota');
+            Route::put('manajemen-data/anggota/{anggota}', [AnggotaController::class, 'update'])->name('admin.manajemen-data.anggota.update');
             Route::put('manajemen-data/anggota/{user}/update-role', [AnggotaController::class, 'updateRole'])->name('anggota.updateRole');
         });
 

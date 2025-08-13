@@ -21,9 +21,9 @@
                                 <i class="icon fas fa-check"></i> {{ $message }}
                             </div>
                         @endif
-                        
+
                         <h4>Data Utama Desa</h4>
-                        
+
                         <div class="form-group">
                             <label for="nama_desa">Nama Desa</label>
                             <input type="text" name="nama_desa" class="form-control @error('nama_desa') is-invalid @enderror" value="{{ old('nama_desa', $profil->nama_desa) }}">
@@ -43,7 +43,7 @@
                         </div>
 
                         <hr>
-                        
+
                         <h4>Data Profil Halaman Depan</h4>
                         <div class="form-group">
                             <label for="deskripsi">Deskripsi Desa</label>
@@ -101,7 +101,7 @@
 
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <button type="submit" class="btn btn-primary">simpan</button>
                     </div>
                 </div>
             </div>

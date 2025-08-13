@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\View\Components\ConfirmModal;
 use Illuminate\Support\Facades\Schema;
-use App\Models\Bungdes; // Pastikan model Bungdes di-import
-
+use App\Models\Bungdes;
+use App\Models\Anggota;
+use Illuminate\Support\Facades\Route;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -39,7 +40,9 @@ class AppServiceProvider extends ServiceProvider
             $view->with('logo_bungdes', $bungdes ? asset('storage/' . $bungdes->logo) : asset('path/ke/logo/default.png')); // Perbaiki sintaks dan tambahkan default
             $view->with('logo_img', $photo);
         });
-
+            Route::bind('anggota', function ($value) {
+            return Anggota::where('anggota_id', $value)->firstOrFail();
+        });
         // Schema::disableForeignKeyConstraints();`
     }
 }

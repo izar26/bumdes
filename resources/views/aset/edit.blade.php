@@ -92,7 +92,7 @@
                             <label for="tanggal_perolehan">Tanggal Perolehan</label>
                             <input type="date" name="tanggal_perolehan" id="tanggal_perolehan"
                                 class="form-control @error('tanggal_perolehan') is-invalid @enderror"
-                                value="{{ old('tanggal_perolehan', $aset->tanggal_perolehan ? \Carbon\Carbon::parse($aset->tanggal_perolehan)->format('Y-m-d') : '') }}" required>
+                                value="{{ old('tanggal_perolehan', \Carbon\Carbon::parse($aset->tanggal_perolehan)->format('Y-m-d')) }}" required>
                             @error('tanggal_perolehan')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

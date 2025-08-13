@@ -18,8 +18,8 @@ return new class extends Migration
     $table->string('username', 100)->unique();
     $table->string('password', 255);
     $table->boolean('is_active');
-     $table->boolean('is_profile_complete')->default(false);
     $table->dateTime('last_login')->nullable();
+    $table->boolean('is_profile_complete')->default(false);
     $table->timestamps();
 
 });

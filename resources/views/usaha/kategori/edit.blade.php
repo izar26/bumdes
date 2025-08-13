@@ -52,7 +52,7 @@
 
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                            <i class="fas fa-save mr-1"></i> simpan
                         </button>
                         <a href="{{ route('usaha.kategori.index') }}" class="btn btn-default float-right">
                             <i class="fas fa-arrow-left mr-1"></i> Kembali

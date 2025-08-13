@@ -16,11 +16,15 @@ return new class extends Migration
             $table->bigIncrements('aset_id');
             $table->string('nama_aset', 255);
             $table->string('jenis_aset', 100);
-            $table->decimal('nilai_perolehan', 18, 2);
             $table->date('tanggal_perolehan');
+            $table->bigInteger('nilai_perolehan')->unsigned(); // unsigned artinya tidak boleh negatif
             $table->string('kondisi', 100);
             $table->string('lokasi', 255)->nullable();
             $table->string('nomor_inventaris', 100)->unique();
+            $table->string('metode_penyusutan', 50)->nullable();
+            $table->integer('masa_manfaat')->nullable();
+            $table->bigInteger('nilai_saat_ini')->nullable();
+            $table->bigInteger('nilai_residu')->unsigned()->nullable();
 
             $table->unsignedBigInteger('unit_usaha_id')->nullable();
 

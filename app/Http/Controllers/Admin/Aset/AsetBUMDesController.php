@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon; // PERBAIKAN: Menambahkan import Carbon
 
 class AsetBUMDesController extends Controller
 {
@@ -41,21 +42,24 @@ class AsetBUMDesController extends Controller
             'jenis_aset' => 'required|string|max:100',
             'nilai_perolehan' => 'required|numeric|min:0',
             'tanggal_perolehan' => 'required|date',
-            'kondisi' => 'required|string|in:Baik,Rusak Ringan,Rusak Berat',
+            'kondisi' => 'required|string|in:Baru,Baik,Rusak Ringan,Rusak Berat',
             'lokasi' => 'nullable|string|max:255',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
-            // --- Kolom baru untuk penyusutan ---
             'metode_penyusutan' => 'required|string|in:Garis Lurus,Saldo Menurun',
             'masa_manfaat' => 'required|integer|min:1',
             'nilai_residu' => 'nullable|numeric|min:0',
         ]);
 
         try {
-            // Hitung nilai awal saat ini (nilai buku awal)
-            $nilaiSaatIni = $validatedData['nilai_perolehan'];
-            $validatedData['nilai_saat_ini'] = $nilaiSaatIni;
+            // PERBAIKAN: Set nilai saat ini sama dengan nilai perolehan terlebih dahulu
+            $validatedData['nilai_saat_ini'] = $validatedData['nilai_perolehan'];
 
-            AsetBUMDes::create($validatedData);
+            $aset = AsetBUMDes::create($validatedData);
+
+            // PENAMBAHAN: Setelah aset dibuat, langsung hitung nilai buku saat ini
+            // Ini untuk mengatasi jika tanggal perolehan adalah di masa lalu.
+            $this->calculateAndUpdateCurrentValue($aset);
+
             return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil ditambahkan!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal menambahkan aset: ' . $e->getMessage());
@@ -67,6 +71,8 @@ class AsetBUMDesController extends Controller
      */
     public function show(AsetBUMDes $aset): View
     {
+        // PENAMBAHAN: Panggil fungsi kalkulasi untuk memastikan data yang ditampilkan adalah yang terbaru
+        $this->calculateAndUpdateCurrentValue($aset);
         return view('aset.show', compact('aset'));
     }
 
@@ -91,7 +97,7 @@ class AsetBUMDesController extends Controller
             'jenis_aset' => 'required|string|max:100',
             'nilai_perolehan' => 'required|numeric|min:0',
             'tanggal_perolehan' => 'required|date',
-            'kondisi' => 'required|string|in:,Baru,Baik,Rusak Ringan,Rusak Berat',
+            'kondisi' => 'required|string|in:Baru,Baik,Rusak Ringan,Rusak Berat',
             'lokasi' => 'nullable|string|max:255',
             'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
             'metode_penyusutan' => 'required|string|in:Garis Lurus,Saldo Menurun',
@@ -101,6 +107,10 @@ class AsetBUMDesController extends Controller
 
         try {
             $aset->update($validatedData);
+
+            // PERBAIKAN: Panggil metode kalkulasi terpusat setelah update
+            $this->calculateAndUpdateCurrentValue($aset);
+
             return redirect()->route('bumdes.aset.index')->with('success', 'Aset berhasil diperbarui!');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal memperbarui aset: ' . $e->getMessage());
@@ -121,29 +131,15 @@ class AsetBUMDesController extends Controller
     }
 
     /**
-     * Menampilkan halaman penyusutan.
-     * Mengimplementasikan logika perhitungan penyusutan.
+     * Menampilkan halaman penyusutan dan menjalankan kalkulasi.
      */
     public function penyusutan(): View
     {
-        // Ambil semua aset yang memiliki masa manfaat
         $asets = AsetBUMDes::whereNotNull('masa_manfaat')->get();
 
-        // Hitung nilai buku saat ini untuk setiap aset
+        // PERBAIKAN: Gunakan metode terpusat untuk menghitung dan menyimpan
         $asets->each(function ($aset) {
-            $tahunSekarang = now()->year;
-            $tahunPerolehan = $aset->tanggal_perolehan->year;
-            $umurAset = $tahunSekarang - $tahunPerolehan;
-
-            if ($aset->metode_penyusutan == 'Garis Lurus') {
-                $penyusutanPerTahun = ($aset->nilai_perolehan - $aset->nilai_residu) / $aset->masa_manfaat;
-                $akumulasiPenyusutan = $penyusutanPerTahun * $umurAset;
-                $nilaiSaatIni = $aset->nilai_perolehan - $akumulasiPenyusutan;
-
-                // Pastikan nilai buku tidak di bawah nilai residu
-                $aset->nilai_saat_ini = max($nilaiSaatIni, $aset->nilai_residu);
-                $aset->save(); // Simpan nilai saat ini ke database
-            }
+            $this->calculateAndUpdateCurrentValue($aset);
         });
 
         return view('aset.penyusutan', compact('asets'));
@@ -155,7 +151,55 @@ class AsetBUMDesController extends Controller
     public function pemeliharaan(): View
     {
         $asets = AsetBUMDes::with('unitUsaha')->get();
-
         return view('aset.pemeliharaan', compact('asets'));
+    }
+
+
+    /**
+     * PENAMBAHAN: Metode terpusat untuk menghitung dan menyimpan nilai buku aset.
+     * Metode ini dipanggil dari store(), update(), show(), dan penyusutan().
+     *
+     * @param AsetBUMDes $aset
+     * @return void
+     */
+    private function calculateAndUpdateCurrentValue(AsetBUMDes $aset): void
+    {
+        $tahunSekarang = now()->year;
+        $tahunPerolehan = Carbon::parse($aset->tanggal_perolehan)->year;
+        $umurAset = max(0, $tahunSekarang - $tahunPerolehan);
+        $nilaiBuku = $aset->nilai_perolehan;
+
+        // Jangan lakukan apa-apa jika umur aset masih 0 atau kurang
+        if ($umurAset <= 0) {
+            $aset->nilai_saat_ini = $aset->nilai_perolehan;
+            $aset->save();
+            return;
+        }
+
+        if ($aset->metode_penyusutan == 'Garis Lurus') {
+            $penyusutanPerTahun = ($aset->nilai_perolehan - $aset->nilai_residu) / $aset->masa_manfaat;
+            $akumulasiPenyusutan = $penyusutanPerTahun * $umurAset;
+            $nilaiBuku = $aset->nilai_perolehan - $akumulasiPenyusutan;
+
+        } elseif ($aset->metode_penyusutan == 'Saldo Menurun') {
+            // Menggunakan metode Double Declining Balance
+            $tarifPenyusutan = (1 / $aset->masa_manfaat) * 2;
+            $nilaiBukuSementara = $aset->nilai_perolehan;
+
+            for ($i = 0; $i < $umurAset; $i++) {
+                $penyusutanTahunan = $nilaiBukuSementara * $tarifPenyusutan;
+                $nilaiBukuSementara -= $penyusutanTahunan;
+
+                // Hentikan penyusutan jika sudah mencapai nilai residu
+                if ($nilaiBukuSementara < $aset->nilai_residu) {
+                    break;
+                }
+            }
+            $nilaiBuku = $nilaiBukuSementara;
+        }
+
+        // Pastikan nilai buku tidak pernah di bawah nilai residu
+        $aset->nilai_saat_ini = max($nilaiBuku, $aset->nilai_residu ?? 0);
+        $aset->save(); // Simpan nilai yang sudah dihitung
     }
 }

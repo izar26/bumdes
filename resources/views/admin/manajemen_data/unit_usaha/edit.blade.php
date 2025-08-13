@@ -4,7 +4,7 @@
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
-        <h1 class="m-0 text-dark">✏️ Edit Unit Usaha</h1>
+        <h1 class="m-0 text-dark">Edit Unit Usaha</h1>
         <a href="{{ route('admin.manajemen-data.unit_usaha.index') }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left"></i> Kembali
         </a>
@@ -15,8 +15,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card border-gray shadow-sm">
-                <div class="card-header bg-gray">
-                    <h3 class="card-title mb-0">Form Edit Unit Usaha</h3>
+                <div class="card-header bg-primary">
+                    <h3 class="card-title text-white mb-0">Form Edit Unit Usaha</h3>
                 </div>
                 <form action="{{ route('admin.manajemen-data.unit_usaha.update', $unitUsaha->unit_usaha_id) }}" method="POST">
                     @csrf
@@ -99,7 +99,7 @@
                     {{-- Footer --}}
                     <div class="card-footer bg-gray-light text-right">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Simpan Perubahan
+                            <i class="fas fa-save"></i> simpan
                         </button>
                         <button type="reset" class="btn btn-outline-secondary ml-2">
                             <i class="fas fa-undo"></i> Reset

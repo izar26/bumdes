@@ -34,21 +34,19 @@ class LoginController extends Controller
 
         switch ($user->role) {
             case 'kepala_desa':
-                return '/admin/dashboard';
-            case 'manajer_unit_usaha':
-                return '/admin/dashboard';
-            case 'admin_unit_usaha':
-                return '/admin/dashboard';
+                return '/dashboard';
             case 'sekretaris_bumdes':
-                return '/admin/dashboard';
+                return '/dashboard';
             case 'bendahara_bumdes':
-                return '/admin/dashboard';
+                return '/dashboard';
             case 'admin_bumdes':
-                return '/admin/dashboard';
-            case 'anggota_baru':
-                return '/profile';
+                return '/dashboard';
             case 'anggota':
                 return '/profile';
+             case 'manajer_unit_usaha':
+            return '/usaha/dashboard';
+            case 'admin_unit_usaha':
+                return '/usaha/dashboard';
             default:
                 return '/login';
         }

@@ -412,7 +412,7 @@ return [
             ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index', 'icon' => 'fas fa-fw fa-table'],
             ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
             [
-        'text' => 'Arus Kas',
+        'text' => 'rus Kas',
         'route'  => 'arus-kas.index',
         'icon' => 'fas fa-fw fa-exchange-alt',
     ],
@@ -429,8 +429,8 @@ return [
         'icon' => 'fas fa-fw fa-file-alt',
 
         'submenu' => [
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => ['manejer_unit_usaha', 'direktur_bumdes']],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => ['manejer_unit_usaha', 'direktur_bumdes']],
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => ['manejer_unit_usaha']],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => ['manejer_unit_usaha']],
             ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes','can' => 'manejer_unit_usaha'],
             ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart', 'can' => 'manejer_unit_usaha'],
         ]

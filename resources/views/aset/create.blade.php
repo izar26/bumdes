@@ -218,3 +218,13 @@
         }
     </style>
 @stop
+@section('js')
+<script src="{{ asset('js/currency-formatter.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            numberFormatted('nilai_perolehan');
+            numberFormatted('nilai_residu');
+        });
+    </script>
+
+@stop

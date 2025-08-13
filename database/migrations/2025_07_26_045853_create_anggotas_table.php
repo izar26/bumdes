@@ -23,7 +23,7 @@ return new class extends Migration
                 $table->string('jenis_kelamin', 10)->nullable();
                 $table->string('photo', 255)->nullable();
                 $table->string('jabatan', 100)->nullable();
-                $table->boolean('is_profile_complete')->default(false);
+    $table->boolean('is_profile_complete')->default(false);
 
                 $table->unsignedBigInteger('user_id')->nullable();
                 $table->foreign('user_id')->references('user_id')->on('users')->onDelete('set null');

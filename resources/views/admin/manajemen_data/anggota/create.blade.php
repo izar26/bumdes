@@ -9,16 +9,15 @@
 @section('content')
     <div class="row">
         <div class="col-md-12">
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    <i class="icon fas fa-check-circle"></i> {{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
+            @if($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    <i class="icon fas fa-exclamation-circle"></i> {{ session('error') }}
+                    <strong>Terjadi kesalahan:</strong>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 
@@ -36,66 +35,105 @@
                                 <hr>
                                 <div class="form-group">
                                     <label for="nama_lengkap">Nama Lengkap</label>
-                                    <input type="text" class="form-control @error('nama_lengkap') is-invalid @enderror" id="nama_lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required>
-                                    @error('nama_lengkap') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                                        <input type="text" class="form-control @error('nama_lengkap') is-invalid @enderror" id="nama_lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" placeholder="Masukkan nama lengkap..." required>
+                                    </div>
+                                    @error('nama_lengkap') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
                                     <label for="nik">NIK</label>
-                                    <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik" value="{{ old('nik') }}" required>
-                                    @error('nik') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-card"></i></span></div>
+                                        <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik" value="{{ old('nik') }}" placeholder="Masukkan 16 digit NIK..." required pattern="[0-9]{16}" title="NIK harus 16 digit angka">
+                                    </div>
+                                    @error('nik') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
                                     <label for="alamat">Alamat</label>
-                                    <textarea class="form-control @error('alamat') is-invalid @enderror" id="alamat" name="alamat" rows="3" required>{{ old('alamat') }}</textarea>
-                                    @error('alamat') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span></div>
+                                        <textarea class="form-control @error('alamat') is-invalid @enderror" id="alamat" name="alamat" rows="3" placeholder="Masukkan alamat lengkap..." required>{{ old('alamat') }}</textarea>
+                                    </div>
+                                    @error('alamat') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
                                     <label for="no_telepon">No. Telepon</label>
-                                    <input type="text" class="form-control @error('no_telepon') is-invalid @enderror" id="no_telepon" name="no_telepon" value="{{ old('no_telepon') }}" required>
-                                    @error('no_telepon') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-phone"></i></span></div>
+                                        <input type="tel" class="form-control @error('no_telepon') is-invalid @enderror" id="no_telepon" name="no_telepon" value="{{ old('no_telepon') }}" placeholder="Contoh: 08123456789" required>
+                                    </div>
+                                    @error('no_telepon') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
                                     <label for="jenis_kelamin">Jenis Kelamin</label>
-                                    <select class="form-control @error('jenis_kelamin') is-invalid @enderror" id="jenis_kelamin" name="jenis_kelamin" required>
-                                        <option value="">-- Pilih Jenis Kelamin --</option>
-                                        <option value="Laki-laki" {{ old('jenis_kelamin') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
-                                        <option value="Perempuan" {{ old('jenis_kelamin') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
-                                    </select>
-                                    @error('jenis_kelamin') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-venus-mars"></i></span></div>
+                                        <select class="form-control @error('jenis_kelamin') is-invalid @enderror" id="jenis_kelamin" name="jenis_kelamin" required>
+                                            <option value="">-- Pilih Jenis Kelamin --</option>
+                                            <option value="Laki-laki" {{ old('jenis_kelamin') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                                            <option value="Perempuan" {{ old('jenis_kelamin') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                                        </select>
+                                    </div>
+                                    @error('jenis_kelamin') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
-                                    <label for="photo">Foto Profil</label>
-                                    <input type="file" class="form-control-file @error('photo') is-invalid @enderror" id="photo" name="photo">
-                                    <small class="form-text text-muted">Maks. 2MB. Format: JPG, PNG, GIF, SVG.</small>
-                                    @error('photo') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="photo">Foto Profil (Opsional)</label>
+                                    <div class="input-group">
+                                        <div class="custom-file">
+                                            <input type="file" name="photo" class="custom-file-input @error('photo') is-invalid @enderror" id="photo" accept="image/*">
+                                            <label class="custom-file-label" for="photo">Pilih file...</label>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Maks. 2MB. Format: JPG, PNG, GIF.</small>
+                                    @error('photo') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                                    <div class="mt-2 text-center">
+                                        <img id="photo-preview" class="img-thumbnail" width="150" style="display:none;">
+                                    </div>
                                 </div>
                             </div>
 
                             {{-- Kolom Kanan: Data Akun dan Jabatan --}}
                             <div class="col-md-6">
-                                <h5>Data Akun Pengguna (Opsional)</h5>
+                                <h5>Data Akun Pengguna</h5>
                                 <hr>
-                                <p class="text-muted">Isi bagian ini jika ingin membuat akun login untuk anggota.</p>
                                 <div class="form-group">
-                                    <label for="email">Email</label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}">
-                                    @error('email') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="email">Email <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-envelope"></i></span></div>
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Contoh: nama@email.com" required>
+                                    </div>
+                                    @error('email') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
-                                    <label for="password">Password</label>
-                                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password">
-                                    @error('password') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="username">Username <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                                        <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username" value="{{ old('username') }}" placeholder="Username untuk login" required>
+                                    </div>
+                                    @error('username') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="form-group">
-                                    <label for="password_confirmation">Konfirmasi Password</label>
-                                    <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
+                                    <label for="password">Password <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-lock"></i></span></div>
+                                        <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Min. 8 karakter" required>
+                                    </div>
+                                    @error('password') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="form-group">
+                                    <label for="password_confirmation">Konfirmasi Password <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-lock"></i></span></div>
+                                        <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Ketik ulang password" required>
+                                    </div>
                                 </div>
 
-                                <h5>Informasi Jabatan</h5>
+                                <h5 class="mt-4">Informasi Jabatan</h5>
                                 <hr>
                                 <div class="form-group">
                                     <label for="role">Jabatan</label>
-                                    <select class="form-control @error('role') is-invalid @enderror" id="role" name="role" required>
+                                    <select class="form-control select2 @error('role') is-invalid @enderror" id="role" name="role" required>
                                         <option value="">-- Pilih Jabatan --</option>
                                         @foreach($roles as $role)
                                             <option value="{{ $role->name }}" {{ old('role') == $role->name ? 'selected' : '' }}>
@@ -103,26 +141,14 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('role') <span class="text-danger">{{ $message }}</span> @enderror
+                                    @error('role') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="form-group" id="unit_usaha_group" style="{{ !in_array(old('role'), ['manajer_unit_usaha', 'admin_unit_usaha']) ? 'display:none;' : '' }}">
-                                    <label for="unit_usaha_id">Unit Usaha</label>
-                                    <select class="form-control @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" name="unit_usaha_id">
-                                        <option value="">-- Pilih Unit Usaha --</option>
-                                        @foreach($unitUsahas as $unit)
-                                            <option value="{{ $unit->unit_usaha_id }}" {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
-                                                {{ $unit->nama_unit_usaha }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('unit_usaha_id') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
+                               
                             </div>
                         </div>
                     </div>
-
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Simpan</button>
                         <a href="{{ route('admin.manajemen-data.anggota.index') }}" class="btn btn-default">Batal</a>
                     </div>
                 </form>
@@ -131,48 +157,47 @@
     </div>
 @stop
 
-@section('js')
+@push('js')
 <script>
     $(document).ready(function() {
+        // Inisialisasi Select2
+        $('.select2').select2();
+
+        // Fungsi untuk menampilkan/menyembunyikan Unit Usaha
         function toggleUnitUsaha() {
             var selectedRole = $('#role').val();
             var unitUsahaGroup = $('#unit_usaha_group');
+            var unitUsahaSelect = $('#unit_usaha_id');
+
             if (selectedRole === 'manajer_unit_usaha' || selectedRole === 'admin_unit_usaha') {
-                unitUsahaGroup.show();
-                $('#unit_usaha_id').prop('required', true);
+                unitUsahaGroup.slideDown();
+                unitUsahaSelect.prop('required', true);
             } else {
-                unitUsahaGroup.hide();
-                $('#unit_usaha_id').prop('required', false);
+                unitUsahaGroup.slideUp();
+                unitUsahaSelect.prop('required', false);
             }
         }
-
         toggleUnitUsaha();
+        $('#role').change(toggleUnitUsaha);
 
-        $('#role').change(function() {
-            toggleUnitUsaha();
-        });
-
-        // Set `required` attribute for email and password based on user input
-        $('#email, #password').on('input', function() {
-            if ($('#email').val() !== '' || $('#password').val() !== '') {
-                $('#email').attr('required', true);
-                $('#password').attr('required', true);
-                $('#password_confirmation').attr('required', true);
+        // Live preview foto
+        $('#photo').on('change', function(event) {
+            var preview = $('#photo-preview');
+            if (event.target.files && event.target.files[0]) {
+                preview.show();
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.attr('src', e.target.result);
+                }
+                reader.readAsDataURL(event.target.files[0]);
             } else {
-                $('#email').removeAttr('required');
-                $('#password').removeAttr('required');
-                $('#password_confirmation').removeAttr('required');
+                preview.hide();
             }
-        });
-
-        // Optional: Pre-fill password confirmation when a password is typed
-        $('#password').on('input', function() {
-            if ($(this).val() !== '') {
-                $('#password_confirmation').attr('required', true);
-            } else {
-                $('#password_confirmation').removeAttr('required');
-            }
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName);
         });
     });
 </script>
-@stop
+@endpush
+
+@section('plugins.Select2', true)

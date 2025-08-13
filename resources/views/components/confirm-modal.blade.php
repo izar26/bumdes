@@ -3,7 +3,6 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="{{ $modalId }}Label">
-                    {{-- Default title, will be overridden by JS if data-title is present --}}
                     {{ $title ?? 'Konfirmasi Aksi' }}
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -11,12 +10,13 @@
                 </button>
             </div>
             <div class="modal-body">
-                {{-- Default body, will be overridden by JS if data-body is present --}}
                 {{ $body ?? 'Apakah Anda yakin ingin melakukan aksi ini?' }}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="button" class="btn {{ $confirmButtonClass ?? 'btn-primary' }}" id="confirmModalButton">
+
+                {{-- REVISI 1: Buat ID tombol ini menjadi dinamis --}}
+                <button type="button" class="btn {{ $confirmButtonClass ?? 'btn-primary' }}" id="{{ $modalId }}-confirmButton">
                     {{ $confirmButtonText ?? 'Konfirmasi' }}
                 </button>
             </div>
@@ -26,29 +26,33 @@
 
 @push('js')
 <script>
-    // This script ensures the modal's content is updated dynamically
     $(document).ready(function() {
         $('#{{ $modalId }}').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget); // Button that triggered the modal
+            var button = $(event.relatedTarget);
             var formId = button.data('form-id');
-            var modalTitle = button.data('title'); // New: get title from data attribute
+            var modalTitle = button.data('title');
             var modalBody = button.data('body');
             var confirmButtonText = button.data('button-text');
             var confirmButtonClass = button.data('button-class');
-
             var modal = $(this);
 
             if (modalTitle) {
                 modal.find('.modal-title').text(modalTitle);
-            } else {
-                modal.find('.modal-title').text('Konfirmasi Aksi'); // Fallback
+            }
+            if(modalBody) {
+                modal.find('.modal-body').text(modalBody);
             }
 
-            modal.find('.modal-body').text(modalBody);
-            var confirmButton = modal.find('#confirmModalButton');
-            confirmButton.text(confirmButtonText);
-            confirmButton.removeClass().addClass('btn').addClass(confirmButtonClass);
+            {{-- REVISI 2: Cari tombol berdasarkan ID yang dinamis --}}
+            var confirmButton = modal.find('#{{ $modalId }}-confirmButton');
 
+            confirmButton.text(confirmButtonText || 'Konfirmasi');
+            // Hapus semua class btn-* lalu tambahkan class yang baru
+            confirmButton.removeClass (function (index, className) {
+                return (className.match (/(^|\s)btn-\S+/g) || []).join(' ');
+            }).addClass(confirmButtonClass || 'btn-primary');
+
+            // Hapus event listener sebelumnya dan tambahkan yang baru
             confirmButton.off('click').on('click', function() {
                 $('#' + formId).submit();
             });

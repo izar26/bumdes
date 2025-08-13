@@ -39,6 +39,7 @@ class Anggota extends Model
         'photo',
         'jabatan',
         'user_id',
+        'is_profile_complete'
     ];
 
     /**

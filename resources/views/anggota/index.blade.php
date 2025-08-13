@@ -22,7 +22,7 @@
                     <p><strong>NIK:</strong> {{ $anggota->nik ?? 'Belum diisi' }}</p>
                     <p><strong>Tanggal Lahir:</strong> {{ $anggota->tanggal_lahir ?? 'Belum diisi' }}</p>
                     <p><strong>Alamat:</strong> {{ $anggota->alamat ?? 'Belum diisi' }}</p>
-                    <p><strong>Nomor Telepon:</strong> {{ $anggota->nomor_telepon ?? 'Belum diisi' }}</p>
+                    <p><strong>Nomor Telepon:</strong> {{ $anggota->nomor_telepon ?? '' }}</p>
                     <a href="{{ route('profile.edit') }}" class="btn btn-sm btn-primary">Edit Profil</a>
                 </x-adminlte-card>
             </div>
