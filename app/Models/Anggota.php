@@ -33,7 +33,6 @@ class Anggota extends Model
         'alamat',
         'no_telepon',
         'tanggal_daftar',
-        'unit_usaha_id',
         'status_anggota',
         'jenis_kelamin',
         'photo',

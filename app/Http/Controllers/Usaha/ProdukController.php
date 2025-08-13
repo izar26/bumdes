@@ -16,21 +16,27 @@ class ProdukController extends Controller
     /**
      * Helper function untuk mengambil daftar Unit Usaha berdasarkan peran user.
      */
-    private function getUnitUsahasForUser()
+   private function getUnitUsahasForUser()
     {
         $user = auth()->user();
-        // Bendahara atau Admin BUMDes bisa melihat semua unit usaha
         if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
             return UnitUsaha::where('status_operasi', 'Aktif')->get();
         }
 
-        // Peran lain hanya melihat unit usaha yang menjadi tanggung jawabnya
+        // Relasi Many-to-Many via tabel pivot akan otomatis digunakan di sini
         return $user->unitUsahas()->where('status_operasi', 'Aktif')->get();
     }
 
     public function index()
     {
-        $produks = Produk::with('unitUsaha', 'stok')->latest()->get();
+        $unitUsahas = $this->getUnitUsahasForUser();
+        $unitUsahaIds = $unitUsahas->pluck('unit_usaha_id');
+
+        $produks = Produk::with('unitUsaha', 'stok')
+            ->whereIn('unit_usaha_id', $unitUsahaIds)
+            ->latest()
+            ->get();
+
         return view('usaha.produk.index', compact('produks'));
     }
 
@@ -69,8 +75,6 @@ class ProdukController extends Controller
         'stok_awal' => 'required|numeric|min:0',
     ];
 
-    // Jika manajer unit usaha, tambahkan aturan kustom ke array 'unit_usaha_id'
-    // Menggunakan array push seperti ini sekarang akan berhasil.
     if ($currentUser->role === 'manajer_unit_usaha') {
         $validationRules['unit_usaha_id'][] = function ($attribute, $value, $fail) use ($currentUser) {
             if (!$currentUser->unitUsahas()->where('unit_usaha_id', $value)->exists()) {
