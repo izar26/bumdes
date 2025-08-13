@@ -11,7 +11,7 @@
     <div class="card-header">
         <h3 class="card-title">Filter Laporan</h3>
     </div>
-    <form action="{{ route('laporan.arus-kas.generate') }}" method="POST" target="_blank">
+    <form action="{{ route('arus-kas.generate') }}" method="POST" target="_blank">
         @csrf
         <div class="card-body">
             <div class="row">

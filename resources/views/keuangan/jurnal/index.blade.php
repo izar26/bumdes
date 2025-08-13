@@ -18,7 +18,7 @@
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
-            <div class="small mt-1">
+            <div class="small mt-2">
                 <br>
                 <strong>Total Debit:</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
                 <strong>Total Kredit:</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
@@ -28,61 +28,74 @@
     </div>
     <div class="card-body">
         {{-- Filter Section --}}
-        <form method="GET" class="mb-3">
-    <div class="row g-2 align-items-end">
-        <div class="col-md-2">
-            <label class="form-label">Tahun</label>
-            <select name="year" class="form-control">
-                @foreach($years as $year)
-                    <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
-                        {{ $year }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        <form id="filterForm" method="GET" class="mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Tahun</label>
+                    <select name="year" class="form-control">
+                        @foreach($years as $year)
+                            <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-        <div class="col-md-2">
-            <label class="form-label">Tanggal Mulai</label>
-            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-        </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status Jurnal</label>
+                    <select name="approval_status" class="form-control">
+                        <option value="semua" {{ $statusJurnal == 'semua' ? 'selected' : '' }}>Semua</option>
+                        <option value="menunggu" {{ $statusJurnal == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
+                        <option value="disetujui" {{ $statusJurnal == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="ditolak" {{ $statusJurnal == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    </select>
+                </div>
 
-        <div class="col-md-2">
-            <label class="form-label">Tanggal Akhir</label>
-            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-        </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Mulai</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                </div>
 
-        <div class="col-md-2">
-            <label class="form-label">Status Jurnal</label>
-            <select name="approval_status" class="form-control">
-                <option value="semua">Semua</option>
-                <option value="menunggu" {{ $statusJurnal == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                <option value="disetujui" {{ $statusJurnal == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
-                <option value="ditolak" {{ $statusJurnal == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-            </select>
-        </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tanggal Akhir</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                </div>
 
-        @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
-        <div class="col-md-2">
-            <label class="form-label">Unit Usaha</label>
-            <select name="unit_usaha_id" class="form-control">
-                <option value="">Semua</option>
-                @foreach($unitUsahas as $unit)
-                    <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
-                        {{ $unit->nama_unit }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        @endif
+                @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
+                <div class="col-md-2">
+                    <label class="form-label">Unit Usaha</label>
+                    <select name="unit_usaha_id" class="form-control">
+                        <option value="">Semua</option>
+                        @foreach($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
+                                {{ $unit->nama_unit }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
 
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-filter"></i> Filter
-            </button>
-        </div>
-    </div>
-</form>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-80 me-2 mx-2" title="Filter"><i class="fas fa-filter"></i></button>
+                    <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary w-80 me-2 mx-2" title="Refresh"><i class="fas fa-sync"></i></a>
+                    <a href="{{ route('jurnal-umum.show', [
+    'jurnal_umum' => 'print',
+    'year' => request('year'),
+    'approval_status' => request('approval_status'),
+    'start_date' => request('start_date'),
+    'end_date' => request('end_date'),
+    'unit_usaha_id' => request('unit_usaha_id')
+]) }}"
+   target="_blank" 
+   class="btn btn-success w-100" 
+   title="Cetak Laporan">
+    <i class="fas fa-print"></i>
+</a>
 
+
+                </div>
+            </div>
+        </form>
 
         {{-- Table Section --}}
         <div class="table-responsive">
@@ -100,41 +113,35 @@
                     @forelse ($jurnals as $jurnal)
                         <tr class="table-primary">
                             <td><strong>{{ \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('d M Y') }}</strong></td>
-<td>
-    <strong>{{ $jurnal->deskripsi }}</strong>
-    <br>
-    @switch($jurnal->status)
-        @case('menunggu')
-            <span class="badge badge-warning">Menunggu</span>
-            @break
-        @case('disetujui')
-            <span class="badge badge-success">Disetujui</span>
-            @break
-        @case('ditolak')
-            <span class="badge badge-danger">Ditolak</span>
-            @if($jurnal->rejected_reason)
-                <div class="mt-1 text-danger small">
-                    <strong>Alasan:</strong> {{ $jurnal->rejected_reason }}
-                </div>
-            @endif
-            @break
-    @endswitch
-</td>
-
-
-                            <td></td>
-                            <td></td>
+                            <td>
+                                <strong>{{ $jurnal->deskripsi }}</strong>
+                                <br>
+                                @switch($jurnal->status)
+                                    @case('menunggu')
+                                        <span class="badge badge-warning">Menunggu</span>
+                                        @break
+                                    @case('disetujui')
+                                        <span class="badge badge-success">Disetujui</span>
+                                        @break
+                                    @case('ditolak')
+                                        <span class="badge badge-danger">Ditolak</span>
+                                        @if($jurnal->rejected_reason)
+                                            <div class="mt-1 text-danger small">
+                                                <strong>Alasan:</strong> {{ $jurnal->rejected_reason }}
+                                            </div>
+                                        @endif
+                                        @break
+                                @endswitch
+                            </td>
+                            <td class="text-right"><strong>Rp {{ number_format($jurnal->total_debit, 0, ',', '.') }}</strong></td>
+                            <td class="text-right"><strong>Rp {{ number_format($jurnal->total_kredit, 0, ',', '.') }}</strong></td>
                             <td class="text-center">
                                 <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jurnal ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus Jurnal">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-danger btn-xs" title="Hapus Jurnal" data-toggle="modal" data-target="#deleteModal" data-id="{{ $jurnal->jurnal_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         @foreach ($jurnal->detailJurnals as $detail)
@@ -162,12 +169,46 @@
         <div class="mt-3">{{ $jurnals->links() }}</div>
     </div>
 </div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Konfirmasi Penghapusan</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Yakin ingin menghapus jurnal ini?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <form id="deleteForm" method="POST" action="">
+          @csrf
+          @method('DELETE')
+          <button type="submit" class="btn btn-danger">Hapus</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 @stop
 
 @section('js')
 <script>
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
+  $('[data-toggle="tooltip"]').tooltip();
+
+  $('#deleteModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var jurnalId = button.data('id');
+    var form = $(this).find('#deleteForm');
+    var actionUrl = '{{ route("jurnal-umum.destroy", ":jurnal_id") }}';
+    actionUrl = actionUrl.replace(':jurnal_id', jurnalId);
+    form.attr('action', actionUrl);
+  });
 })
 </script>
 @stop
