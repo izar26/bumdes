@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Akun;
 use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
+use App\Models\Bungdes;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -42,6 +43,7 @@ class NeracaController extends Controller
         $user = Auth::user();
         $reportDate = Carbon::parse($request->report_date);
         $unitUsahaId = $request->unit_usaha_id;
+        $bumdes = Bungdes::first();
 
         // Base query yang sudah difilter berdasarkan status jurnal dan unit usaha
         $baseQuery = DetailJurnal::join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
@@ -126,7 +128,7 @@ class NeracaController extends Controller
             'asets', 'totalAset',
             'kewajibans', 'totalKewajiban',
             'ekuitas', 'totalModalAwal',
-            'labaDitahan', 'totalEkuitas'
+            'labaDitahan', 'totalEkuitas', 'bumdes'
         ));
     }
 }
