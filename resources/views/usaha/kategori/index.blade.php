@@ -53,26 +53,6 @@
                                                        title="Edit">
                                                        Edit
                                                     </a>
-                                                    {{-- FORM INI DIPERBARUI --}}
-                                                    <form id="delete-form-{{ $kategori->id }}"
-                                                          action="{{ route('usaha.kategori.destroy', $kategori->id) }}"
-                                                          method="POST"
-                                                          style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="button" {{-- Ubah type dari 'submit' ke 'button' --}}
-                                                                class="btn btn-danger"
-                                                                title="Hapus"
-                                                                data-toggle="modal"
-                                                                data-target="#confirmDeleteModalKategori" {{-- ID modal yang unik --}}
-                                                                data-form-id="delete-form-{{ $kategori->id }}"
-                                                                data-title="Konfirmasi Penghapusan Kategori"
-                                                                data-body="Apakah Anda yakin ingin menghapus kategori '{{ $kategori->nama_kategori }}' ini secara permanen? Produk terkait akan dikategorikan sebagai Tanpa Kategori. Aksi ini tidak bisa dikembalikan."
-                                                                data-button-text="Hapus Permanen"
-                                                                data-button-class="btn-danger">
-                                                                Hapus
-                                                        </button>
-                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>

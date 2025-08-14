@@ -37,16 +37,34 @@
                 <label for="email">Email (Opsional)</label>
                 <input type="email" name="email" class="form-control" value="{{ old('email', $pemasok->email) }}">
             </div>
+
             <div class="form-group">
                 <label for="unit_usaha_id">Terkait Unit Usaha</label>
-                <select name="unit_usaha_id" class="form-control" required>
-                    <option value="">-- Pilih Unit Usaha --</option>
-                    @foreach ($unitUsahas as $unit)
-                        <option value="{{ $unit->unit_usaha_id }}" {{ old('unit_usaha_id', $pemasok->unit_usaha_id) == $unit->unit_usaha_id ? 'selected' : '' }}>
-                           {{ $unit->nama_unit }}
-                        </option>
-                    @endforeach
-                </select>
+
+                {{-- Logika untuk menampilkan dropdown yang berbeda berdasarkan jumlah unit usaha yang dikelola --}}
+                @if ($unitUsahas->count() === 1)
+                    {{-- Jika user hanya mengelola 1 unit usaha, dropdown dinonaktifkan --}}
+                    <select id="unit_usaha_id_display" class="form-control" disabled>
+                        @foreach ($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}" selected>
+                               {{ $unit->nama_unit }}
+                            </option>
+                        @endforeach
+                    </select>
+                    {{-- Gunakan input hidden untuk mengirim nilai ke controller --}}
+                    <input type="hidden" name="unit_usaha_id" value="{{ $unitUsahas->first()->unit_usaha_id }}">
+                @else
+                    {{-- Jika user mengelola lebih dari 1 unit usaha, dropdown bisa diubah --}}
+                    <select name="unit_usaha_id" class="form-control" required>
+                        <option value="">-- Pilih Unit Usaha --</option>
+                        @foreach ($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}" {{ old('unit_usaha_id', $pemasok->unit_usaha_id) == $unit->unit_usaha_id ? 'selected' : '' }}>
+                               {{ $unit->nama_unit }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
+
             </div>
         </div>
         <div class="card-footer">

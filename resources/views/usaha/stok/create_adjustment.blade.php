@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title">Form Penyesuaian Stok Produk</h3>
         </div>
-        <form action="{{ route('usaha.stok.store') }}" method="POST">
+        <form id="stok-adjustment-form" action="{{ route('usaha.stok.store') }}" method="POST">
             @csrf
             <div class="card-body">
                 @if (session('success'))
@@ -46,11 +46,12 @@
 
                 <div class="form-group">
                     <label for="produk_id">Produk:</label>
+                    {{-- DROPDOWN INI HANYA MENAMPILKAN PRODUK DARI UNIT USAHA YANG DIKELOLA USER --}}
                     <select name="produk_id" id="produk_id" class="form-control @error('produk_id') is-invalid @enderror" required>
                         <option value="">-- Pilih Produk --</option>
                         @foreach ($produks as $produk)
                             <option value="{{ $produk->produk_id }}" {{ old('produk_id') == $produk->produk_id ? 'selected' : '' }}>
-                                {{ $produk->nama_produk }} ({{ $produk->unitUsaha->nama_unit ?? 'Tidak ada Unit Usaha' }}) - Stok Saat Ini: {{ $produk->stok->jumlah_stok ?? '0' }} {{ $produk->satuan_unit ?? ''}}
+                                {{ $produk->nama_produk }} - Stok Saat Ini: {{ $produk->stok->jumlah_stok ?? '0' }} {{ $produk->satuan_unit ?? ''}}
                             </option>
                         @endforeach
                     </select>
@@ -62,22 +63,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="unit_usaha_id">Unit Usaha (Otomatis berdasarkan Produk):</label>
-                    {{-- Ini akan diisi oleh JS atau read-only, dan dikirim sebagai hidden input --}}
-                    <select name="unit_usaha_id" id="unit_usaha_id" class="form-control @error('unit_usaha_id') is-invalid @enderror" required>
-                        <option value="">-- Pilih Produk untuk menentukan Unit Usaha --</option>
+                    <label for="unit_usaha_id_display">Unit Usaha (Otomatis berdasarkan Produk):</label>
+                    <select id="unit_usaha_id_display" class="form-control" disabled>
                         @foreach ($unitUsahas as $unitUsaha)
                             <option value="{{ $unitUsaha->unit_usaha_id }}" {{ old('unit_usaha_id') == $unitUsaha->unit_usaha_id ? 'selected' : '' }}>
                                 {{ $unitUsaha->nama_unit }}
                             </option>
                         @endforeach
                     </select>
-                    @error('unit_usaha_id')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
                 </div>
+
+                {{-- INPUT HIDDEN INI YANG AKAN MENGIRIMKAN NILAI UNIT USAHA KE CONTROLLER --}}
+                <input type="hidden" name="unit_usaha_id" id="unit_usaha_id_hidden" value="{{ old('unit_usaha_id') }}">
 
                 <div class="form-group">
                     <label for="jenis_penyesuaian">Jenis Penyesuaian:</label>
@@ -134,34 +131,29 @@
 
 @section('js')
     <script>
-        // Data produk untuk mapping unit_usaha_id
         const produksData = @json($produks->keyBy('produk_id'));
 
         document.getElementById('produk_id').addEventListener('change', function() {
             const selectedProdukId = this.value;
-            const unitUsahaSelect = document.getElementById('unit_usaha_id');
+            const unitUsahaSelectDisplay = document.getElementById('unit_usaha_id_display');
+            const unitUsahaInputHidden = document.getElementById('unit_usaha_id_hidden');
 
             if (selectedProdukId && produksData[selectedProdukId]) {
                 const produk = produksData[selectedProdukId];
                 const unitUsahaId = produk.unit_usaha_id;
 
-                // Set nilai dropdown unit_usaha_id
-                unitUsahaSelect.value = unitUsahaId;
-                unitUsahaSelect.setAttribute('readonly', 'readonly'); // Membuat readonly
-                unitUsahaSelect.style.pointerEvents = 'none'; // Menonaktifkan interaksi mouse
-                unitUsahaSelect.style.backgroundColor = '#e9ecef'; // Memberi warna abu-abu
+                unitUsahaSelectDisplay.value = unitUsahaId;
+                unitUsahaInputHidden.value = unitUsahaId;
             } else {
-                unitUsahaSelect.value = ''; // Reset jika tidak ada produk terpilih
-                unitUsahaSelect.removeAttribute('readonly');
-                unitUsahaSelect.style.pointerEvents = 'auto';
-                unitUsahaSelect.style.backgroundColor = '#fff';
+                unitUsahaSelectDisplay.value = '';
+                unitUsahaInputHidden.value = '';
             }
         });
 
-        // Trigger change on load if an old value exists
         document.addEventListener('DOMContentLoaded', function() {
-            if (document.getElementById('produk_id').value) {
-                document.getElementById('produk_id').dispatchEvent(new Event('change'));
+            const produkId = document.getElementById('produk_id');
+            if (produkId.value) {
+                produkId.dispatchEvent(new Event('change'));
             }
         });
     </script>
