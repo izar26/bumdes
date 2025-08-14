@@ -76,7 +76,7 @@
                             <td>{{ $produk->produk_id }}</td>
                             <td>{{ $produk->nama_produk }}</td>
                             <td>{{ $produk->unitUsaha->nama_unit ?? 'N/A' }}</td>
-                            <td>{{ $produk->kategori ?? '-' }}</td>
+                            <td>{{ $produk->kategori->nama_kategori ?? '-' }}</td>
                             <td>Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
                             <td>
                                 <strong>{{ $currentStok }}</strong> {{ $produk->satuan_unit ?? '' }}

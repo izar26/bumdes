@@ -10,6 +10,7 @@ use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
 use App\Models\Stok;
+use App\Models\Bungdes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -154,10 +155,16 @@ class PenjualanController extends Controller
     }
 
     public function show(Penjualan $penjualan)
-    {
-        $penjualan->load('detailPenjualans.produk', 'unitUsaha');
-        return view('usaha.penjualan.show', compact('penjualan'));
-    }
+{
+    // Muat relasi yang diperlukan
+    $penjualan->load('detailPenjualans.produk', 'unitUsaha');
+    
+    // Ambil data BUMDes
+    $bumdes = Bungdes::first(); 
+
+    // Kirim kedua variabel ke view
+    return view('usaha.penjualan.show', compact('penjualan', 'bumdes'));
+}
 
     public function destroy(Penjualan $penjualan)
     {

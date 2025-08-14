@@ -8,28 +8,34 @@
 
 @section('content')
 <div class="invoice p-3 mb-3">
+    {{-- BARIS HEADER --}}
     <div class="row">
         <div class="col-12">
             <h4>
-                <i class="fas fa-store"></i> BUMDes Anda.
+                {{-- PERBAIKAN: Tampilkan nama BUMDes secara dinamis --}}
+                <i class="fas fa-file-invoice-dollar"></i> {{ optional($bumdes)->nama_bumdes ?? 'BUMDes' }}
                 <small class="float-right">Tanggal: {{ \Carbon\Carbon::parse($penjualan->tanggal_penjualan)->format('d/m/Y') }}</small>
             </h4>
         </div>
     </div>
+
+    {{-- BARIS INFO --}}
     <div class="row invoice-info">
         <div class="col-sm-4 invoice-col">
             Dari
             <address>
-                <strong>BUMDes Anda</strong><br>
-                Alamat BUMDes Anda<br>
-                Telepon: (xxx) xxxx-xxxx<br>
-                Email: info@bumdes.com
+                {{-- PERBAIKAN: Tampilkan nama Unit Usaha dan data BUMDes --}}
+                <strong>{{ $penjualan->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
+                {{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}<br>
+                Telepon: {{ optional($bumdes)->telepon ?? '-' }}<br>
+                Email: {{ optional($bumdes)->email ?? '-' }}
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
             Kepada
             <address>
                 <strong>{{ $penjualan->nama_pelanggan ?? 'Pelanggan Umum' }}</strong><br>
+                {{-- Bisa ditambahkan alamat pelanggan jika ada --}}
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
@@ -44,6 +50,8 @@
             <br>
         </div>
     </div>
+
+    {{-- BARIS TABEL PRODUK --}}
     <div class="row">
         <div class="col-12 table-responsive">
             <table class="table table-striped">
@@ -68,6 +76,8 @@
             </table>
         </div>
     </div>
+
+    {{-- BARIS TOTAL --}}
     <div class="row">
         <div class="col-6">
             {{-- Bisa ditambahkan notes atau metode pembayaran di sini --}}
@@ -85,6 +95,7 @@
         </div>
     </div>
 
+    {{-- BARIS TOMBOL AKSI --}}
     <div class="row no-print">
         <div class="col-12">
             <a href="#" onclick="window.print();" class="btn btn-default"><i class="fas fa-print"></i> Cetak</a>
@@ -97,7 +108,6 @@
 @stop
 
 @section('css')
-    {{-- CSS khusus untuk halaman cetak agar rapi --}}
     <style>
         @media print {
             .main-sidebar, .main-header, .btn, .content-header, .no-print {

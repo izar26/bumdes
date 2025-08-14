@@ -132,7 +132,7 @@ $(document).ready(function() {
                         ${produkNama}
                     </td>
                     <td><input type="number" name="jumlah[]" class="form-control jumlah" value="1" min="1"></td>
-                    <td><input type="text" name="harga_unit[]" class="form-control harga-unit" value="${produkHarga}" readonly></td>
+                    <td><input type="text" name="harga_unit[]" class="form-control harga-unit" value="${parseInt(produkHarga)}" readonly></td>
                     <td><span class="subtotal-text">Rp ${parseInt(produkHarga).toLocaleString('id-ID')}</span></td>
                     <td><button type="button" class="btn btn-danger btn-sm hapus-produk">Hapus</button></td>
                 </tr>
