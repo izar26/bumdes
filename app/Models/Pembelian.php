@@ -29,4 +29,9 @@ class Pembelian extends Model
     {
         return $this->belongsTo(Pemasok::class, 'pemasok_id', 'pemasok_id');
     }
+
+    public function unitUsaha()
+    {
+        return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
+    }
 }

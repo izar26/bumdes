@@ -20,7 +20,7 @@ class DashboardController extends Controller
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             // Pastikan Anda sudah membuat relasi ini di model User.php
             // public function managedUnit() { return $this->hasOne(UnitUsaha::class, 'user_id', 'user_id'); }
-            $unit = $user->managedUnit; 
+            $unit = $user->managedUnit;
             if ($unit) {
                 $unitUsahaId = $unit->unit_usaha_id;
             }
@@ -118,7 +118,7 @@ class DashboardController extends Controller
         }
         return $kinerja;
     }
-    
+
     private function getNotifications()
     {
         $notifications = [];
@@ -132,16 +132,16 @@ class DashboardController extends Controller
             $unit = $user->managedUnit;
             if ($unit) {
                 $jurnalMenunggu = JurnalUmum::where('status', 'menunggu')
-                                            ->where('unit_usaha_id', $unit->unit_usaha_id)
-                                            ->whereHas('user.roles', function ($query) {
-                                                $query->where('name', 'admin_unit_usaha');
-                                            })
-                                            ->count();
+                    ->where('unit_usaha_id', $unit->unit_usaha_id)
+                    ->whereHas('user.roles', function ($query) {
+                        $query->where('name', 'admin_unit_usaha');
+                    })
+                    ->count();
                 if ($jurnalMenunggu > 0) {
                     $notifications[] = [
                         'type' => 'info',
                         'icon' => 'fas fa-file-invoice-dollar',
-                        'message' => "Ada <strong>{$jurnalMenunggu} jurnal unit</strong> perlu persetujuan Anda. <a href='".route('approval-jurnal.index')."'>Proses sekarang</a>."
+                        'message' => "Ada <strong>{$jurnalMenunggu} jurnal unit</strong> perlu persetujuan Anda. <a href='" . route('approval-jurnal.index') . "'>Proses sekarang</a>."
                     ];
                 }
             }
@@ -150,16 +150,16 @@ class DashboardController extends Controller
         // Untuk Direktur BUMDes: Cek SEMUA jurnal 'menunggu' yang dibuat oleh 'bendahara_bumdes'.
         if ($user->hasRole('direktur_bumdes')) {
             $jurnalMenunggu = JurnalUmum::where('status', 'menunggu')
-                                        // PERBAIKAN: Hapus 'whereNull' agar semua jurnal bendahara terhitung
-                                        ->whereHas('user.roles', function ($query) {
-                                            $query->where('name', 'bendahara_bumdes');
-                                        })
-                                        ->count();
+                // PERBAIKAN: Hapus 'whereNull' agar semua jurnal bendahara terhitung
+                ->whereHas('user.roles', function ($query) {
+                    $query->where('name', 'bendahara_bumdes');
+                })
+                ->count();
             if ($jurnalMenunggu > 0) {
                 $notifications[] = [
                     'type' => 'info',
                     'icon' => 'fas fa-file-invoice-dollar',
-                    'message' => "Ada <strong>{$jurnalMenunggu} jurnal</strong> perlu persetujuan Anda. <a href='".route('approval-jurnal.index')."'>Proses sekarang</a>."
+                    'message' => "Ada <strong>{$jurnalMenunggu} jurnal</strong> perlu persetujuan Anda. <a href='" . route('approval-jurnal.index') . "'>Proses sekarang</a>."
                 ];
             }
         }
@@ -167,21 +167,21 @@ class DashboardController extends Controller
         // 2. Notifikasi INFO untuk PEMBUAT JURNAL
         // Notifikasi Jurnal DITOLAK
         $jurnalDitolak = JurnalUmum::where('status', 'ditolak')
-                                    ->where('user_id', $user->user_id)
-                                    ->count();
+            ->where('user_id', $user->user_id)
+            ->count();
         if ($jurnalDitolak > 0) {
             $notifications[] = [
                 'type' => 'danger',
                 'icon' => 'fas fa-exclamation-triangle',
-                'message' => "Terdapat <strong>{$jurnalDitolak} jurnal</strong> Anda yang ditolak. <a href='".route('jurnal-umum.index')."'>Periksa & perbaiki</a>."
+                'message' => "Terdapat <strong>{$jurnalDitolak} jurnal</strong> Anda yang ditolak. <a href='" . route('jurnal-umum.index') . "'>Periksa & perbaiki</a>."
             ];
         }
 
         // Notifikasi Jurnal DISETUJUI (hanya yang disetujui dalam 24 jam terakhir)
         $jurnalDisetujui = JurnalUmum::where('status', 'disetujui')
-                                    ->where('user_id', $user->user_id)
-                                    ->where('approved_at', '>=', Carbon::now()->subDay())
-                                    ->count();
+            ->where('user_id', $user->user_id)
+            ->where('approved_at', '>=', Carbon::now()->subDay())
+            ->count();
         if ($jurnalDisetujui > 0) {
             $notifications[] = [
                 'type' => 'success',

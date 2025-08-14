@@ -118,4 +118,10 @@ class User extends Authenticatable
         }
         return 'Anggota';
     }
+
+    public function managedUnit()
+    {
+        // Relasi ini mengasumsikan 'user_id' di tabel 'unit_usahas' adalah penanggung jawab/manajer
+        return $this->hasOne(UnitUsaha::class, 'user_id', 'user_id');
+    }
 }
