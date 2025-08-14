@@ -38,14 +38,19 @@
             </div>
             <div class="form-group">
                 <label for="unit_usaha_id">Terkait Unit Usaha</label>
-                <select name="unit_usaha_id" class="form-control" required>
-                    <option value="">-- Pilih Unit Usaha --</option>
+
+                {{-- Field ini hanya untuk tampilan, nilai dikirim lewat input hidden --}}
+                <select name="unit_usaha_id_display" id="unit_usaha_id_display" class="form-control" disabled required>
+                    <option value="">Pilih Unit Usaha</option>
                     @foreach ($unitUsahas as $unit)
                         <option value="{{ $unit->unit_usaha_id }}" {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
                            {{ $unit->nama_unit }}
                         </option>
                     @endforeach
                 </select>
+
+                {{-- Input hidden yang akan mengirimkan nilai unit_usaha_id --}}
+                <input type="hidden" name="unit_usaha_id" id="unit_usaha_id_hidden" value="{{ old('unit_usaha_id') }}">
             </div>
         </div>
         <div class="card-footer">
@@ -54,4 +59,34 @@
         </div>
     </form>
 </div>
+@stop
+
+@section('js')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectDisplay = document.getElementById('unit_usaha_id_display');
+        const hiddenInput = document.getElementById('unit_usaha_id_hidden');
+
+        // Ambil ID dari unit usaha pertama yang ada di dropdown
+        const firstUnitUsahaId = selectDisplay.options.length > 1 ? selectDisplay.options[1].value : '';
+
+        // Jika hanya ada satu unit usaha yang dikelola user, pilih secara otomatis
+        if (selectDisplay.options.length === 2 && firstUnitUsahaId) {
+            selectDisplay.value = firstUnitUsahaId;
+            hiddenInput.value = firstUnitUsahaId;
+            selectDisplay.dispatchEvent(new Event('change'));
+        }
+
+        // Jika old('unit_usaha_id') ada, pilih dan set nilainya
+        const oldUnitUsahaId = hiddenInput.value;
+        if (oldUnitUsahaId) {
+            selectDisplay.value = oldUnitUsahaId;
+        }
+
+        // Tambahkan event listener untuk memastikan input hidden selalu terupdate
+        selectDisplay.addEventListener('change', function() {
+            hiddenInput.value = this.value;
+        });
+    });
+</script>
 @stop

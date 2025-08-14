@@ -51,7 +51,6 @@
                         <td>{{ $pemasok->email ?? '-' }}</td>
                         <td>
                             <a href="{{ route('usaha.pemasok.edit', $pemasok->pemasok_id) }}" class="btn btn-info btn-xs">Edit</a>
-                            {{-- FORM INI DIPERBAIKI: ID form dan data-form-id --}}
                             <form id="delete-form-{{ $pemasok->pemasok_id }}" {{-- Perbaikan: penjualan_id diganti jadi pemasok_id --}}
                                   action="{{ route('usaha.pemasok.destroy', $pemasok->pemasok_id) }}"
                                   method="POST"
@@ -80,8 +79,8 @@
 
 {{-- MODAL INI DIPERBAIKI: ID modal --}}
 @include('components.confirm-modal', [
-    'modalId' => 'confirmDeleteModal', 
-    'title' => 'Konfirmasi Penghapusan Pemasok', 
+    'modalId' => 'confirmDeleteModal',
+    'title' => 'Konfirmasi Penghapusan Pemasok',
     'body' => 'Apakah Anda yakin ingin menghapus data ini?',
     'confirmButtonText' => 'Hapus',
     'confirmButtonClass' => 'btn-danger',
