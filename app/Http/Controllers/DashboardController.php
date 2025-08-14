@@ -10,18 +10,15 @@ class DashboardController extends Controller
     {
         $role = auth()->user()->role;
 
-        // Kalau profil belum lengkap, langsung ke halaman lengkapi profil
-        if (is_null(auth()->user()->nama) || is_null(auth()->user()->alamat)) {
-            return redirect()->route('profile.complete');
-        }
+
 
         // Kalau role = admin_bumdes → ke dashboard admin
         if ($role === 'admin_bumdes') {
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('home');
         }
 
         // Default ke dashboard admin (atau ubah sesuai kebutuhan)
-        return redirect()->route('admin.dashboard');
+        return redirect()->route('home');
     }
 
     public function index()
