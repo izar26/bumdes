@@ -399,7 +399,7 @@ return [
         'text'    => 'Approval Jurnal',
         'icon'    => 'fas fa-fw fa-check-circle',
         'route'   => 'approval-jurnal.index',
-        'can' => ['manajer_unit_usaha' ,'direkt~ur_bumdes' ],
+        'can' => ['manajer_unit_usaha' ,'direktur_bumdes' ],
     ],
     [
         'text'    => 'Laporan',

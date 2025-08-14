@@ -59,7 +59,7 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::middleware(['auth'])->group(function () {
 
     // Redirect ke dashboard sesuai role
-    Route::get('/dashboard', [DashboardController::class, 'redirect'])->name('dashboard.redirect');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
     // Halaman Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -206,7 +206,3 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('laporan/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     Route::post('laporan/arus-kas', [ArusKasController::class, 'generate'])->name('arus-kas.generate');
-
-Route::get('/admin/dashboard', fn () => view('admin.dashboard'))
-    ->name('home')
-    ->middleware('auth');
