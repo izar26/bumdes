@@ -31,7 +31,7 @@ class LoginController extends Controller
         }
 
         // 2. Perbaikan: Mengambil nama peran menggunakan metode dari Spatie
-        $role = $user->getRoleNames()->first(); 
+        $role = $user->getRoleNames()->first();
 
         \Log::info('User attempting redirect: ' . $user->username);
         \Log::info('User role: ' . $role);
@@ -46,7 +46,7 @@ class LoginController extends Controller
                 return '/profile';
             case 'manajer_unit_usaha':
             case 'admin_unit_usaha':
-                return '/usaha/dashboard';
+                return '/dashboard';
             default:
                 return '/login';
         }
@@ -70,7 +70,7 @@ class LoginController extends Controller
     {
         $bumdes = Bungdes::first();
         // Pastikan path view sesuai dengan lokasi file login Anda
-        return view('auth.login', compact('bumdes')); 
+        return view('auth.login', compact('bumdes'));
     }
 
     /**

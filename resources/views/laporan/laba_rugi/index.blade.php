@@ -33,7 +33,21 @@
                     <label for="end_date">Tanggal Selesai</label>
                     <input type="date" class="form-control" id="end_date" name="end_date" value="{{ date('Y-m-t') }}" required>
                 </div>
-            </div>
+
+                {{-- === BLOK BARU YANG DITAMBAHKAN === --}}
+                @if(isset($unitUsahas) && !$unitUsahas->isEmpty())
+                <div class="form-group col-md-12">
+                    <label for="unit_usaha_id">Filter Unit Usaha (Opsional)</label>
+                    <select class="form-control" id="unit_usaha_id" name="unit_usaha_id">
+                        <option value="">-- Tampilkan Semua Unit Usaha --</option>
+                        @foreach ($unitUsahas as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}">{{ $unit->nama_unit }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                {{-- === AKHIR BLOK BARU === --}}
+            </div>  
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">

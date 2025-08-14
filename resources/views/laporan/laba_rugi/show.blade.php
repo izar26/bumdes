@@ -5,15 +5,12 @@
 @section('content_header')
     {{-- Dibiarkan kosong agar header default tidak mengganggu --}}
 @stop
-
 @section('content')
 <div class="card">
     <div class="card-body">
-
-        {{-- KOP SURAT (Menggunakan struktur baru yang standar) --}}
         <div class="kop">
             @if($bumdes && $bumdes->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo">
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo">
             @else
                 <img src="https://placehold.co/75x75/008080/FFFFFF?text=Logo" alt="Logo">
             @endif
@@ -25,25 +22,18 @@
         </div>
         <div class="garis-pembatas"></div>
 
-        {{-- JUDUL LAPORAN --}}
         <div class="judul">
             <h3>Laporan Laba Rugi</h3>
-            <p>Untuk Periode yang Berakhir pada <strong>{{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}</strong></p>
+            <p>Untuk Periode yang Berakhir pada <strong>{{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}</strong></p>
         </div>
 
-        {{-- TABEL DATA (Struktur HTML tetap, hanya CSS yang diubah) --}}
         <table class="table-laporan table-laba-rugi">
             <tbody>
-                {{-- PENDAPATAN --}}
-                <tr class="header-row">
-                    <td colspan="2"><strong>Pendapatan</strong></td>
-                </tr>
-                @php $totalPendapatan = 0; @endphp
+                <tr class="header-row"><td colspan="2"><strong>Pendapatan</strong></td></tr>
                 @forelse ($pendapatans as $pendapatan)
-                    @php $totalPendapatan += $pendapatan['total']; @endphp
                     <tr>
                         <td class="item-name">{{ $pendapatan['nama_akun'] }}</td>
-                        <td class="item-value">{{ 'Rp ' . $pendapatan['total'] }}</td>
+                        <td class="item-value">Rp {{ number_format($pendapatan['total'], 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -53,46 +43,15 @@
                 @endforelse
                 <tr class="total-row">
                     <td><strong>Total Pendapatan</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' . $totalPendapatan }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalPendapatan, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr><td colspan="2" class="spacer"></td></tr>
 
-                {{-- HPP (jika ada) --}}
-                @if(isset($hpps) && count($hpps) > 0)
-                <tr class="header-row">
-                    <td colspan="2"><strong>Harga Pokok Penjualan (HPP)</strong></td>
-                </tr>
-                @php $totalHpp = 0; @endphp
-                @foreach ($hpps as $hpp)
-                    @php $totalHpp += $hpp['total']; @endphp
-                    <tr>
-                        <td class="item-name">{{ $hpp['nama_akun'] }}</td>
-                        <td class="item-value">({{ 'Rp ' . $hpp['total'] }})</td>
-                    </tr>
-                @endforeach
-                <tr class="total-row">
-                    <td><strong>Total HPP</strong></td>
-                    <td class="item-value"><strong>({{ 'Rp ' . $totalHpp }})</strong></td>
-                </tr>
-                
-                {{-- LABA KOTOR --}}
-                <tr class="grand-total-row">
-                    <td><strong>Laba Kotor</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' . $totalPendapatan - $totalHpp }}</strong></td>
-                </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
-                @endif
-
-                {{-- BEBAN OPERASIONAL --}}
-                <tr class="header-row">
-                    <td colspan="2"><strong>Beban Operasional</strong></td>
-                </tr>
-                @php $totalBeban = 0; @endphp
+                <tr class="header-row"><td colspan="2"><strong>Beban Operasional</strong></td></tr>
                 @forelse ($bebans as $beban)
-                    @php $totalBeban += $beban['total']; @endphp
                     <tr>
                         <td class="item-name">{{ $beban['nama_akun'] }}</td>
-                        <td class="item-value">({{ 'Rp ' . $beban['total'] }})</td>
+                        <td class="item-value">(Rp {{ number_format($beban['total'], 0, ',', '.') }})</td>
                     </tr>
                 @empty
                     <tr>
@@ -102,61 +61,43 @@
                 @endforelse
                 <tr class="total-row">
                     <td><strong>Total Beban Operasional</strong></td>
-                    <td class="item-value"><strong>({{ 'Rp ' . $totalBeban }})</strong></td>
+                    <td class="item-value"><strong>(Rp {{ number_format($totalBeban, 0, ',', '.') }})</strong></td>
                 </tr>
                 <tr><td colspan="2" class="spacer"></td></tr>
 
-                {{-- LABA/RUGI BERSIH --}}
                 @php
-                    $labaRugi = ($totalPendapatan - ($totalHpp ?? 0)) - $totalBeban;
                     $labaRugiLabel = $labaRugi >= 0 ? 'Laba Bersih Operasional' : 'Rugi Bersih Operasional';
                 @endphp
                 <tr class="grand-total-row">
                     <td><strong>{{ $labaRugiLabel }}</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' .abs($labaRugi) }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format(abs($labaRugi), 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
-        {{-- TANDA TANGAN (Menggunakan struktur baru yang standar) --}}
         <table class="footer">
             <tr>
                 <td style="width: 50%;"></td>
-                <td style="width: 50%;">
-                    {{ 'Cianjur' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
-                </td>
+                <td style="width: 50%;">{{ $bumdes->kota ?? 'Kota Anda' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</td>
             </tr>
             <tr>
-                 <td>Menyetujui,</td>
-                {{-- <td></td> --}}
-            </tr>
-            <tr>
-                <td>
-                    <strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong>
-                </td>
-                <td>
-                    <strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong>
-                </td>
-            </tr>
-            <tr class="ttd-space">
-                <td></td>
+                <td>Menyetujui,</td>
                 <td></td>
             </tr>
             <tr>
-                <td class="nama-terang">
-                    ({{ $penandaTangan1['nama'] ?? '.........................................' }})
-                </td>
-                <td class="nama-terang">
-                    ({{ $penandaTangan2['nama'] ?? '.........................................' }})
-                </td>
+                <td><strong>{{ $penandaTangan1['jabatan'] }}</strong></td>
+                <td><strong>{{ $penandaTangan2['jabatan'] }}</strong></td>
+            </tr>
+            <tr class="ttd-space"><td></td><td></td></tr>
+            <tr>
+                <td class="nama-terang">({{ $penandaTangan1['nama'] }})</td>
+                <td class="nama-terang">({{ $penandaTangan2['nama'] }})</td>
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK (non-print) --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
-
     </div>
 </div>
 @stop
@@ -174,7 +115,7 @@
     .judul { text-align: center; margin-bottom: 20px; }
     .judul h3 { margin: 5px 0; font-size: 16px; text-transform: uppercase; }
     .judul p { margin: 2px 0; }
-    
+
     /* == PERUBAHAN DI SINI == */
     /* Styling Tabel Laporan Laba Rugi */
     .table-laporan { width: 100%; } /* Memastikan tabel memenuhi lebar kontainer */
