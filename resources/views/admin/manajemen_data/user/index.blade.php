@@ -26,7 +26,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Daftar Pengguna</h3>
                     <div class="card-tools">
-                        <a href="{{ route('admin.manajemen-data.anggotap.create') }}" class="btn btn-primary">
+                        <a href="{{ route('admin.manajemen-data.anggota.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Tambah User Baru
                         </a>
                     </div>

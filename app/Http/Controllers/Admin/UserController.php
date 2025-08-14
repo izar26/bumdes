@@ -125,7 +125,6 @@ class UserController extends Controller
             'anggota.jenis_kelamin' => 'nullable|string|in:Laki-laki,Perempuan',
             'anggota.jabatan' => 'nullable|string|max:100',
             'anggota.status_anggota' => 'nullable|string|in:Aktif,Nonaktif',
-            'anggota.unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
         ]);
 
         DB::beginTransaction();

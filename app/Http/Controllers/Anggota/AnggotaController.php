@@ -18,13 +18,20 @@ use Illuminate\Support\Str;
 
 class AnggotaController extends Controller
 {
-     public function index()
+    /**
+     * Menampilkan daftar semua anggota (untuk admin).
+     */
+    public function index()
     {
-        $anggotas = Anggota::with(['user', 'user.roles', 'unitUsaha'])->latest()->get();
+        // FIX: Eager loading relasi user.unitUsahas untuk view
+        $anggotas = Anggota::with(['user', 'user.roles', 'unitUsaha', 'user.unitUsahas'])->latest()->get();
         $rolesOptions = Role::where('name', '!=', 'admin_bumdes')->pluck('name');
         return view('admin.manajemen_data.anggota.index', compact('anggotas', 'rolesOptions'));
     }
 
+    /**
+     * Menampilkan form untuk membuat anggota baru.
+     */
     public function create()
     {
         $roles = Role::all();
@@ -32,6 +39,9 @@ class AnggotaController extends Controller
         return view('admin.manajemen_data.anggota.create', compact('roles', 'unitUsahas'));
     }
 
+    /**
+     * Menyimpan anggota baru ke database dengan pembuatan akun wajib.
+     */
     public function store(Request $request)
     {
         if (!$request->filled('role')) {
@@ -45,100 +55,111 @@ class AnggotaController extends Controller
             'jenis_kelamin' => 'required|string|in:Laki-laki,Perempuan',
             'unit_usaha_id' => ['nullable','exists:unit_usahas,unit_usaha_id', Rule::requiredIf(fn() => in_array($request->role, ['manajer_unit_usaha', 'admin_unit_usaha']))],
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'email' => 'nullable|string|email|max:255|unique:users,email',
-            'password' => 'nullable|required_with:email|string|min:8|confirmed',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
-            'is_profile_complete' => 'boolean',
+            // FIX: Tambahkan validasi username
+            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
         ]);
+
         DB::beginTransaction();
         try {
-            $anggotaData = $request->except(['email', 'password', 'password_confirmation', 'role']);
-            if ($request->filled('email') && $request->filled('password')) {
-                $user = User::create([
-                    'name' => $request->nama_lengkap,
-                    'email' => $request->email,
-                    'username' => $request->username,
-                    'password' => Hash::make($request->password),
-                    'is_active' => true,
-                ]);
-                $user->assignRole($request->role);
-                $anggotaData['user_id'] = $user->user_id;
-            }
+            // Buat user baru (wajib)
+            $user = User::create([
+                'name' => $request->nama_lengkap,
+                'email' => $request->email,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'is_active' => true,
+                'is_profile_complete' => true,
+            ]);
+
+            $user->assignRole($request->role);
+
+            $anggotaData = $request->except(['email', 'password', 'password_confirmation', 'role', 'username']);
+
+            $anggotaData['user_id'] = $user->user_id;
             $anggotaData['tanggal_daftar'] = now();
             $anggotaData['status_anggota'] = 'Aktif';
             $anggotaData['jabatan'] = Str::title(str_replace('_', ' ', $request->role));
+            $anggotaData['email'] = $request->email;
+            $anggotaData['is_profile_complete'] = true;
+
             if ($request->hasFile('photo')) {
                 $anggotaData['photo'] = $request->file('photo')->store('photos/anggota', 'public');
             }
+
             Anggota::create($anggotaData);
+
             DB::commit();
-            return redirect()->route('admin.manajemen-data.anggota.index')->with('success', 'Anggota baru berhasil ditambahkan.');
+
+            return redirect()->route('admin.manajemen-data.anggota.index')
+                             ->with('success', 'Anggota baru berhasil ditambahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal menambahkan anggota: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                             ->with('error', 'Gagal menambahkan anggota: ' . $e->getMessage())
+                             ->withInput();
         }
     }
 
+    /**
+     * Menampilkan form untuk mengedit data anggota.
+     */
     public function edit($anggotaId)
     {
-        $anggota = Anggota::with('user.roles', 'unitUsaha')->findOrFail($anggotaId);
-        $roles = Role::all(); // REVISI: Ambil semua role untuk dropdown
+        // FIX: Tambahkan 'user.unitUsahas' ke eager loading
+        $anggota = Anggota::with(['user.roles', 'unitUsaha', 'user.unitUsahas'])->findOrFail($anggotaId);
+        $roles = Role::all();
         $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
-        return view('admin.manajemen_data.anggota.edit', compact('anggota', 'roles', 'unitUsahas')); // REVISI: Kirim variabel $roles
+        return view('admin.manajemen_data.anggota.edit', compact('anggota', 'roles', 'unitUsahas'));
     }
 
-    // REVISI METODE UPDATE UNTUK MENAMBAH ROLE
+    /**
+     * Memperbarui data anggota.
+     */
     public function update(Request $request, $anggotaId)
     {
         $anggota = Anggota::findOrFail($anggotaId);
-        $user = $anggota->user;
+        $user = $anggota->user; // Mendapatkan user yang terkait
 
-        // Validasi untuk semua field di form edit
         $rules = [
             'nama_lengkap' => 'required|string|max:255',
             'nik' => ['required', 'string', 'digits:16', Rule::unique('anggotas')->ignore($anggota->anggota_id, 'anggota_id')],
             'alamat' => 'required|string|max:500',
             'no_telepon' => 'required|string|max:50',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'jenis_kelamin' => 'required|string|in:Laki-laki,Perempuan',
             'status_anggota' => 'required|string|in:Aktif,Nonaktif',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
 
-            // Validasi untuk role (Wajib ada)
-            'role' => 'required|exists:roles,name',
-
-            // Validasi untuk unit_usaha_id (Kondisional)
+            // Validasi untuk data User
+            'role' => ['nullable', 'exists:roles,name'], // Role bisa null jika tidak ada user
             'unit_usaha_id' => [
+                'nullable', 'exists:unit_usahas,unit_usaha_id',
                 Rule::requiredIf(function () use ($request) {
                     return in_array($request->role, ['manajer_unit_usaha', 'admin_unit_usaha']);
                 }),
-                'nullable',
-                'exists:unit_usahas,unit_usaha_id',
             ],
-
-            // Validasi untuk user account jika ada user
-            'email' => ['nullable','string','email','max:255', Rule::unique('users', 'email')->ignore(optional($user)->user_id, 'user_id')],
+            // Validasi email dan password hanya jika user ada
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore(optional($user)->user_id, 'user_id')],
             'password' => 'nullable|string|min:8|confirmed',
         ];
+
+        // Validasi tambahan untuk user jika ada
+        if ($user) {
+            $rules['email'] = ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->user_id, 'user_id')];
+            $rules['role'] = ['required', 'exists:roles,name'];
+            $rules['password'] = 'nullable|string|min:8|confirmed';
+        }
 
         $request->validate($rules);
 
         DB::beginTransaction();
         try {
-            // Update data User jika ada
-            if ($user) {
-                $user->name = $request->nama_lengkap;
-                $user->email = $request->email;
-                if ($request->filled('password')) {
-                    $user->password = Hash::make($request->password);
-                }
-                $user->syncRoles($request->role); // Sync role di model User
-                $user->save();
-            }
-
             // Update data Anggota
             $anggotaData = $request->only([
                 'nama_lengkap', 'nik', 'alamat', 'no_telepon', 'jenis_kelamin',
-                'unit_usaha_id', 'status_anggota'
+                'status_anggota', 'unit_usaha_id'
             ]);
             $anggotaData['jabatan'] = Str::title(str_replace('_', ' ', $request->role));
             $anggotaData['email'] = $request->email;
@@ -151,6 +172,23 @@ class AnggotaController extends Controller
             }
             $anggota->update($anggotaData);
 
+            // Update data User jika ada
+            if ($user) {
+                $userData = $request->only(['nama_lengkap', 'email']);
+                if ($request->filled('password')) {
+                    $userData['password'] = Hash::make($request->password);
+                }
+                $user->update($userData);
+
+                // Sinkronkan role dan unit usaha
+                $user->syncRoles($request->role);
+                if ($request->filled('unit_usaha_id')) {
+                    $user->unitUsahas()->sync([$request->unit_usaha_id]);
+                } else {
+                    $user->unitUsahas()->detach();
+                }
+            }
+
             DB::commit();
 
             return redirect()->route('admin.manajemen-data.anggota.index')
@@ -158,17 +196,12 @@ class AnggotaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
-                             ->with('error', 'Gagal memperbarui data anggota: ' . $e->getMessage())
+                             ->with('error', 'Gagal memperbarui data: ' . $e->getMessage())
                              ->withInput();
         }
     }
-    public function show(Anggota $anggota)
-    {
-        // Memuat relasi yang diperlukan untuk ditampilkan di view
-        $anggota->load(['user', 'user.roles', 'unitUsaha']);
-        return view('admin.manajemen_data.anggota.show', compact('anggota'));
-    }
-    public function updateRole(Request $request, $userId)
+
+       public function updateRole(Request $request, $userId)
     {
         $user = User::with('anggota')->findOrFail($userId);
         $request->validate(['role' => 'required|exists:roles,name']);
