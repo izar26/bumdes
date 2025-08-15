@@ -22,7 +22,7 @@ class LabaRugiController extends Controller
         $user = Auth::user();
         $unitUsahas = null;
 
-        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')
                                     ->orderBy('nama_unit')
                                     ->get();
@@ -83,7 +83,7 @@ class LabaRugiController extends Controller
                     $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
                 }
             }
-            elseif ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+            elseif ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
                 if (!empty($unitUsahaId)) {
                     $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
                 }

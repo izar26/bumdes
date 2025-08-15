@@ -23,7 +23,7 @@ class PerubahanEkuitasController extends Controller
         $user = Auth::user();
         $unitUsahas = collect();
 
-        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         } elseif ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             // FIX: Tambahkan nama tabel eksplisit untuk menghindari ambiguitas
@@ -58,7 +58,7 @@ class PerubahanEkuitasController extends Controller
         $managedUnitIds = collect();
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-        } elseif ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+        } elseif ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
             if (!empty($unitUsahaId)) {
                 $managedUnitIds = collect([$unitUsahaId]);
             }

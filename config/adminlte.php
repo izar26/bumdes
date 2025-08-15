@@ -411,7 +411,7 @@ return [
             ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
             [
         'text' => 'Arus Kas',
-        'route'  => 'arus-kas.index',
+        'route'  => 'laporan.arus-kas.index',
         'icon' => 'fas fa-fw fa-exchange-alt',
     ],
         ],

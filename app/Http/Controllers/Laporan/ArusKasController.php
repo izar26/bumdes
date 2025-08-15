@@ -17,7 +17,7 @@ class ArusKasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('role:bendahara_bumdes|admin_bumdes');
+        $this->middleware('role:bendahara_bumdes|sekretaris_bumdes');
     }
 
     public function index()
@@ -26,7 +26,7 @@ class ArusKasController extends Controller
         $unitUsahas = collect();
 
         // FIX: Perbaiki logika peran dan tambahkan nama tabel eksplisit di pluck
-        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         } else {
             // FIX: Tambahkan nama tabel eksplisit di pluck
@@ -66,7 +66,7 @@ class ArusKasController extends Controller
             // FIX: Tambahkan nama tabel eksplisit di pluck
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $baseQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-        } elseif ($user->hasRole(['bendahara_bumdes', 'admin_bumdes']) && !empty($unitUsahaId)) {
+        } elseif ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes']) && !empty($unitUsahaId)) {
             $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
         }
 

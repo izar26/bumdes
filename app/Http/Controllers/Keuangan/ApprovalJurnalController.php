@@ -14,56 +14,66 @@ class ApprovalJurnalController extends Controller
     /**
      * Middleware untuk memastikan hanya peran yang benar yang bisa mengakses controller ini.
      */
-    public function __construct()
+     public function __construct()
     {
-        $this->middleware('role:manajer_unit_usaha|direktur_bumdes');
+        // Tambahkan peran  ke middleware
+        $this->middleware('role:manajer_unit_usaha|direktur_bumdes|');
     }
 
-    /**
-     * Menampilkan daftar jurnal yang menunggu persetujuan.
-     */
     public function index(Request $request)
     {
         $user = Auth::user();
-
         $query = JurnalUmum::with('detailJurnals.akun', 'unitUsaha', 'user')
             ->where('status', 'menunggu')
             ->latest('tanggal_transaksi');
 
-        // Jika manajer unit: hanya jurnal dari admin_unit_usaha di unit yg dikelolanya
-        if ($user->hasRole('manajer_unit_usaha')) {
+        $unitUsahasUntukFilter = collect();
+        $isManajerOrWisata = $user->hasRole(['manajer_unit_usaha']);
+        $isDirektur = $user->hasRole('direktur_bumdes');
+
+        if ($isManajerOrWisata) {
             $unitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             $query->whereIn('unit_usaha_id', $unitIds);
+
+            // Filter jurnal yang dibuat hanya oleh admin_unit_usaha
             $query->whereHas('user', function ($q) {
-                $q->whereHas('roles', function ($q2) {
-                    $q2->where('name', 'admin_unit_usaha');
-                });
+                $q->whereHas('roles', fn ($q2) => $q2->where('name', 'admin_unit_usaha'));
             });
-        }
-        // Jika direktur BUMDes: hanya jurnal yang dibuat oleh bendahara_bumdes
-        elseif ($user->hasRole('direktur_bumdes')) {
+
+            $unitUsahasUntukFilter = $user->unitUsahas;
+
+        } elseif ($isDirektur) {
+            // Filter jurnal yang dibuat hanya oleh bendahara_bumdes
             $query->whereHas('user', function ($q) {
-                $q->whereHas('roles', function ($q2) {
-                    $q2->where('name', 'bendahara_bumdes');
-                });
+                $q->whereHas('roles', fn ($q2) => $q2->where('name', 'bendahara_bumdes'));
             });
+
+            // Direktur bisa melihat semua unit usaha
+            $unitUsahasUntukFilter = UnitUsaha::all();
+        } else {
+            abort(403);
         }
 
-        // Filter opsional
+        // Terapkan filter opsional (unit usaha, tanggal, tahun)
         if ($request->filled('unit_usaha_id')) {
             $query->where('unit_usaha_id', $request->unit_usaha_id);
         }
-        // ... filter lainnya bisa ditambahkan di sini
+        if ($request->filled('start_date')) {
+            $query->whereDate('tanggal_transaksi', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('tanggal_transaksi', '<=', $request->end_date);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('tanggal_transaksi', $request->year);
+        }
 
         $jurnals = $query->paginate(15);
-        $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
+        $jurnals->appends(request()->query()); // Tambahkan ini agar paginasi tidak merusak filter
 
-        return view('keuangan.approval.index', compact('jurnals', 'unitUsahas'));
+        return view('keuangan.approval.index', compact('jurnals', 'unitUsahasUntukFilter'));
     }
 
-    /**
-     * Helper untuk otorisasi aksi.
-     */
     protected function authorizeAction(JurnalUmum $jurnal)
     {
         $user = Auth::user();
@@ -72,7 +82,7 @@ class ApprovalJurnalController extends Controller
             abort(403, 'Jurnal bukan dalam status menunggu.');
         }
 
-        if ($user->hasRole('manajer_unit_usaha')) {
+        if ($user->hasRole(['manajer_unit_usaha'])) {
             $unitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             if (!in_array($jurnal->unit_usaha_id, $unitIds) || !$jurnal->user->hasRole('admin_unit_usaha')) {
                 abort(403, 'Anda tidak memiliki izin untuk memproses jurnal ini.');

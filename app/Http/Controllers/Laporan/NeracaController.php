@@ -12,33 +12,27 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\Rule;
 
 class NeracaController extends Controller
 {
-    // Tambahkan middleware otorisasi di sini
     public function __construct()
     {
-        $this->middleware('role:bendahara_bumdes|admin_bumdes');
+        $this->middleware('role:bendahara_bumdes|sekretaris_bumdes');
     }
 
-    /**
-     * Menampilkan halaman form filter laporan Neraca.
-     */
     public function index()
     {
-        // Peran non-BUMDes tidak bisa mencapai sini karena middleware
         $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         return view('laporan.neraca.index', compact('unitUsahas'));
     }
 
-    /**
-     * Memproses filter dan menampilkan laporan Neraca.
-     */
     public function generate(Request $request)
     {
         $request->validate([
             'report_date' => 'required|date',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id'
+            // FIX: Hapus aturan 'exists' untuk unit_usaha_id
+            'unit_usaha_id' => 'nullable'
         ]);
 
         $user = Auth::user();
@@ -46,13 +40,14 @@ class NeracaController extends Controller
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
 
-        // Logika filter unit usaha hanya untuk bendahara/admin BUMDes
+        // Logika filter unit usaha
         $managedUnitIds = collect();
         if (!empty($unitUsahaId)) {
+            // VERIFIKASI HAK AKSES: Pastikan ID yang disubmit memang unit usaha yang ada
+            $unitUsaha = UnitUsaha::findOrFail($unitUsahaId);
             $managedUnitIds = collect([$unitUsahaId]);
         }
 
-        // Gunakan satu query yang efisien untuk mengambil semua saldo
         $query = Akun::select('akuns.nama_akun', 'akuns.tipe_akun')
             ->selectRaw('SUM(detail_jurnals.debit) as total_debit')
             ->selectRaw('SUM(detail_jurnals.kredit) as total_kredit')
@@ -90,26 +85,21 @@ class NeracaController extends Controller
                     $kewajibans[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
                     $totalKewajiban += $saldo;
                 } elseif ($akun->tipe_akun === 'Ekuitas') {
-                    // Akun Ekuitas selain laba ditahan
                     $ekuitas[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
                     $totalEkuitas += $saldo;
-                } elseif ($akun->tipe_akun === 'Pendapatan') {
+                } elseif (in_array($akun->tipe_akun, ['Pendapatan', 'Pendapatan & Beban Lainnya'])) {
                     $totalPendapatan += $saldo;
-                } elseif ($akun->tipe_akun === 'Beban') {
+                } elseif (in_array($akun->tipe_akun, ['Beban', 'HPP'])) {
                     $totalBeban += $saldo;
-                } elseif ($akun->tipe_akun === 'HPP') {
-                    $totalHpp += $saldo;
                 }
             }
         }
 
-        // Perhitungan laba ditahan
-        $labaDitahan = ($totalPendapatan - $totalHpp) - $totalBeban;
+        $labaDitahan = $totalPendapatan - $totalBeban;
         $totalEkuitas += $labaDitahan;
 
         $totalKewajibanDanEkuitas = $totalKewajiban + $totalEkuitas;
 
-        // Menyiapkan data penanda tangan
         $penandaTangan1 = [ 'jabatan' => 'Direktur', 'nama' => 'Nama Direktur Anda' ];
         $penandaTangan2 = [ 'jabatan' => 'Bendahara', 'nama' => 'Nama Bendahara Anda' ];
 

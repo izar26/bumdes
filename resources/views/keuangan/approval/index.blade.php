@@ -13,9 +13,8 @@
             <strong>Approval Jurnal (Menunggu)</strong>
             <div class="d-flex align-items-center">
                 {{-- Tombol Aksi Massal --}}
-                <form id="bulk-approve-form" action="{{ route('approval-jurnal.approveSelected') }}" method="POST" class="mr-2">
+                <form id="bulk-approve-form" action="{{ route('approval-jurnal.approve-selected') }}" method="POST" class="mr-2">
                     @csrf
-                    {{-- Input tersembunyi untuk ID jurnal akan ditambahkan oleh JavaScript --}}
                     <button type="submit" class="btn btn-success btn-sm" id="bulk-approve-btn" disabled>
                         <i class="fas fa-check-double"></i> Approve yang Dipilih
                     </button>
@@ -31,14 +30,23 @@
         <form method="GET" action="{{ route('approval-jurnal.index') }}" class="form-inline">
             <div class="form-group mr-2">
                 <label for="unit_usaha_id" class="mr-2">Filter Unit Usaha:</label>
-                <select name="unit_usaha_id" id="unit_usaha_id" class="form-control form-control-sm">
-                    <option value="">-- Semua Unit Usaha --</option>
-                    @foreach($unitUsahas as $unit)
-                        <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
-                            {{ $unit->nama_unit }}
-                        </option>
-                    @endforeach
-                </select>
+                {{-- Logika dropdown Unit Usaha disesuaikan dengan controller --}}
+                @php $user = auth()->user(); @endphp
+                @if($user->hasRole(['direktur_bumdes']))
+                    <select name="unit_usaha_id" id="unit_usaha_id" class="form-control form-control-sm">
+                        <option value="">-- Semua Unit Usaha --</option>
+                        @foreach($unitUsahasUntukFilter as $unit)
+                            <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
+                                {{ $unit->nama_unit }}
+                            </option>
+                        @endforeach
+                    </select>
+                @else
+                    {{-- Manajer Unit Usaha/Wisata hanya bisa melihat unitnya sendiri --}}
+                    @php $firstUnit = $unitUsahasUntukFilter->first(); @endphp
+                    <input type="text" class="form-control form-control-sm" value="{{ $firstUnit->nama_unit ?? 'N/A' }}" disabled>
+                    <input type="hidden" name="unit_usaha_id" value="{{ $firstUnit->unit_usaha_id ?? '' }}">
+                @endif
             </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
             <a href="{{ route('approval-jurnal.index') }}" class="btn btn-default btn-sm ml-2"><i class="fas fa-undo"></i> Reset</a>
@@ -70,10 +78,7 @@
                             <td>
                                 {{ $jurnal->deskripsi }}
                                 <br>
-                                <small class="text-muted">oleh: {{ $jurnal->user->name ?? '–' }} ({{ $jurnal->user->role ?? '–' }})</small>
-                                @if($jurnal->status === 'ditolak' && $jurnal->rejected_reason)
-                                    <br><small class="text-danger">Alasan tolak: {{ $jurnal->rejected_reason }}</small>
-                                @endif
+                                <small class="text-muted">oleh: {{ $jurnal->user->name ?? '–' }}</small>
                             </td>
                             <td>{{ $jurnal->unitUsaha->nama_unit ?? 'BUMDes Pusat' }}</td>
                             <td class="text-right">Rp {{ number_format($jurnal->total_debit, 0, ',', '.') }}</td>
@@ -85,11 +90,11 @@
                                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#approveModal-{{ $jurnal->jurnal_id }}">
                                     <i class="fas fa-check"></i> Approve
                                 </button>
-
                                 <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#rejectModal-{{ $jurnal->jurnal_id }}">
                                     <i class="fas fa-times"></i> Reject
                                 </button>
 
+                                {{-- Modal Konfirmasi Approve --}}
                                 <div class="modal fade" id="approveModal-{{ $jurnal->jurnal_id }}" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel-{{ $jurnal->jurnal_id }}" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
@@ -113,7 +118,7 @@
                                     </div>
                                 </div>
 
-
+                                {{-- Modal Tolak Jurnal --}}
                                 <div class="modal fade" id="rejectModal-{{ $jurnal->jurnal_id }}" tabindex="-1" role="dialog" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <form method="POST" action="{{ route('approval-jurnal.reject', $jurnal->jurnal_id) }}">
@@ -146,7 +151,6 @@
             </table>
         </div>
     </div>
-
     <div class="card-footer">
         {{ $jurnals->appends(request()->query())->links() }}
     </div>
@@ -156,7 +160,6 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // Fungsi untuk mengupdate status tombol 'Approve yang Dipilih'
     function updateBulkApproveButton() {
         const checkedCount = $('.jurnal-checkbox:checked').length;
         if (checkedCount > 0) {
@@ -166,13 +169,11 @@ $(document).ready(function() {
         }
     }
 
-    // Checkbox 'pilih semua'
     $('#select-all-checkbox').on('click', function() {
         $('.jurnal-checkbox').prop('checked', $(this).prop('checked'));
         updateBulkApproveButton();
     });
 
-    // Checkbox per baris
     $('.jurnal-checkbox').on('click', function() {
         if ($('.jurnal-checkbox:checked').length === $('.jurnal-checkbox').length) {
             $('#select-all-checkbox').prop('checked', true);
@@ -182,23 +183,27 @@ $(document).ready(function() {
         updateBulkApproveButton();
     });
 
-    // Konfirmasi sebelum submit form bulk approve
     $('#bulk-approve-form').on('submit', function(e) {
-        e.preventDefault(); // Mencegah form submit secara default
-
+        e.preventDefault();
         const selectedCount = $('.jurnal-checkbox:checked').length;
         if (selectedCount > 0) {
             if (confirm(`Apakah Anda yakin ingin menyetujui ${selectedCount} jurnal yang dipilih?`)) {
-                this.submit(); // Lanjutkan submit jika dikonfirmasi
+                this.submit();
             }
         } else {
             alert('Silakan pilih setidaknya satu jurnal untuk disetujui.');
         }
     });
 
-    // Menambahkan query string filter saat paginasi
-    // Modifikasi pada blade: {{ $jurnals->appends(request()->query())->links() }}
-    // Ini memastikan filter tetap aktif saat berpindah halaman
+    // Perbaikan: Pastikan ID jurnal dikirim ke form bulk approve
+    $('.jurnal-checkbox').on('change', function() {
+        let form = $('#bulk-approve-form');
+        let hiddenInputName = 'jurnal_ids[]';
+        form.find('input[name="' + hiddenInputName + '"][value="' + this.value + '"]').remove();
+        if (this.checked) {
+            form.append('<input type="hidden" name="' + hiddenInputName + '" value="' + this.value + '">');
+        }
+    });
 });
 </script>
 @stop

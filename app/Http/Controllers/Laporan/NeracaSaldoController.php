@@ -24,7 +24,7 @@ class NeracaSaldoController extends Controller
         $unitUsahas = collect();
 
         // FIX: Perbaiki logika peran untuk konsistensi
-        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
+        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         } else {
             // FIX: Tambahkan nama tabel eksplisit untuk menghindari ambiguitas
@@ -62,7 +62,7 @@ class NeracaSaldoController extends Controller
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
         }
-        elseif ($user->hasRole(['bendahara_bumdes', 'admin_bumdes']) && !empty($unitUsahaId)) {
+        elseif ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes']) && !empty($unitUsahaId)) {
             $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
         }
 
