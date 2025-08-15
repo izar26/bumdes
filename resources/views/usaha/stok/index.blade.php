@@ -10,11 +10,13 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Manajemen Inventaris Produk</h3>
+            @if(auth()->user()->hasRole('admin_unit_usaha'))
             <div class="card-tools">
                 <a href="{{ route('usaha.stok.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Buat Penyesuaian Stok
                 </a>
             </div>
+            @endif
         </div>
         <div class="card-body">
             @if (session('success'))
@@ -47,7 +49,7 @@
                 </div>
             @endif
 
-            
+
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>

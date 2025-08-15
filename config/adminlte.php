@@ -376,8 +376,6 @@ return [
         ],
     ],
 
-    // --- KEUANGAN & LAPORAN ---
-    // Akses: Direktur, Bendahara, Sekretaris, Admin Unit Usaha, Manajer Unit Usaha
     [
         'header' => 'KEUANGAN & LAPORAN',
         'can'    => ['bendahara_bumdes', 'direktur_bumdes' ],
@@ -389,9 +387,9 @@ return [
         'submenu' => [
             ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
             ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
-
+            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => 'admin_unit_usaha'],
+            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => 'admin_unit_usaha'],
+            ['text' => 'Manajemen Akun', 'route' => 'keuangan.akun.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => 'bendahara_bumdes']
 
         ],
     ],
@@ -412,7 +410,7 @@ return [
             ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index', 'icon' => 'fas fa-fw fa-table'],
             ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
             [
-        'text' => 'rus Kas',
+        'text' => 'Arus Kas',
         'route'  => 'arus-kas.index',
         'icon' => 'fas fa-fw fa-exchange-alt',
     ],

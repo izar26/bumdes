@@ -5,29 +5,56 @@ namespace App\Http\Controllers\Keuangan;
 use App\Http\Controllers\Controller;
 use App\Models\KasBank;
 use App\Models\Akun;
+use App\Models\TransaksiKasBank; // Diperlukan untuk show
+use App\Models\DetailJurnal; // Diperlukan untuk perhitungan saldo
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class KasBankController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Tambahkan middleware otorisasi untuk semua method
+     */
+    public function __construct()
+    {
+        $this->middleware('role:bendahara_bumdes|admin_bumdes|admin_unit_usaha|manajer_unit_usaha');
+    }
+
+    /**
+     * Menampilkan daftar kas/bank yang dikelola user.
      */
     public function index()
     {
-        $kasBanks = KasBank::all();
+        $user = Auth::user();
+        $kasBankQuery = KasBank::with('akun');
+
+        // Filter berdasarkan unit usaha yang dikelola, jika bukan admin BUMDes
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            // Asumsi model KasBank memiliki relasi dengan UnitUsaha atau akunnya
+            $kasBankQuery->whereIn('unit_usaha_id', $managedUnitUsahaIds);
+        }
+
+        $kasBanks = $kasBankQuery->get();
         return view('keuangan.kas_bank.index', compact('kasBanks'));
     }
 
     /**
-     * Show the form for creating a new resource.
-     * FUNGSI INI YANG KEMUNGKINAN BESAR HILANG DARI FILE ANDA
+     * Menampilkan form untuk membuat akun Kas/Bank baru.
      */
     public function create()
     {
-        // Ambil hanya akun dengan tipe 'Kas & Bank' dari Chart of Accounts
-        $akun_list = Akun::where('tipe_akun', 'Kas & Bank')
-                            ->where('is_header', 0)
-                            ->get();
+        // Hanya Admin BUMDes yang seharusnya bisa membuat akun kas baru
+        if (!Auth::user()->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            throw new AuthorizationException('Anda tidak memiliki izin untuk membuat akun kas/bank baru.');
+        }
+
+        $akun_list = Akun::whereIn('tipe_akun', ['Aset'])
+                         ->where('nama_akun', 'like', '%Kas%')
+                         ->orWhere('nama_akun', 'like', '%Bank%')
+                         ->where('is_header', 0)
+                         ->get();
         return view('keuangan.kas_bank.create', compact('akun_list'));
     }
 
@@ -36,6 +63,10 @@ class KasBankController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::user()->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            throw new AuthorizationException('Anda tidak memiliki izin untuk membuat akun kas/bank baru.');
+        }
+
         $request->validate([
             'nama_akun_kas_bank' => 'required|string|max:255',
             'akun_id' => 'required|exists:akuns,akun_id|unique:kas_banks,akun_id',
@@ -43,51 +74,65 @@ class KasBankController extends Controller
             'saldo_saat_ini' => 'required|numeric|min:0',
         ]);
 
+        // Simpan juga unit_usaha_id agar relasi jelas
+        $unitUsahaId = Auth::user()->unitUsahas->first()->unit_usaha_id ?? null;
+
         KasBank::create([
             'nama_akun_kas_bank' => $request->nama_akun_kas_bank,
             'akun_id' => $request->akun_id,
             'nomor_rekening' => $request->nomor_rekening,
             'saldo_saat_ini' => $request->saldo_saat_ini,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
+            'unit_usaha_id' => $unitUsahaId,
         ]);
 
-        return redirect()->route('kas-bank.index')
-                         ->with('success', 'Akun Kas/Bank baru berhasil ditambahkan.');
+        return redirect()->route('kas-bank.index')->with('success', 'Akun Kas/Bank baru berhasil ditambahkan.');
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan detail spesifik resource.
      */
     public function show(KasBank $kasBank)
     {
-        $kasBank->load(['transaksiKasBanks' => function ($query) {
-            $query->orderBy('tanggal_transaksi', 'desc');
-        }]);
+        // Otorisasi: Pastikan user punya hak akses ke kasBank ini
+        $user = Auth::user();
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            if (!$managedUnitUsahaIds->contains($kasBank->unit_usaha_id)) {
+                throw new AuthorizationException('Anda tidak memiliki izin untuk melihat detail akun kas/bank ini.');
+            }
+        }
+
+        // REKOMENDASI: Hitung saldo secara dinamis
+        $saldoAwal = DetailJurnal::where('akun_id', $kasBank->akun_id)
+                                 ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+                                 ->where('jurnal_umums.status', 'disetujui')
+                                 ->sum(DB::raw('debit - kredit'));
+
+        $transaksiKasBanks = TransaksiKasBank::where('kas_bank_id', $kasBank->kas_bank_id)
+                                             ->orderBy('tanggal_transaksi', 'desc')
+                                             ->get();
+
         $akuns = Akun::where('is_header', 0)->orderBy('kode_akun', 'asc')->get();
-        return view('keuangan.kas_bank.show', compact('kasBank', 'akuns'));
+
+        return view('keuangan.kas_bank.show', compact('kasBank', 'transaksiKasBanks', 'akuns', 'saldoAwal'));
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(KasBank $kasBank)
-    {
-        // Untuk nanti jika perlu fitur edit
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, KasBank $kasBank)
-    {
-        // Untuk nanti jika perlu fitur edit
-    }
-
-    /**
-     * Remove the specified resource from storage.
+     * Hapus akun Kas/Bank dari storage.
      */
     public function destroy(KasBank $kasBank)
     {
-        // Untuk nanti jika perlu fitur hapus
+        $user = Auth::user();
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            throw new AuthorizationException('Anda tidak memiliki izin untuk menghapus akun kas/bank.');
+        }
+
+        try {
+            $kasBank->delete();
+            return redirect()->route('kas-bank.index')->with('success', 'Akun Kas/Bank berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus akun: ' . $e->getMessage());
+        }
     }
 }

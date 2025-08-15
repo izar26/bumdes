@@ -9,7 +9,9 @@ use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class NeracaSaldoController extends Controller
 {
@@ -20,12 +22,13 @@ class NeracaSaldoController extends Controller
     {
         $user = Auth::user();
         $unitUsahas = collect();
-        if ($user->hasRole('bendahara_bumdes')) {
-            // Bendahara bisa filter semua unit usaha
+
+        // FIX: Perbaiki logika peran untuk konsistensi
+        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         } else {
-            // Peran lain hanya melihat unit usahanya sendiri
-            $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->get();
+            // FIX: Tambahkan nama tabel eksplisit untuk menghindari ambiguitas
+            $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->select('unit_usahas.*')->get();
         }
         return view('laporan.neraca_saldo.index', compact('unitUsahas'));
     }
@@ -45,74 +48,45 @@ class NeracaSaldoController extends Controller
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
 
-        // Query dasar yang sudah difilter berdasarkan status jurnal dan unit usaha
-        $baseQuery = DetailJurnal::join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
-            ->where('jurnal_umums.status', 'disetujui') // Filter utama
+        // FIX: Gunakan satu query efisien untuk mengambil semua data
+        $query = Akun::select('akuns.kode_akun', 'akuns.nama_akun')
+            ->selectRaw('SUM(detail_jurnals.debit) as total_debit')
+            ->selectRaw('SUM(detail_jurnals.kredit) as total_kredit')
+            ->join('detail_jurnals', 'akuns.akun_id', '=', 'detail_jurnals.akun_id')
+            ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+            ->where('jurnal_umums.status', 'disetujui')
             ->where('jurnal_umums.tanggal_transaksi', '<=', $reportDate);
 
-        // Terapkan filter unit usaha berdasarkan peran
+        // FIX: Logika filter unit usaha yang disatukan
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $managedUnitIds = $user->unitUsahas()->pluck('unit_usaha_id');
-            $baseQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-        } elseif ($user->hasRole('bendahara_bumdes') && !empty($unitUsahaId)) {
-            $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+            $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
+        }
+        elseif ($user->hasRole(['bendahara_bumdes', 'admin_bumdes']) && !empty($unitUsahaId)) {
+            $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
         }
 
-        // Ambil semua akun detail
-        $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get();
-        
-        $laporanData = [];
-        $totalDebit = 0;
-        $totalKredit = 0;
+        $laporanData = $query->groupBy('akuns.akun_id', 'akuns.kode_akun', 'akuns.nama_akun')
+            ->having(DB::raw('SUM(detail_jurnals.debit)'), '!=', 0)
+            ->orHaving(DB::raw('SUM(detail_jurnals.kredit)'), '!=', 0)
+            ->orderBy('akuns.kode_akun')
+            ->get();
 
-        // Loop setiap akun untuk menghitung saldo akhirnya
-        foreach ($akuns as $akun) {
-            $query = (clone $baseQuery)->where('akun_id', $akun->akun_id);
-            $debit = (clone $query)->sum('detail_jurnals.debit');
-            $kredit = (clone $query)->sum('detail_jurnals.kredit');
+        $totalDebit = $laporanData->sum('total_debit');
+        $totalKredit = $laporanData->sum('total_kredit');
 
-            // Tentukan saldo normal berdasarkan tipe akun
-            $saldo = 0;
-            $saldoDebit = 0;
-            $saldoKredit = 0;
+        // Menyiapkan data tanda tangan untuk view
+        $penandaTangan1 = [ 'jabatan' => 'Direktur', 'nama' => 'Nama Direktur Anda' ];
+        $penandaTangan2 = [ 'jabatan' => 'Bendahara', 'nama' => 'Nama Bendahara Anda' ];
 
-            if (in_array($akun->tipe_akun, ['Aset', 'Beban'])) {
-                // Saldo normal di Debit
-                $saldo = $debit - $kredit;
-                if ($saldo > 0) {
-                    $saldoDebit = $saldo;
-                } else {
-                    $saldoKredit = abs($saldo);
-                }
-            } else { // Kewajiban, Ekuitas, Pendapatan
-                // Saldo normal di Kredit
-                $saldo = $kredit - $debit;
-                if ($saldo > 0) {
-                    $saldoKredit = $saldo;
-                } else {
-                    $saldoDebit = abs($saldo);
-                }
-            }
-            
-            // Hanya tampilkan akun yang memiliki saldo
-            if ($saldoDebit != 0 || $saldoKredit != 0) {
-                $laporanData[] = [
-                    'kode_akun' => $akun->kode_akun,
-                    'nama_akun' => $akun->nama_akun,
-                    'debit' => $saldoDebit,
-                    'kredit' => $saldoKredit,
-                ];
-                $totalDebit += $saldoDebit;
-                $totalKredit += $saldoKredit;
-            }
-        }
-        
         return view('laporan.neraca_saldo.show', compact(
             'reportDate',
             'laporanData',
             'totalDebit',
             'totalKredit',
-            'bumdes'
+            'bumdes',
+            'penandaTangan1',
+            'penandaTangan2'
         ));
     }
 }

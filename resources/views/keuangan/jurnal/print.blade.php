@@ -131,10 +131,12 @@
 <body>
     {{-- KOP Surat --}}
     <div class="kop">
-        @if($bumdes && $bumdes->logo)
-            {{-- Pastikan path ke logo benar, public_path mungkin memerlukan penyesuaian tergantung setup Anda --}}
-            <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo">
-        @endif
+          @if(!empty($logo_bungdes))
+                        <img src="{{ $logo_bungdes }}" alt="Logo">
+                    @else
+                        {{-- Icon fallback jika logo tidak ada --}}
+                        <i class="fas fa-landmark fa-2x"></i>
+                    @endif
         <div class="kop-text">
             <h1>{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h1>
             <h2>{{ $bumdes->alamat ?? 'Alamat BUMDes Anda' }}</h2>

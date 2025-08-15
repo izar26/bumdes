@@ -10,11 +10,13 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Riwayat Penjualan</h3>
+        @if(auth()->user()->hasRole('admin_unit_usaha'))
         <div class="card-tools">
             <a href="{{ route('usaha.penjualan.create') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> Buat Transaksi Baru
             </a>
         </div>
+    @endif
     </div>
     <div class="card-body">
         @if(session('success'))

@@ -237,8 +237,8 @@
         <div class="login-info">
             <div class="info-content">
                 <div class="logo">
-                    @if(optional($bumdes)->logo)
-                        <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo">
+                    @if(!empty($logo_bungdes))
+                        <img src="{{ $logo_bungdes }}" alt="Logo">
                     @else
                         {{-- Icon fallback jika logo tidak ada --}}
                         <i class="fas fa-landmark fa-2x"></i>
@@ -280,7 +280,7 @@
                         <strong>{{ $message }}</strong>
                     </span>
                 @enderror
-                
+
                 {{-- Opsi Login --}}
                 <div class="login-options">
                     <div class="remember-me">

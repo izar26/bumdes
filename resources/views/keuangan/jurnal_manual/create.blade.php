@@ -27,10 +27,10 @@
                            value="{{ old('tanggal_transaksi', date('Y-m-d')) }}" required>
                 </div>
 
-                {{-- Unit Usaha --}}
+                {{-- Bagian Unit Usaha yang Disesuaikan --}}
                 <div class="form-group col-md-4">
                     <label>Untuk Unit Usaha</label>
-                    @php $unit = $unitUsahas->first(); @endphp
+                    @php $firstUnit = $unitUsahas->first(); @endphp
                     @if(auth()->user()->hasRole(['bendahara_bumdes','admin_bumdes']))
                         <select name="unit_usaha_id" class="form-control">
                             <option value="">-- BUMDes Pusat --</option>
@@ -41,9 +41,19 @@
                                 </option>
                             @endforeach
                         </select>
+                    @elseif($unitUsahas->count() > 1)
+                        <select name="unit_usaha_id" class="form-control" required>
+                            <option value="">-- Pilih Unit Usaha --</option>
+                            @foreach($unitUsahas as $unit)
+                                <option value="{{ $unit->unit_usaha_id }}"
+                                    {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
+                                    {{ $unit->nama_unit }}
+                                </option>
+                            @endforeach
+                        </select>
                     @else
-                        <input type="text" class="form-control" value="{{ $unit->nama_unit ?? 'BUMDes Pusat' }}" disabled>
-                        <input type="hidden" name="unit_usaha_id" value="{{ $unit->unit_usaha_id ?? '' }}">
+                        <input type="text" class="form-control" value="{{ $firstUnit->nama_unit ?? 'N/A' }}" disabled>
+                        <input type="hidden" name="unit_usaha_id" value="{{ $firstUnit->unit_usaha_id ?? '' }}">
                     @endif
                 </div>
 
@@ -135,7 +145,7 @@ $(document).ready(function() {
     });
 
     function parseNumber(value) {
-        return parseInt(value.replace(/\./g, '')) || 0;
+        return parseInt(value.replace(/\D/g, '')) || 0;
     }
 
     function calculateTotals() {

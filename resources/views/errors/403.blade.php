@@ -13,7 +13,7 @@
             <h3><i class="fas fa-exclamation-triangle text-danger"></i> Oops! Akses ditolak.</h3>
             <p>
                 Anda tidak memiliki izin untuk mengakses halaman ini.
-                Mungkin Anda bisa kembali ke <a href="{{ route('dashboard.redirect') }}">dashboard</a>.
+                Mungkin Anda bisa kembali ke <a href="{{ route('home') }}">dashboard</a>.
             </p>
         </div>
     </div>

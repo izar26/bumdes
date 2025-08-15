@@ -9,7 +9,7 @@ use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // Pastikan DB sudah di-import
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class LabaRugiController extends Controller
@@ -24,8 +24,8 @@ class LabaRugiController extends Controller
 
         if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')
-                                  ->orderBy('nama_unit')
-                                  ->get();
+                                    ->orderBy('nama_unit')
+                                    ->get();
         }
         elseif ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $unitUsahas = $user->unitUsahas()
@@ -59,13 +59,19 @@ class LabaRugiController extends Controller
 
         $bumdes = Bungdes::first();
 
-        // Fungsi Closure untuk mengambil saldo (menghindari duplikasi kode)
-        $calculateSaldoes = function($tipeAkun) use ($user, $startDate, $endDate, $unitUsahaId) {
+        // --- PERUBAHAN: DAFTAR LENGKAP TIPE AKUN UNTUK LAPORAN LABA RUGI ---
+        $pendapatanTipes = ['Pendapatan'];
+        $hppTipes = ['HPP'];
+        $bebanTipes = ['Beban'];
+        $pendapatanBebanLainTipes = ['Pendapatan & Beban Lainnya'];
+        // --- AKHIR PERUBAHAN ---
 
+        // Fungsi Closure untuk mengambil saldo (menghindari duplikasi kode)
+        $calculateSaldoes = function($tipeAkunArray) use ($user, $startDate, $endDate, $unitUsahaId) {
             $query = DetailJurnal::query()
                 ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
                 ->join('akuns', 'detail_jurnals.akun_id', '=', 'akuns.akun_id')
-                ->where('akuns.tipe_akun', $tipeAkun)
+                ->whereIn('akuns.tipe_akun', $tipeAkunArray)
                 ->where('jurnal_umums.status', 'disetujui')
                 ->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate]);
 
@@ -73,7 +79,6 @@ class LabaRugiController extends Controller
             if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
                 $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
                 $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-
                 if (!empty($unitUsahaId)) {
                     $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
                 }
@@ -84,18 +89,17 @@ class LabaRugiController extends Controller
                 }
             }
 
-            // Satu query efisien ke database
             return $query->select(
-                            'akuns.nama_akun',
-                            DB::raw('SUM(detail_jurnals.debit) as total_debit'),
-                            DB::raw('SUM(detail_jurnals.kredit) as total_kredit')
-                        )
-                        ->groupBy('akuns.akun_id', 'akuns.nama_akun')
-                        ->get();
+                'akuns.nama_akun',
+                DB::raw('SUM(detail_jurnals.debit) as total_debit'),
+                DB::raw('SUM(detail_jurnals.kredit) as total_kredit')
+            )
+            ->groupBy('akuns.akun_id', 'akuns.nama_akun')
+            ->get();
         };
 
         // Menghitung Pendapatan
-        $pendapatanResults = $calculateSaldoes('Pendapatan');
+        $pendapatanResults = $calculateSaldoes($pendapatanTipes);
         $pendapatans = [];
         $totalPendapatan = 0;
         foreach ($pendapatanResults as $result) {
@@ -106,8 +110,23 @@ class LabaRugiController extends Controller
             }
         }
 
-        // Menghitung Beban
-        $bebanResults = $calculateSaldoes('Beban');
+        // Menghitung Harga Pokok Penjualan (HPP)
+        $hppResults = $calculateSaldoes($hppTipes);
+        $hpps = [];
+        $totalHpp = 0;
+        foreach ($hppResults as $result) {
+            $saldo = $result->total_debit - $result->total_kredit;
+            if ($saldo > 0) {
+                $hpps[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
+                $totalHpp += $saldo;
+            }
+        }
+
+        // Laba Kotor
+        $labaKotor = $totalPendapatan - $totalHpp;
+
+        // Menghitung Beban Operasional
+        $bebanResults = $calculateSaldoes($bebanTipes);
         $bebans = [];
         $totalBeban = 0;
         foreach ($bebanResults as $result) {
@@ -118,11 +137,39 @@ class LabaRugiController extends Controller
             }
         }
 
-        $labaRugi = $totalPendapatan - $totalBeban;
+        // Laba/Rugi Operasional
+        $labaOperasional = $labaKotor - $totalBeban;
 
-        // --- BLOK BARU: MENYIAPKAN DATA UNTUK TANDA TANGAN ---
-        // Logika ini bisa Anda kembangkan lebih lanjut, misalnya mengambil dari tabel 'pengurus'
-        // atau dari data user yang memiliki peran tertentu.
+        // Menghitung Pendapatan dan Beban Lain-lain
+        $pendapatanBebanLainResults = $calculateSaldoes($pendapatanBebanLainTipes);
+        $pendapatanLains = [];
+        $totalPendapatanLain = 0;
+        $bebanLains = [];
+        $totalBebanLain = 0;
+
+        foreach ($pendapatanBebanLainResults as $result) {
+            $namaAkun = strtolower($result->nama_akun);
+            $saldo = $result->total_kredit - $result->total_debit; // Default untuk pendapatan
+
+            // Logika untuk membedakan Pendapatan Lain dan Beban Lain
+            if (str_contains($namaAkun, 'beban') || str_contains($namaAkun, 'kerugian')) {
+                $saldo = $result->total_debit - $result->total_kredit;
+                if ($saldo > 0) {
+                    $bebanLains[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
+                    $totalBebanLain += $saldo;
+                }
+            } else {
+                if ($saldo > 0) {
+                    $pendapatanLains[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
+                    $totalPendapatanLain += $saldo;
+                }
+            }
+        }
+
+        // Laba/Rugi Bersih Sebelum Pajak
+        $labaRugiBersih = $labaOperasional + $totalPendapatanLain - $totalBebanLain;
+
+        // Menyiapkan data untuk tanda tangan
         $penandaTangan1 = [
             'jabatan' => 'Direktur',
             'nama'    => 'Nama Direktur Anda'
@@ -131,8 +178,6 @@ class LabaRugiController extends Controller
             'jabatan' => 'Bendahara',
             'nama'    => 'Nama Bendahara Anda'
         ];
-        // --- AKHIR BLOK BARU ---
-
 
         // --- PERUBAHAN: KIRIM VARIABEL BARU KE VIEW ---
         return view('laporan.laba_rugi.show', compact(
@@ -141,11 +186,19 @@ class LabaRugiController extends Controller
             'endDate',
             'pendapatans',
             'totalPendapatan',
+            'hpps',
+            'totalHpp',
+            'labaKotor',
             'bebans',
             'totalBeban',
-            'labaRugi',
+            'labaOperasional',
+            'pendapatanLains',
+            'totalPendapatanLain',
+            'bebanLains',
+            'totalBebanLain',
+            'labaRugiBersih',
             'penandaTangan1',
             'penandaTangan2'
-                ));
+        ));
     }
 }

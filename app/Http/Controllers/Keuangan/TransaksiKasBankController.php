@@ -1,100 +1,90 @@
 <?php
 
-// app/Http/Controllers/Keuangan/TransaksiKasBankController.php
 namespace App\Http\Controllers\Keuangan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Akun; // Tambahkan
-use App\Models\DetailJurnal; // Tambahkan
-use App\Models\JurnalUmum; // Tambahkan
+use App\Models\Akun;
+use App\Models\DetailJurnal;
+use App\Models\JurnalUmum;
 use App\Models\KasBank;
 use App\Models\TransaksiKasBank;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\Rule;
 
 class TransaksiKasBankController extends Controller
 {
+    // Tambahkan middleware otorisasi jika perlu
+    public function __construct()
+    {
+        // Asumsi hanya Bendahara dan Admin BUMDes yang bisa membuat transaksi kas bank
+        // Jika manajer unit usaha juga bisa, tambahkan peran mereka
+        $this->middleware('role:bendahara_bumdes|admin_bumdes');
+    }
+
     public function store(Request $request)
     {
-        // 1. Validasi Input (dengan tambahan akun_id)
+        $user = Auth::user();
+
+        // Dapatkan unit usaha yang dikelola user
+        $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+
+        // Validasi input
         $request->validate([
-            'kas_bank_id' => 'required|exists:kas_banks,kas_bank_id',
-            'akun_id' => 'required|exists:akuns,akun_id', // validasi baru
+            'kas_bank_id' => [
+                'required',
+                Rule::exists('kas_banks', 'kas_bank_id')
+            ],
+            'unit_usaha_id' => [ // Wajib ada untuk otorisasi
+                'required',
+                Rule::in($managedUnitUsahaIds)
+            ],
+            'akun_id' => 'required|exists:akuns,akun_id',
             'tanggal_transaksi' => 'required|date',
             'jenis_transaksi' => 'required|in:debit,kredit',
             'jumlah' => 'required|numeric|min:1',
             'deskripsi' => 'required|string|max:500',
         ]);
 
-        DB::transaction(function () use ($request) {
+        try {
+            DB::beginTransaction();
+
             $kasBank = KasBank::findOrFail($request->kas_bank_id);
             $akunTerkait = Akun::findOrFail($request->akun_id);
             $jumlah = $request->jumlah;
-            $user_id = Auth::id();
-            // Asumsi BUMDes ID = 1 untuk sementara, sesuaikan jika perlu
+            $unitUsahaId = $request->unit_usaha_id;
 
-            // 2. Buat Jurnal Umum (Header)
+            // --- Jurnal Umum ---
             $jurnal = JurnalUmum::create([
-                'user_id' => $user_id,
+                'user_id' => $user->user_id,
+                'unit_usaha_id' => $unitUsahaId, // Hubungkan ke unit usaha
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
-                'total_debit' => $jumlah, // Total debit dan kredit jurnal harus sama
+                'total_debit' => $jumlah,
                 'total_kredit' => $jumlah,
             ]);
 
-            // 3. Buat Detail Jurnal (Double Entry)
-            if ($request->jenis_transaksi == 'debit') { // Pemasukan
-                // Debit: Akun Kas/Bank bertambah
-                DetailJurnal::create([
-                    'jurnal_id' => $jurnal->jurnal_id,
-                    'akun_id' => $kasBank->akun_id, // Ambil akun_id dari relasi kasBank
-                    'debit' => $jumlah,
-                    'kredit' => 0,
-                ]);
-                // Kredit: Akun terkait (misal: Pendapatan) bertambah
-                DetailJurnal::create([
-                    'jurnal_id' => $jurnal->jurnal_id,
-                    'akun_id' => $akunTerkait->akun_id,
-                    'debit' => 0,
-                    'kredit' => $jumlah,
-                ]);
-            } else { // Pengeluaran
-                // Debit: Akun terkait (misal: Beban) bertambah
-                DetailJurnal::create([
-                    'jurnal_id' => $jurnal->jurnal_id,
-                    'akun_id' => $akunTerkait->akun_id,
-                    'debit' => $jumlah,
-                    'kredit' => 0,
-                ]);
-                // Kredit: Akun Kas/Bank berkurang
-                DetailJurnal::create([
-                    'jurnal_id' => $jurnal->jurnal_id,
-                    'akun_id' => $kasBank->akun_id,
-                    'debit' => 0,
-                    'kredit' => $jumlah,
-                ]);
-            }
-
-            // 4. Catat Transaksi Kas & Update Saldo (Logika lama tetap berjalan)
-            TransaksiKasBank::create([
-                'kas_bank_id' => $kasBank->kas_bank_id,
-                'tanggal_transaksi' => $request->tanggal_transaksi,
-                'jumlah_debit' => $request->jenis_transaksi == 'debit' ? $jumlah : 0,
-                'jumlah_kredit' => $request->jenis_transaksi == 'kredit' ? $jumlah : 0,
-                'deskripsi' => $request->deskripsi,
-                'user_id' => $user_id,
-            ]);
-
             if ($request->jenis_transaksi == 'debit') {
-                $kasBank->saldo_saat_ini += $jumlah;
+                DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $kasBank->akun_id, 'debit' => $jumlah, 'kredit' => 0]);
+                DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunTerkait->akun_id, 'debit' => 0, 'kredit' => $jumlah]);
             } else {
-                $kasBank->saldo_saat_ini -= $jumlah;
+                DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunTerkait->akun_id, 'debit' => $jumlah, 'kredit' => 0]);
+                DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $kasBank->akun_id, 'debit' => 0, 'kredit' => $jumlah]);
             }
-            $kasBank->save();
-        });
 
-        return redirect()->route('kas-bank.show', $request->kas_bank_id)
-                         ->with('success', 'Transaksi berhasil ditambahkan dan Jurnal Umum telah dibuat.');
+            // --- REKOMENDASI: Hapus tabel TransaksiKasBank dan kolom saldo_saat_ini ---
+            // Cukup andalkan jurnal umum sebagai single source of truth.
+            // Transaksi ini bisa dicatat sebagai 'jurnal_id' di tabel KasBank jika perlu relasi.
+
+            DB::commit();
+
+            return redirect()->route('kas-bank.show', $request->kas_bank_id)
+                             ->with('success', 'Transaksi berhasil ditambahkan dan Jurnal Umum telah dibuat.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage())->withInput();
+        }
     }
 }

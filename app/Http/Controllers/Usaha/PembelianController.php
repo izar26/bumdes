@@ -14,9 +14,37 @@ use App\Models\Stok;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\Rule;
 
 class PembelianController extends Controller
 {
+    /**
+     * Helper function untuk otorisasi berdasarkan unit usaha.
+     * @param int|array $unitUsahaId
+     * @param string $message
+     * @throws AuthorizationException
+     */
+    private function authorizeUserUnitUsaha($unitUsahaId, $message = 'Anda tidak memiliki izin untuk mengakses data ini.')
+    {
+        $user = Auth::user();
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            if (is_array($unitUsahaId)) {
+                $check = collect($unitUsahaId)->every(function($id) use ($managedUnitUsahaIds) {
+                    return $managedUnitUsahaIds->contains($id);
+                });
+                if (!$check) {
+                    throw new AuthorizationException($message);
+                }
+            } else {
+                if (!$managedUnitUsahaIds->contains($unitUsahaId)) {
+                    throw new AuthorizationException($message);
+                }
+            }
+        }
+    }
+
     /**
      * Menampilkan daftar transaksi pembelian.
      */
@@ -25,13 +53,10 @@ class PembelianController extends Controller
         $user = Auth::user();
         $pembelianQuery = Pembelian::with('pemasok', 'unitUsaha')->latest('tanggal_pembelian');
 
-        // Filter berdasarkan peran pengguna
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            // FIX: Tambahkan nama tabel 'unit_usahas' untuk mengatasi ambiguitas kolom
             $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $pembelianQuery->whereIn('unit_usaha_id', $unitUsahaIds);
         }
-        // Bendahara dan peran di atasnya bisa melihat semua
 
         $pembelians = $pembelianQuery->get();
         return view('usaha.pembelian.index', compact('pembelians'));
@@ -46,10 +71,9 @@ class PembelianController extends Controller
         $pemasokQuery = Pemasok::orderBy('nama_pemasok');
         $produkQuery = Produk::orderBy('nama_produk');
 
-        // Filter pemasok dan produk berdasarkan unit usaha yang dikelola pengguna
+        $unitUsahaIds = [];
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            // FIX: Tambahkan nama tabel 'unit_usahas' untuk mengatasi ambiguitas kolom
-            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             $pemasokQuery->whereIn('unit_usaha_id', $unitUsahaIds);
             $produkQuery->whereIn('unit_usaha_id', $unitUsahaIds);
         }
@@ -65,7 +89,8 @@ class PembelianController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $user = Auth::user();
+        $rules = [
             'tanggal_pembelian' => 'required|date',
             'pemasok_id' => 'required|exists:pemasoks,pemasok_id',
             'status_pembelian' => 'required|in:Lunas,Belum Lunas',
@@ -76,7 +101,22 @@ class PembelianController extends Controller
             'jumlah.*' => 'required|numeric|min:1',
             'harga_unit' => 'required|array|min:1',
             'harga_unit.*' => 'required|numeric|min:0',
-        ]);
+        ];
+
+        // Aturan validasi tambahan untuk otorisasi
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            $rules['pemasok_id'] = [
+                'required',
+                Rule::exists('pemasoks', 'pemasok_id')->whereIn('unit_usaha_id', $managedUnitUsahaIds)
+            ];
+            $rules['produk_id.*'] = [
+                'required',
+                Rule::exists('produks', 'produk_id')->whereIn('unit_usaha_id', $managedUnitUsahaIds)
+            ];
+        }
+
+        $request->validate($rules);
 
         try {
             DB::beginTransaction();
@@ -87,6 +127,15 @@ class PembelianController extends Controller
             // Tentukan Unit Usaha dari pemasok yang dipilih
             $pemasok = Pemasok::findOrFail($request->pemasok_id);
             $unitUsahaId = $pemasok->unit_usaha_id;
+
+            // Otorisasi: Verifikasi unit usaha dari pemasok
+            $this->authorizeUserUnitUsaha($unitUsahaId, 'Anda tidak memiliki izin untuk membuat pembelian di unit usaha ini.');
+
+            // Otorisasi: Verifikasi setiap produk
+            foreach ($request->produk_id as $id_produk) {
+                $produk = Produk::findOrFail($id_produk);
+                $this->authorizeUserUnitUsaha($produk->unit_usaha_id, 'Salah satu produk tidak berada di unit usaha yang dikelola.');
+            }
 
             foreach ($request->produk_id as $key => $id_produk) {
                 $jumlah = $request->jumlah[$key];
@@ -102,19 +151,19 @@ class PembelianController extends Controller
                 ];
 
                 // Logika Update Stok: Tambah stok saat pembelian
-                // Gunakan firstOrCreate untuk menangani jika record stok belum ada
-                Stok::firstOrCreate(['produk_id' => $id_produk], ['jumlah_stok' => 0])
-                    ->increment('jumlah_stok', $jumlah);
+                $stok = Stok::firstOrNew(['produk_id' => $id_produk, 'unit_usaha_id' => $unitUsahaId]);
+                $stok->jumlah_stok += $jumlah;
+                $stok->save();
             }
 
             // --- Jurnal Akuntansi ---
-            $akunDebit = Akun::where('kode_akun', '1.1.05.01')->firstOrFail(); // Persediaan Barang Dagang
+            $akunDebit = Akun::where('kode_akun', '1.1.05.01')->firstOrFail();
             $deskripsiJurnal = 'Pembelian barang dagang dari ' . $pemasok->nama_pemasok;
 
             if ($request->status_pembelian == 'Lunas') {
-                $akunKredit = Akun::where('kode_akun', '1.1.01.01')->firstOrFail(); // Kas di Tangan
+                $akunKredit = Akun::where('kode_akun', '1.1.01.01')->firstOrFail();
             } else {
-                $akunKredit = Akun::where('kode_akun', '2.1.01.01')->firstOrFail(); // Utang Usaha
+                $akunKredit = Akun::where('kode_akun', '2.1.01.01')->firstOrFail();
             }
 
             $jurnal = JurnalUmum::create([
@@ -124,12 +173,12 @@ class PembelianController extends Controller
                 'deskripsi' => $deskripsiJurnal,
                 'total_debit' => $totalPembelian,
                 'total_kredit' => $totalPembelian,
+                'status' => 'menunggu', // Status awal selalu menunggu persetujuan
             ]);
 
             DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunDebit->akun_id, 'debit' => $totalPembelian, 'kredit' => 0]);
             DetailJurnal::create(['jurnal_id' => $jurnal->jurnal_id, 'akun_id' => $akunKredit->akun_id, 'debit' => 0, 'kredit' => $totalPembelian]);
 
-            // --- Simpan data Pembelian utama ---
             $pembelian = Pembelian::create([
                 'pemasok_id' => $request->pemasok_id,
                 'no_faktur' => $request->no_faktur,
@@ -140,7 +189,6 @@ class PembelianController extends Controller
                 'status_pembelian' => $request->status_pembelian,
             ]);
 
-            // Simpan detail pembelian terkait
             $pembelian->detailPembelians()->createMany($detailData);
 
             DB::commit();
@@ -158,6 +206,9 @@ class PembelianController extends Controller
      */
     public function show(Pembelian $pembelian)
     {
+        // Otorisasi: Pastikan user punya hak akses ke pembelian ini
+        $this->authorizeUserUnitUsaha($pembelian->unit_usaha_id, 'Anda tidak memiliki izin untuk melihat detail pembelian ini.');
+
         $pembelian->load('detailPembelians.produk', 'pemasok', 'unitUsaha');
         return view('usaha.pembelian.show', compact('pembelian'));
     }
@@ -167,33 +218,33 @@ class PembelianController extends Controller
      */
     public function destroy(Pembelian $pembelian)
     {
-        // IMPROVED: Logika destroy yang benar dengan penyesuaian stok
+        // Otorisasi: Pastikan user punya hak akses ke pembelian ini
+        $this->authorizeUserUnitUsaha($pembelian->unit_usaha_id, 'Anda tidak memiliki izin untuk menghapus transaksi ini.');
+
         try {
             DB::beginTransaction();
 
-            // 1. Muat detail pembelian beserta produknya
+            // Cek otorisasi jurnal sebelum dihapus
+            $jurnal = JurnalUmum::find($pembelian->jurnal_id);
+            if ($jurnal && ($jurnal->status === 'disetujui' || $jurnal->status === 'ditolak')) {
+                throw new AuthorizationException('Transaksi pembelian tidak dapat dihapus karena jurnal terkait sudah diverifikasi. Silakan hubungi admin keuangan.');
+            }
+
             $pembelian->load('detailPembelians.produk');
 
-            // 2. Kurangi stok untuk setiap produk yang dibatalkan pembeliannya
             foreach ($pembelian->detailPembelians as $detail) {
                 if ($detail->produk) {
                     $stok = Stok::where('produk_id', $detail->produk_id)->first();
                     if ($stok) {
-                        // Gunakan decrement untuk mengurangi stok.
-                        // Ini memastikan stok tidak menjadi negatif jika terjadi race condition.
                         $stok->decrement('jumlah_stok', $detail->jumlah);
                     }
                 }
             }
 
-            // 3. Hapus jurnal terkait
-            $jurnal = JurnalUmum::find($pembelian->jurnal_id);
             if ($jurnal) {
-                $jurnal->delete(); // Ini akan otomatis menghapus detail jurnal jika relasi di-set cascade
+                $jurnal->delete();
             }
 
-            // 4. Hapus data pembelian utama
-            // Ini akan otomatis menghapus detail pembelian jika relasi di-set cascade
             $pembelian->delete();
 
             DB::commit();

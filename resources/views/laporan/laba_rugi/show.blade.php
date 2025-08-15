@@ -29,6 +29,7 @@
 
         <table class="table-laporan table-laba-rugi">
             <tbody>
+                {{-- BAGIAN PENDAPATAN --}}
                 <tr class="header-row"><td colspan="2"><strong>Pendapatan</strong></td></tr>
                 @forelse ($pendapatans as $pendapatan)
                     <tr>
@@ -47,6 +48,36 @@
                 </tr>
                 <tr><td colspan="2" class="spacer"></td></tr>
 
+                {{-- BAGIAN HARGA POKOK PENJUALAN (HPP) --}}
+                <tr class="header-row"><td colspan="2"><strong>Harga Pokok Penjualan</strong></td></tr>
+                @forelse ($hpps as $hpp)
+                    <tr>
+                        <td class="item-name">{{ $hpp['nama_akun'] }}</td>
+                        <td class="item-value">(Rp {{ number_format($hpp['total'], 0, ',', '.') }})</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td class="item-name">Tidak ada data HPP</td>
+                        <td class="item-value">Rp 0</td>
+                    </tr>
+                @endforelse
+                <tr class="total-row">
+                    <td><strong>Total HPP</strong></td>
+                    <td class="item-value"><strong>(Rp {{ number_format($totalHpp, 0, ',', '.') }})</strong></td>
+                </tr>
+                <tr><td colspan="2" class="spacer"></td></tr>
+
+                {{-- BAGIAN LABA KOTOR --}}
+                @php
+                    $labaKotorLabel = $labaKotor >= 0 ? 'Laba Kotor' : 'Rugi Kotor';
+                @endphp
+                <tr class="grand-total-row">
+                    <td><strong>{{ $labaKotorLabel }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format(abs($labaKotor), 0, ',', '.') }}</strong></td>
+                </tr>
+                <tr><td colspan="2" class="spacer"></td></tr>
+
+                {{-- BAGIAN BEBAN OPERASIONAL --}}
                 <tr class="header-row"><td colspan="2"><strong>Beban Operasional</strong></td></tr>
                 @forelse ($bebans as $beban)
                     <tr>
@@ -55,7 +86,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td class="item-name">Tidak ada data beban</td>
+                        <td class="item-name">Tidak ada data beban operasional</td>
                         <td class="item-value">Rp 0</td>
                     </tr>
                 @endforelse
@@ -65,12 +96,61 @@
                 </tr>
                 <tr><td colspan="2" class="spacer"></td></tr>
 
+                {{-- BAGIAN LABA RUGI OPERASIONAL --}}
                 @php
-                    $labaRugiLabel = $labaRugi >= 0 ? 'Laba Bersih Operasional' : 'Rugi Bersih Operasional';
+                    $labaOperasionalLabel = $labaOperasional >= 0 ? 'Laba Operasional' : 'Rugi Operasional';
                 @endphp
                 <tr class="grand-total-row">
-                    <td><strong>{{ $labaRugiLabel }}</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format(abs($labaRugi), 0, ',', '.') }}</strong></td>
+                    <td><strong>{{ $labaOperasionalLabel }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format(abs($labaOperasional), 0, ',', '.') }}</strong></td>
+                </tr>
+                <tr><td colspan="2" class="spacer"></td></tr>
+
+                {{-- BAGIAN PENDAPATAN LAIN-LAIN --}}
+                <tr class="header-row"><td colspan="2"><strong>Pendapatan Lain-lain</strong></td></tr>
+                @forelse ($pendapatanLains as $pendapatanLain)
+                    <tr>
+                        <td class="item-name">{{ $pendapatanLain['nama_akun'] }}</td>
+                        <td class="item-value">Rp {{ number_format($pendapatanLain['total'], 0, ',', '.') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td class="item-name">Tidak ada data pendapatan lain-lain</td>
+                        <td class="item-value">Rp 0</td>
+                    </tr>
+                @endforelse
+                <tr class="total-row">
+                    <td><strong>Total Pendapatan Lain-lain</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalPendapatanLain, 0, ',', '.') }}</strong></td>
+                </tr>
+                <tr><td colspan="2" class="spacer"></td></tr>
+
+                {{-- BAGIAN BEBAN LAIN-LAIN --}}
+                <tr class="header-row"><td colspan="2"><strong>Beban Lain-lain</strong></td></tr>
+                @forelse ($bebanLains as $bebanLain)
+                    <tr>
+                        <td class="item-name">{{ $bebanLain['nama_akun'] }}</td>
+                        <td class="item-value">(Rp {{ number_format($bebanLain['total'], 0, ',', '.') }})</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td class="item-name">Tidak ada data beban lain-lain</td>
+                        <td class="item-value">Rp 0</td>
+                    </tr>
+                @endforelse
+                <tr class="total-row">
+                    <td><strong>Total Beban Lain-lain</strong></td>
+                    <td class="item-value"><strong>(Rp {{ number_format($totalBebanLain, 0, ',', '.') }})</strong></td>
+                </tr>
+                <tr><td colspan="2" class="spacer"></td></tr>
+
+                {{-- BAGIAN LABA BERSIH --}}
+                @php
+                    $labaBersihLabel = $labaRugiBersih >= 0 ? 'Laba Bersih Sebelum Pajak' : 'Rugi Bersih Sebelum Pajak';
+                @endphp
+                <tr class="grand-total-row">
+                    <td><strong>{{ $labaBersihLabel }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format(abs($labaRugiBersih), 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -116,17 +196,15 @@
     .judul h3 { margin: 5px 0; font-size: 16px; text-transform: uppercase; }
     .judul p { margin: 2px 0; }
 
-    /* == PERUBAHAN DI SINI == */
     /* Styling Tabel Laporan Laba Rugi */
-    .table-laporan { width: 100%; } /* Memastikan tabel memenuhi lebar kontainer */
+    .table-laporan { width: 100%; }
     .table-laba-rugi, .table-laba-rugi td { border: none !important; }
     .table-laba-rugi .header-row td { font-size: 14px; padding-top: 15px; }
     .table-laba-rugi .item-name { padding-left: 30px !important; }
-    .table-laba-rugi .item-value { text-align: right; width: 30%; } /* Memberi lebar tetap pada kolom nilai */
+    .table-laba-rugi .item-value { text-align: right; width: 30%; }
     .table-laba-rugi .total-row td { border-top: 1px solid #000 !important; padding-top: 5px; }
     .table-laba-rugi .grand-total-row td { border-top: 3px double #000 !important; font-size: 14px; padding-top: 8px; font-weight: bold; }
     .table-laba-rugi .spacer { border: none; padding: 10px; }
-    /* == AKHIR PERUBAHAN == */
 
     /* Styling Footer Tanda Tangan */
     .footer { margin-top: 50px; width: 100%; border: none; }

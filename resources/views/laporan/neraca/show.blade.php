@@ -10,10 +10,10 @@
 <div class="card">
     <div class="card-body">
 
-        {{-- KOP SURAT (Menggunakan struktur baru yang standar) --}}
+        {{-- KOP SURAT --}}
         <div class="kop">
             @if($bumdes && $bumdes->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo">
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo">
             @else
                 <img src="https://placehold.co/75x75/008080/FFFFFF?text=Logo" alt="Logo">
             @endif
@@ -41,7 +41,7 @@
                 @forelse ($asets as $aset)
                     <tr>
                         <td class="item-name">{{ $aset['nama_akun'] }}</td>
-                        <td class="item-value">{{ 'Rp ' . $aset['total'] }}</td>
+                        <td class="item-value">Rp {{ number_format($aset['total'], 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -51,7 +51,7 @@
                 @endforelse
                 <tr class="total-section">
                     <td><strong>TOTAL ASET</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' . $totalAset }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalAset, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr><td colspan="2" class="spacer"></td></tr>
 
@@ -62,7 +62,7 @@
                 @forelse ($kewajibans as $kewajiban)
                     <tr>
                         <td class="item-name">{{ $kewajiban['nama_akun'] }}</td>
-                        <td class="item-value">{{ 'Rp ' . $kewajiban['total'] }}</td>
+                        <td class="item-value">Rp {{ number_format($kewajiban['total'], 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -72,7 +72,7 @@
                 @endforelse
                 <tr class="total-row">
                     <td><strong>Total Kewajiban</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' .$totalKewajiban }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalKewajiban, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr><td colspan="2" class="spacer-small"></td></tr>
 
@@ -83,37 +83,39 @@
                 @foreach ($ekuitas as $modal)
                     <tr>
                         <td class="item-name">{{ $modal['nama_akun'] }}</td>
-                        <td class="item-value">{{ 'Rp ' . $modal['total'] }}</td>
+                        <td class="item-value">Rp {{ number_format($modal['total'], 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
-                <tr>
-                    <td class="item-name">Laba (Rugi) Ditahan</td>
-                    <td class="item-value">{{ 'Rp ' . $labaDitahan }}</td>
-                </tr>
+                @if ($labaDitahan != 0)
+                    <tr>
+                        <td class="item-name">Laba (Rugi) Ditahan</td>
+                        <td class="item-value">Rp {{ number_format($labaDitahan, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
                 <tr class="total-row">
                     <td><strong>Total Ekuitas</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' . $totalEkuitas }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalEkuitas, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr><td colspan="2" class="spacer-small"></td></tr>
 
                 {{-- TOTAL KEWAJIBAN + EKUITAS --}}
                 <tr class="total-section">
                     <td><strong>TOTAL KEWAJIBAN DAN EKUITAS</strong></td>
-                    <td class="item-value"><strong>{{ 'Rp ' . $totalKewajiban + $totalEkuitas }}</strong></td>
+                    <td class="item-value"><strong>Rp {{ number_format($totalKewajiban + $totalEkuitas, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
-        {{-- TANDA TANGAN (Menggunakan struktur baru yang standar) --}}
+        {{-- TANDA TANGAN --}}
         <table class="footer">
             <tr>
                 <td style="width: 50%;"></td>
                 <td style="width: 50%;">
-                    {{ 'Cianjur' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                    {{ $bumdes->kota ?? 'Kota Anda' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
-                 <td>Menyetujui,</td>
+                <td>Menyetujui,</td>
             </tr>
             <tr>
                 <td>
@@ -137,7 +139,7 @@
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK (non-print) --}}
+        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>

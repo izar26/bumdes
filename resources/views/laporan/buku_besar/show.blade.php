@@ -10,13 +10,12 @@
 <div class="card">
     <div class="card-body">
 
-        {{-- KOP SURAT (Menggunakan struktur baru yang standar) --}}
+        {{-- KOP SURAT --}}
         <div class="kop">
-            @if($bumdes && $bumdes->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo">
+            @if(!empty($logo_bungdes))
+                <img src="{{ $logo_bungdes }}" alt="Logo">
             @else
-                {{-- Fallback jika logo tidak ada --}}
-                <img src="https://placehold.co/75x75/008080/FFFFFF?text=Logo" alt="Logo">
+                <i class="fas fa-landmark fa-2x"></i>
             @endif
             <div class="kop-text">
                 <h1>{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h1>
@@ -46,7 +45,7 @@
             </table>
         </div>
 
-        {{-- TABEL DATA (Menggunakan styling baru) --}}
+        {{-- TABEL DATA --}}
         <table class="table-laporan">
             <thead>
                 <tr>
@@ -61,7 +60,8 @@
                 {{-- Saldo Awal --}}
                 <tr class="saldo-row">
                     <td colspan="4"><strong>Saldo Awal</strong></td>
-                    <td class="text-right"><strong>{{ 'Rp ' . $saldoAwal }}</strong></td>
+                    {{-- PERBAIKAN: Format saldo awal --}}
+                    <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoAwal, 0, ',', '.') }}</strong></td>
                 </tr>
 
                 @php $saldoBerjalan = $saldoAwal; @endphp
@@ -77,12 +77,15 @@
                     <tr>
                         <td class="text-center">{{ \Carbon\Carbon::parse($transaksi->jurnal->tanggal_transaksi)->format('d/m/Y') }}</td>
                         <td>{{ $transaksi->jurnal->deskripsi }}</td>
-                        <td class="text-right">{{ $transaksi->debit > 0 ? 'Rp ' . $transaksi->debit : '-' }}</td>
-                        <td class="text-right">{{ $transaksi->kredit > 0 ? 'Rp ' . $transaksi->kredit : '-' }}</td>
-                        <td class="text-right">{{ 'Rp ' . $saldoBerjalan }}</td>
+                        {{-- PERBAIKAN: Format debit --}}
+                        <td class="text-right">{{ $transaksi->debit > 0 ? 'Rp ' . number_format($transaksi->debit, 0, ',', '.') : '-' }}</td>
+                        {{-- PERBAIKAN: Format kredit --}}
+                        <td class="text-right">{{ $transaksi->kredit > 0 ? 'Rp ' . number_format($transaksi->kredit, 0, ',', '.') : '-' }}</td>
+                        {{-- PERBAIKAN: Format saldo berjalan --}}
+                        <td class="text-right">{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</td>
                     </tr>
                 @empty
-                     <tr>
+                    <tr>
                         <td colspan="5" class="text-center" style="padding: 20px;">Tidak ada transaksi pada periode ini.</td>
                     </tr>
                 @endforelse
@@ -90,12 +93,13 @@
                 {{-- Saldo Akhir --}}
                 <tr class="saldo-row">
                     <td colspan="4"><strong>Saldo Akhir</strong></td>
-                    <td class="text-right"><strong>{{ 'Rp ' . $saldoBerjalan }}</strong></td>
+                    {{-- PERBAIKAN: Format saldo akhir --}}
+                    <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
-        {{-- TANDA TANGAN (Menggunakan struktur baru yang standar) --}}
+        {{-- TANDA TANGAN --}}
         <table class="footer">
             <tr>
                 <td style="width: 50%;"></td>
@@ -104,8 +108,7 @@
                 </td>
             </tr>
             <tr>
-                 <td>Menyetujui,</td>
-                {{-- <td></td> --}}
+                <td>Menyetujui,</td>
             </tr>
             <tr>
                 <td>
@@ -129,7 +132,7 @@
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK (non-print) --}}
+        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
@@ -188,4 +191,4 @@
         }
     }
 </style>
-@stop
+@stop   

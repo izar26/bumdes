@@ -10,23 +10,24 @@ use App\Models\UnitUsaha;
 use App\Models\Bungdes;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class NeracaController extends Controller
 {
+    // Tambahkan middleware otorisasi di sini
+    public function __construct()
+    {
+        $this->middleware('role:bendahara_bumdes|admin_bumdes');
+    }
+
     /**
      * Menampilkan halaman form filter laporan Neraca.
      */
     public function index()
     {
-        $user = Auth::user();
-        $unitUsahas = collect();
-        if ($user->hasRole('bendahara_bumdes')) {
-            // Bendahara bisa filter semua unit usaha
-            $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
-        } else {
-            // Peran lain hanya melihat unit usahanya sendiri
-            $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->get();
-        }
+        // Peran non-BUMDes tidak bisa mencapai sini karena middleware
+        $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         return view('laporan.neraca.index', compact('unitUsahas'));
     }
 
@@ -45,90 +46,78 @@ class NeracaController extends Controller
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
 
-        // Base query yang sudah difilter berdasarkan status jurnal dan unit usaha
-        $baseQuery = DetailJurnal::join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
-            ->where('jurnal_umums.status', 'disetujui') // Filter utama
+        // Logika filter unit usaha hanya untuk bendahara/admin BUMDes
+        $managedUnitIds = collect();
+        if (!empty($unitUsahaId)) {
+            $managedUnitIds = collect([$unitUsahaId]);
+        }
+
+        // Gunakan satu query yang efisien untuk mengambil semua saldo
+        $query = Akun::select('akuns.nama_akun', 'akuns.tipe_akun')
+            ->selectRaw('SUM(detail_jurnals.debit) as total_debit')
+            ->selectRaw('SUM(detail_jurnals.kredit) as total_kredit')
+            ->join('detail_jurnals', 'akuns.akun_id', '=', 'detail_jurnals.akun_id')
+            ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+            ->where('jurnal_umums.status', 'disetujui')
             ->where('jurnal_umums.tanggal_transaksi', '<=', $reportDate);
 
-        // Terapkan filter unit usaha berdasarkan peran
-        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $managedUnitIds = $user->unitUsahas()->pluck('unit_usaha_id');
-            $baseQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-        } elseif ($user->hasRole('bendahara_bumdes') && !empty($unitUsahaId)) {
-            $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
-        }
-        
-        // Helper function untuk menghitung saldo akun dengan base query
-        $calculateBalance = function($akunId) use ($baseQuery) {
-            $query = (clone $baseQuery)->where('akun_id', $akunId);
-            $debit = (clone $query)->sum('detail_jurnals.debit');
-            $kredit = (clone $query)->sum('detail_jurnals.kredit');
-            return ['debit' => $debit, 'kredit' => $kredit];
-        };
-
-        // 1. Hitung ASET
-        $akunAsets = Akun::where('tipe_akun', 'Aset')->where('is_header', 0)->get();
-        $asets = [];
-        $totalAset = 0;
-        foreach ($akunAsets as $akun) {
-            $balances = $calculateBalance($akun->akun_id);
-            $saldo = $balances['debit'] - $balances['kredit']; // Saldo normal Aset di Debit
-            if ($saldo != 0) {
-                $asets[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
-                $totalAset += $saldo;
-            }
+        if ($managedUnitIds->isNotEmpty()) {
+            $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
         }
 
-        // 2. Hitung KEWAJIBAN
-        $akunKewajibans = Akun::where('tipe_akun', 'Kewajiban')->where('is_header', 0)->get();
-        $kewajibans = [];
-        $totalKewajiban = 0;
-        foreach ($akunKewajibans as $akun) {
-            $balances = $calculateBalance($akun->akun_id);
-            $saldo = $balances['kredit'] - $balances['debit']; // Saldo normal Kewajiban di Kredit
-            if ($saldo != 0) {
-                $kewajibans[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
-                $totalKewajiban += $saldo;
-            }
-        }
+        $allBalances = $query->groupBy('akuns.akun_id', 'akuns.nama_akun', 'akuns.tipe_akun')->get();
 
-        // 3. Hitung EKUITAS
-        $akunEkuitas = Akun::where('tipe_akun', 'Ekuitas')->where('is_header', 0)->get();
-        $ekuitas = [];
-        $totalModalAwal = 0;
-        foreach ($akunEkuitas as $akun) {
-            $balances = $calculateBalance($akun->akun_id);
-            $saldo = $balances['kredit'] - $balances['debit']; // Saldo normal Ekuitas di Kredit
-            if ($saldo != 0) {
-                $ekuitas[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
-                $totalModalAwal += $saldo;
-            }
-        }
-        
-        // Hitung Laba Ditahan (Total Pendapatan - Total Beban) s/d tanggal laporan
-        $akunPendapatans = Akun::where('tipe_akun', 'Pendapatan')->get();
+        $asets = []; $totalAset = 0;
+        $kewajibans = []; $totalKewajiban = 0;
+        $ekuitas = []; $totalEkuitas = 0;
         $totalPendapatan = 0;
-        foreach ($akunPendapatans as $akun) {
-            $balances = $calculateBalance($akun->akun_id);
-            $totalPendapatan += ($balances['kredit'] - $balances['debit']);
+        $totalBeban = 0;
+        $totalHpp = 0;
+
+        foreach ($allBalances as $akun) {
+            $saldo = 0;
+            if (in_array($akun->tipe_akun, ['Aset', 'Beban', 'HPP'])) {
+                $saldo = $akun->total_debit - $akun->total_kredit;
+            } else {
+                $saldo = $akun->total_kredit - $akun->total_debit;
+            }
+
+            if ($saldo != 0) {
+                if ($akun->tipe_akun === 'Aset') {
+                    $asets[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
+                    $totalAset += $saldo;
+                } elseif ($akun->tipe_akun === 'Kewajiban') {
+                    $kewajibans[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
+                    $totalKewajiban += $saldo;
+                } elseif ($akun->tipe_akun === 'Ekuitas') {
+                    // Akun Ekuitas selain laba ditahan
+                    $ekuitas[] = ['nama_akun' => $akun->nama_akun, 'total' => $saldo];
+                    $totalEkuitas += $saldo;
+                } elseif ($akun->tipe_akun === 'Pendapatan') {
+                    $totalPendapatan += $saldo;
+                } elseif ($akun->tipe_akun === 'Beban') {
+                    $totalBeban += $saldo;
+                } elseif ($akun->tipe_akun === 'HPP') {
+                    $totalHpp += $saldo;
+                }
+            }
         }
 
-        $akunBebans = Akun::where('tipe_akun', 'Beban')->get();
-        $totalBeban = 0;
-        foreach ($akunBebans as $akun) {
-            $balances = $calculateBalance($akun->akun_id);
-            $totalBeban += ($balances['debit'] - $balances['kredit']);
-        }
-        
-        $labaDitahan = $totalPendapatan - $totalBeban;
-        $totalEkuitas = $totalModalAwal + $labaDitahan;
+        // Perhitungan laba ditahan
+        $labaDitahan = ($totalPendapatan - $totalHpp) - $totalBeban;
+        $totalEkuitas += $labaDitahan;
+
+        $totalKewajibanDanEkuitas = $totalKewajiban + $totalEkuitas;
+
+        // Menyiapkan data penanda tangan
+        $penandaTangan1 = [ 'jabatan' => 'Direktur', 'nama' => 'Nama Direktur Anda' ];
+        $penandaTangan2 = [ 'jabatan' => 'Bendahara', 'nama' => 'Nama Bendahara Anda' ];
 
         return view('laporan.neraca.show', compact(
-            'reportDate',
-            'asets', 'totalAset',
-            'kewajibans', 'totalKewajiban',
-            'ekuitas', 'totalModalAwal',
-            'labaDitahan', 'totalEkuitas', 'bumdes'
+            'reportDate', 'asets', 'totalAset', 'kewajibans',
+            'totalKewajiban', 'ekuitas', 'totalEkuitas',
+            'labaDitahan', 'totalKewajibanDanEkuitas', 'bumdes',
+            'penandaTangan1', 'penandaTangan2'
         ));
     }
 }

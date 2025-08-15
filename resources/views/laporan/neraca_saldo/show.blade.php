@@ -7,20 +7,37 @@
 @stop
 
 @section('content')
+@php
+    // Safeguards agar tidak undefined
+    $bumdes = $bumdes ?? \App\Models\Bungdes::first();
+    $reportDate = $reportDate ?? now();
+    $laporanData = (isset($laporanData) && is_iterable($laporanData)) ? $laporanData : [];
+
+    // Hitung total jika belum disediakan dari controller
+    $totalDebit = $totalDebit ?? 0;
+    $totalKredit = $totalKredit ?? 0;
+    if (($totalDebit === 0 && $totalKredit === 0) && !empty($laporanData)) {
+        foreach ($laporanData as $row) {
+            $totalDebit += (float)($row['debit'] ?? 0);
+            $totalKredit += (float)($row['kredit'] ?? 0);
+        }
+    }
+@endphp
 <div class="card">
     <div class="card-body">
 
         {{-- KOP SURAT (Menggunakan struktur baru yang standar) --}}
         <div class="kop">
-            @if($bumdes && $bumdes->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo">
+            @if(optional($bumdes)->logo)
+                {{-- PERBAIKAN: Gunakan asset() agar path logo benar di lingkungan apapun --}}
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo">
             @else
                 <img src="https://placehold.co/75x75/008080/FFFFFF?text=Logo" alt="Logo">
             @endif
             <div class="kop-text">
-                <h1>{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h1>
-                <h2>{{ $bumdes->alamat ?? 'Alamat BUMDes Anda' }}</h2>
-                <p>Email: {{ $bumdes->email ?? '-' }} | Telp: {{ $bumdes->telepon ?? '-' }}</p>
+                <h1>{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h1>
+                <h2>{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</h2>
+                <p>Email: {{ optional($bumdes)->email ?? '-' }} | Telp: {{ optional($bumdes)->telepon ?? '-' }}</p>
             </div>
         </div>
         <div class="garis-pembatas"></div>
@@ -31,7 +48,7 @@
             <p>Per Tanggal: <strong>{{ \Carbon\Carbon::parse($reportDate)->format('d F Y') }}</strong></p>
         </div>
 
-        {{-- TABEL DATA (Menggunakan styling baru) --}}
+        {{-- TABEL DATA --}}
         <table class="table-laporan">
             <thead>
                 <tr>
@@ -41,25 +58,29 @@
                     <th style="width: 20%;">Kredit</th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse ($laporanData as $data)
-                    <tr>
-                        <td class="text-center">{{ $data['kode_akun'] ?? '' }}</td>
-                        <td>{{ $data['nama_akun'] ?? '' }}</td>
-                        <td class="text-right">{{ ($data['debit'] ?? 0) > 0 ? 'Rp ' . $data['debit'] : '-' }}</td>
-                        <td class="text-right">{{ ($data['kredit'] ?? 0) > 0 ? 'Rp ' . $data['kredit'] : '-' }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="text-center" style="padding: 20px;">Tidak ada data untuk ditampilkan.</td>
-                    </tr>
-                @endforelse
-            </tbody>
+   <tbody>
+    @forelse ($laporanData as $data)
+        <tr>
+            <td class="text-center">{{ $data['kode_akun'] ?? '' }}</td>
+            <td>{{ $data['nama_akun'] ?? '' }}</td>
+            {{-- PERBAIKAN: Menggunakan 'total_debit' --}}
+            <td class="text-right">{{ ($data['total_debit'] ?? 0) > 0 ? 'Rp ' . number_format($data['total_debit'], 0, ',', '.') : '-' }}</td>
+            {{-- PERBAIKAN: Menggunakan 'total_kredit' --}}
+            <td class="text-right">{{ ($data['total_kredit'] ?? 0) > 0 ? 'Rp ' . number_format($data['total_kredit'], 0, ',', '.') : '-' }}</td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="4" class="text-center" style="padding: 20px;">Tidak ada data untuk ditampilkan.</td>
+        </tr>
+    @endforelse
+</tbody>
             <tfoot>
                 <tr class="total-row">
                     <th colspan="2" class="text-right">TOTAL</th>
-                    <th class="text-right">{{ 'Rp ' . $totalDebit }}</th>
-                    <th class="text-right">{{ 'Rp ' . $totalKredit }}</th>
+                    {{-- PERBAIKAN: Gunakan number_format untuk total debit --}}
+                    <th class="text-right">{{ 'Rp ' . number_format($totalDebit, 0, ',', '.') }}</th>
+                    {{-- PERBAIKAN: Gunakan number_format untuk total kredit --}}
+                    <th class="text-right">{{ 'Rp ' . number_format($totalKredit, 0, ',', '.') }}</th>
                 </tr>
                 <tr class="status-row">
                     <th colspan="2" class="text-right">Status</th>
@@ -74,16 +95,16 @@
             </tfoot>
         </table>
 
-        {{-- TANDA TANGAN (Menggunakan struktur baru yang standar) --}}
+        {{-- TANDA TANGAN --}}
         <table class="footer">
             <tr>
                 <td style="width: 50%;"></td>
                 <td style="width: 50%;">
-                    {{ 'Cianjur' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                    {{  optional($bumdes)->kota ?? 'Kota Anda' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
-                 <td>Menyetujui,</td>
+                <td>Menyetujui,</td>
             </tr>
             <tr>
                 <td>
@@ -107,7 +128,7 @@
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK (non-print) --}}
+        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>

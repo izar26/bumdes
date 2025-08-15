@@ -10,25 +10,28 @@ use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\Rule; // Tambahkan baris ini
 
 class JurnalManualController extends Controller
 {
     /**
      * Form create jurnal
      */
-    public function create()
+public function create()
     {
         $user = Auth::user();
         $akuns = Akun::orderBy('kode_akun')->get();
         $unitUsahas = collect();
 
-        // Tentukan unit usaha yang ditampilkan di view
         if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes'])) {
-            // Bendahara & Admin BUMDes bisa akses semua unit usaha
             $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
         } elseif ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
-            // Admin & Manajer Unit Usaha hanya punya unit usahanya sendiri
-            $unitUsahas = $user->unitUsahas;
+            $unitUsahas = $user->unitUsahas()
+                               ->where('status_operasi', 'Aktif')
+                               ->select('unit_usahas.unit_usaha_id', 'unit_usahas.nama_unit')
+                               ->orderBy('nama_unit')
+                               ->get();
         }
 
         return view('keuangan.jurnal_manual.create', compact('akuns', 'unitUsahas'));
@@ -39,6 +42,19 @@ class JurnalManualController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+
+        $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+
+        $unitUsahaValidation = [
+            'nullable',
+            Rule::in($managedUnitUsahaIds)
+        ];
+
+        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+            $unitUsahaValidation[] = 'required';
+        }
+
         $request->validate([
             'tanggal_transaksi' => 'required|date',
             'deskripsi' => 'required|string|max:500',
@@ -47,7 +63,7 @@ class JurnalManualController extends Controller
             'details.*.debit' => 'required|numeric|min:0',
             'details.*.kredit' => 'required|numeric|min:0',
             'details.*.keterangan' => 'nullable|string|max:255',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id'
+            'unit_usaha_id' => $unitUsahaValidation
         ]);
 
         try {
@@ -60,20 +76,21 @@ class JurnalManualController extends Controller
                 throw new \Exception('Total Debit dan Kredit tidak seimbang.');
             }
 
-            $user = Auth::user();
+            $unitUsahaIdToSave = $request->unit_usaha_id;
 
-            // Tentukan unit usaha
-            $unitUsahaId = null;
             if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
-                $unitUsahaId = $user->unitUsahas->pluck('unit_usaha_id')->first();
+                if (!$managedUnitUsahaIds->contains($unitUsahaIdToSave)) {
+                    throw new AuthorizationException('Anda tidak memiliki izin untuk membuat jurnal di unit usaha ini.');
+                }
             } else {
-                $unitUsahaId = $request->unit_usaha_id;
+                if (empty($unitUsahaIdToSave)) {
+                     throw new \Exception('Unit usaha harus dipilih.');
+                }
             }
 
-            // Simpan Jurnal
             $jurnal = JurnalUmum::create([
                 'user_id' => $user->user_id,
-                'unit_usaha_id' => $unitUsahaId,
+                'unit_usaha_id' => $unitUsahaIdToSave,
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
                 'total_debit' => $totalDebit,
