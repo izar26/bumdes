@@ -141,9 +141,7 @@ Route::middleware(['auth'])->group(function () {
 
 
     /*
-    |--------------------------------------------------------------------------
     | GRUP 5: KEUANGAN INTI & ASET - Bendahara & Sekretaris
-    |--------------------------------------------------------------------------
     */
     Route::middleware(['role:bendahara_bumdes|sekretaris_bumdes'])->group(function () {
         // Aset BUMDes
