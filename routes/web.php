@@ -172,7 +172,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('laba-rugi', [LabaRugiController::class, 'generate'])->name('laba-rugi.generate');
 
         Route::get('neraca', [NeracaController::class, 'index'])->name('neraca.index');
-        Route::post('neraca', [NeracaController::class, 'generate'])->name('neraca.generate');
+        Route::get('neraca/generate', [NeracaController::class, 'generate'])->name('neraca.generate');
 
         Route::get('neraca-saldo', [NeracaSaldoController::class, 'index'])->name('neraca-saldo.index');
         Route::post('neraca-saldo', [NeracaSaldoController::class, 'generate'])->name('neraca-saldo.generate');
