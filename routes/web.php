@@ -165,7 +165,7 @@ Route::middleware(['auth'])->group(function () {
     | GRUP 6: LAPORAN - Semua Role yang Berkepentingan
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:admin_bumdes|bendahara_bumdes|sekretaris_bumdes|direktur|manajer_unit_usaha'])
+    Route::middleware(['role:admin_bumdes|bendahara_bumdes|sekretaris_bumdes|direktur|manajer_unit_usaha|admin_unit_usaha'])
         ->prefix('laporan')->name('laporan.')->group(function () {
 
         Route::get('laba-rugi', [LabaRugiController::class, 'index'])->name('laba-rugi.index');
