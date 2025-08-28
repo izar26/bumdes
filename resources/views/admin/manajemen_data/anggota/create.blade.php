@@ -145,7 +145,7 @@
                                 </div>
                                 <div class="form-group" id="unit_usaha_group" style="display:none;">
                                     <label for="unit_usaha_id">Unit Usaha (Wajib untuk Manajer/Admin Unit)</label>
-                                    <select class="form-control select2 @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" name="unit_usaha_id">
+                                    <select class="form-control @error('unit_usaha_id') is-invalid @enderror" id="unit_usaha_id" name="unit_usaha_id">
                                         <option value="">-- Pilih Unit Usaha --</option>
                                         @foreach($unitUsahas as $unit)
                                             <option value="{{ $unit->unit_usaha_id }}" {{ old('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>

@@ -12,7 +12,7 @@
     <div class="row">
         <div class="col-12">
             <h4>
-                {{-- PERBAIKAN: Tampilkan nama BUMDes secara dinamis --}}
+                {{-- Menampilkan nama BUMDes secara dinamis --}}
                 <i class="fas fa-file-invoice-dollar"></i> {{ optional($bumdes)->nama_bumdes ?? 'BUMDes' }}
                 <small class="float-right">Tanggal: {{ \Carbon\Carbon::parse($penjualan->tanggal_penjualan)->format('d/m/Y') }}</small>
             </h4>
@@ -24,7 +24,7 @@
         <div class="col-sm-4 invoice-col">
             Dari
             <address>
-                {{-- PERBAIKAN: Tampilkan nama Unit Usaha dan data BUMDes --}}
+                {{-- Menampilkan nama Unit Usaha dan data BUMDes --}}
                 <strong>{{ $penjualan->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
                 {{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}<br>
                 Telepon: {{ optional($bumdes)->telepon ?? '-' }}<br>
@@ -35,7 +35,7 @@
             Kepada
             <address>
                 <strong>{{ $penjualan->nama_pelanggan ?? 'Pelanggan Umum' }}</strong><br>
-                {{-- Bisa ditambahkan alamat pelanggan jika ada --}}
+                {{-- Alamat pelanggan bisa ditambahkan di sini jika tersedia --}}
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
@@ -47,7 +47,6 @@
             @else
                 <span class="badge badge-warning">Belum Lunas</span>
             @endif
-            <br>
         </div>
     </div>
 
