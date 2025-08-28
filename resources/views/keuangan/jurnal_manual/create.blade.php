@@ -52,7 +52,7 @@
                             @endforeach
                         </select>
                     @else
-                        <input type="text" class="form-control" value="{{ $firstUnit->nama_unit ?? 'N/A' }}" disabled>
+                        <input type="text" class="form-control" value="{{ $firstUnit->nama_unit ?? 'Tidak Punya Unit Usaha' }}" disabled>
                         <input type="hidden" name="unit_usaha_id" value="{{ $firstUnit->unit_usaha_id ?? '' }}">
                     @endif
                 </div>
@@ -113,8 +113,8 @@ $(document).ready(function() {
         let newRow = `
             <tr id="row-${rowIndex}">
                 <td>
-                    <select name="details[${rowIndex}][akun_id]" class="form-control akun-select" required>
-                        <option value="" class="form-control">-- Pilih Akun --</option>
+                    <select name="details[${rowIndex}][akun_id]" class="form-control " required>
+                        <option value="">-- Pilih Akun --</option>
                         @foreach($akuns as $akun)
                         <option value="{{ $akun->akun_id }}">
                             [ {{ $akun->kode_akun }} ] {{ $akun->nama_akun }}
