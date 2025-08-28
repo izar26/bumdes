@@ -3,7 +3,7 @@
 @section('title', 'Buat Jurnal Baru')
 
 @section('content_header')
-    <h1>Buat Jurnal Umum Manual</h1>
+    <h1>Buat Jurnal Umum Baru</h1>
 @stop
 
 @section('content')
@@ -114,7 +114,7 @@ $(document).ready(function() {
             <tr id="row-${rowIndex}">
                 <td>
                     <select name="details[${rowIndex}][akun_id]" class="form-control akun-select" required>
-                        <option value="">-- Pilih Akun --</option>
+                        <option value="" class="form-control">-- Pilih Akun --</option>
                         @foreach($akuns as $akun)
                         <option value="{{ $akun->akun_id }}">
                             [ {{ $akun->kode_akun }} ] {{ $akun->nama_akun }}
