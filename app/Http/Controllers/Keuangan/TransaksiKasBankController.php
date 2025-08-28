@@ -21,7 +21,7 @@ class TransaksiKasBankController extends Controller
     {
         // Asumsi hanya Bendahara dan Admin BUMDes yang bisa membuat transaksi kas bank
         // Jika manajer unit usaha juga bisa, tambahkan peran mereka
-        $this->middleware('role:bendahara_bumdes|admin_bumdes');
+        $this->middleware('role:bendahara_bumdes|admin_bumdes|direktur_bumdes');
     }
 
     public function store(Request $request)

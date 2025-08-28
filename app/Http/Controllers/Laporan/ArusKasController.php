@@ -17,7 +17,7 @@ class ArusKasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('role:bendahara_bumdes|sekretaris_bumdes');
+        $this->middleware('role:bendahara_bumdes|sekretaris_bumdes|direktur_bumdes');
     }
 
     public function index()
