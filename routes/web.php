@@ -132,7 +132,7 @@ Route::middleware(['auth'])->group(function () {
     | GRUP 4: APPROVAL JURNAL - Pimpinan & Manajer
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:direktur|manajer_unit_usaha'])->prefix('keuangan/approval-jurnal')->name('approval-jurnal.')->group(function () {
+    Route::middleware(['role:direktur_bumdes|manajer_unit_usaha'])->prefix('keuangan/approval-jurnal')->name('approval-jurnal.')->group(function () {
         Route::get('/', [ApprovalJurnalController::class, 'index'])->name('index');
         Route::post('/{jurnal}/approve', [ApprovalJurnalController::class, 'approve'])->name('approve');
         Route::post('/{jurnal}/reject', [ApprovalJurnalController::class, 'reject'])->name('reject');
