@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-<form action="{{ route('jurnal-manual.store') }}" method="POST">
+<form action="{{ route('jurnal-umum.store') }}" method="POST">
     @csrf
     <div class="card">
         <div class="card-header">
@@ -110,10 +110,11 @@ $(document).ready(function() {
     let rowIndex = 0;
 
     function addRow() {
+        // NOTE: Added the "akun-select" class to the <select> element below
         let newRow = `
             <tr id="row-${rowIndex}">
                 <td>
-                    <select name="details[${rowIndex}][akun_id]" class="form-control " required>
+                    <select name="details[${rowIndex}][akun_id]" class="form-control akun-select" required>
                         <option value="">-- Pilih Akun --</option>
                         @foreach($akuns as $akun)
                         <option value="{{ $akun->akun_id }}">
@@ -131,21 +132,32 @@ $(document).ready(function() {
             </tr>
         `;
         $('#jurnal-details').append(newRow);
-        $('#row-' + rowIndex + ' .akun-select').select2();
+        // This will now correctly find and initialize Select2 on the new dropdown
+        $('#row-' + rowIndex + ' .akun-select').select2({
+            placeholder: '-- Pilih Akun --'
+        });
         rowIndex++;
     }
 
     $('#tambah-baris').on('click', function() { addRow(); });
 
-    addRow(); addRow();
+    // Start with two rows
+    addRow();
+    addRow();
 
     $(document).on('click', '.hapus-baris', function() {
-        $(this).closest('tr').remove();
-        calculateTotals();
+        // Prevent deleting the last two rows if you want to enforce a minimum
+        if ($('#jurnal-details tr').length > 2) {
+            $(this).closest('tr').remove();
+            calculateTotals();
+        } else {
+            alert('Jurnal harus memiliki minimal 2 baris detail.');
+        }
     });
 
     function parseNumber(value) {
-        return parseInt(value.replace(/\D/g, '')) || 0;
+        // Safely parse numbers from formatted strings like "1.000"
+        return parseInt(String(value).replace(/\D/g, '')) || 0;
     }
 
     function calculateTotals() {
@@ -154,9 +166,12 @@ $(document).ready(function() {
             totalDebit += parseNumber($(this).find('.debit').val());
             totalKredit += parseNumber($(this).find('.kredit').val());
         });
+
+        // Format for display
         $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
         $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
 
+        // Check for balance
         if (totalDebit === totalKredit && totalDebit > 0) {
             $('#status-jurnal').removeClass('badge-danger').addClass('badge-success').text('Seimbang');
             $('#simpan-jurnal').prop('disabled', false);
@@ -168,22 +183,32 @@ $(document).ready(function() {
 
     function formatInput(input) {
         let value = input.value.replace(/\D/g, '');
-        input.value = value ? parseInt(value).toLocaleString('id-ID') : '';
+        // Format with Indonesian locale (using dots as thousands separators)
+        input.value = value ? parseInt(value).toLocaleString('id-ID') : '0';
     }
 
     $(document).on('input', '.debit, .kredit', function() {
         formatInput(this);
         let row = $(this).closest('tr');
-        if ($(this).hasClass('debit') && parseNumber($(this).val()) > 0) row.find('.kredit').val('');
-        if ($(this).hasClass('kredit') && parseNumber($(this).val()) > 0) row.find('.debit').val('');
+        // Auto-clear the other field
+        if ($(this).hasClass('debit') && parseNumber($(this).val()) > 0) {
+            row.find('.kredit').val('0');
+        }
+        if ($(this).hasClass('kredit') && parseNumber($(this).val()) > 0) {
+            row.find('.debit').val('0');
+        }
         calculateTotals();
     });
 
+    // Before submitting the form, un-format the numbers back to raw digits
     $('form').on('submit', function() {
         $('.debit, .kredit').each(function() {
             this.value = parseNumber(this.value);
         });
     });
+
+    // Initial calculation on page load
+    calculateTotals();
 });
 </script>
 @stop
