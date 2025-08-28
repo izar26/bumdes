@@ -437,20 +437,20 @@ return [
 
 
 
-    [
-        'header' => 'MANAJEMEN ASET',
-        'can'    => 'bendahara_bumdes',
-    ],
-    [
-        'text'    => 'Manajemen Aset',
-        'icon'    => 'fas fa-fw fa-boxes',
-        'can'     => 'bendahara_bumdes',
-        'submenu' => [
-            ['text' => 'Pencatatan Aset', 'route' => 'bumdes.aset.index'],
-            ['text' => 'Penyusutan Aset', 'route' => 'bumdes.aset.penyusutan'],
-            ['text' => 'Pemeliharaan Aset', 'route' => 'bumdes.aset.pemeliharaan'],
-        ],
-    ],
+    // [
+    //     'header' => 'MANAJEMEN ASET',
+    //     'can'    => 'bendahara_bumdes',
+    // ],
+    // [
+    //     'text'    => 'Manajemen Aset',
+    //     'icon'    => 'fas fa-fw fa-boxes',
+    //     'can'     => 'bendahara_bumdes',
+    //     'submenu' => [
+    //         ['text' => 'Pencatatan Aset', 'route' => 'bumdes.aset.index'],
+    //         ['text' => 'Penyusutan Aset', 'route' => 'bumdes.aset.penyusutan'],
+    //         ['text' => 'Pemeliharaan Aset', 'route' => 'bumdes.aset.pemeliharaan'],
+    //     ],
+    // ],
 
     [
         'header' => 'MANAJEMEN USAHA',
