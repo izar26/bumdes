@@ -121,8 +121,12 @@
                 <td></td>
             </tr>
             <tr>
-                <td class="nama-terang">(.........................................)</td>
-                <td class="nama-terang">(.........................................)</td>
+                <td class="nama-terang">
+                    ({{ $penandaTangan1['nama'] ?? '.........................................' }})
+                </td>
+                <td class="nama-terang">
+                    ({{ $penandaTangan2['nama'] ?? '.........................................' }})
+                </td>
             </tr>
         </table>
 
