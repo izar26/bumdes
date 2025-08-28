@@ -25,6 +25,14 @@
                             @enderror
                         </div>
 
+                         <div class="form-group">
+                            <label for="usernae">Username</label>
+                            <input type="text" name="username" value="{{ old('username', $user->username) }}" class="form-control @error('username') is-invalid @enderror" id="username" required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="form-group">
                             <label for="email">Email</label>
                             <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-control @error('email') is-invalid @enderror" id="email" required>
