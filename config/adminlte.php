@@ -319,12 +319,12 @@ return [
     ],
 
     // Sidebar items
-    // [
-    //     'text'    => 'Dashboard',
-    //     'route'   => 'dashboard',
-    //     'icon'    => 'fas fa-fw fa-tachometer-alt',
-    //     'classes' => 'text-bold',
-    // ],
+    [
+        'text'    => 'Dashboard',
+        'route'   => 'dashboard',
+        'icon'    => 'fas fa-fw fa-tachometer-alt',
+        'classes' => 'text-bold',
+    ],
 
     // --- PROFIL DESA ---
     // Akses: Admin BUMDes & Direktur BUMDes

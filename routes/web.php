@@ -60,7 +60,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard & Profil Pengguna
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard'); // Mengarahkan ke dashboard yang sesuai
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('home'); // Mengarahkan ke dashboard yang sesuai
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/account', [ProfileController::class, 'updateAccount'])->name('profile.update-account');
     Route::post('/profile/personal', [ProfileController::class, 'updatePersonal'])->name('profile.update-personal');
