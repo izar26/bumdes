@@ -135,7 +135,7 @@
                             </td>
                             <td class="text-right"><strong>Rp {{ number_format($jurnal->total_debit, 0, ',', '.') }}</strong></td>
                             <td class="text-right"><strong>Rp {{ number_format($jurnal->total_kredit, 0, ',', '.') }}</strong></td>
-                            <<form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" onsubmit="return confirm('Yakin hapus?')">
+<form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" onsubmit="return confirm('Yakin hapus?')">
     @csrf
     @method('DELETE')
     <button type="submit" class="btn btn-danger btn-xs">Hapus</button>
