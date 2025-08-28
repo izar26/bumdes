@@ -208,9 +208,9 @@ class JurnalUmumController extends Controller
         }
 
         // Batasi hapus jika jurnal sudah disetujui & user bukan Admin BUMDes
-        if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
-            return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
-        }
+        // if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+        //     return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
+        // }
 
         try {
             DB::beginTransaction();
