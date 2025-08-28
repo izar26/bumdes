@@ -24,10 +24,12 @@
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
-            Kepada
+            Dari
             <address>
-                <strong>BUMDes Anda</strong><br>
-                Alamat BUMDes Anda
+                <strong>{{ $penjualan->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
+                {{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}<br>
+                Telepon: {{ optional($bumdes)->telepon ?? '-' }}<br>
+                Email: {{ optional($bumdes)->email ?? '-' }}
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
