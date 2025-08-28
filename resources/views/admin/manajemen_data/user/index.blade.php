@@ -71,7 +71,7 @@
                                     </form>
 
                                     <div class="btn-group">
-                                        <a href="{{ route('admin.manajemen-data.anggota.edit', $user->user_id) }}" class="btn btn-sm btn-warning" data-toggle="tooltip" title="Edit User">
+                                        <a href="{{ route('admin.manajemen-data.user.edit', $user->user_id) }}" class="btn btn-sm btn-warning" data-toggle="tooltip" title="Edit User">
                                             Edit
                                         </a>
 
