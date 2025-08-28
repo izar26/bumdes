@@ -195,38 +195,38 @@ class JurnalUmumController extends Controller
     /**
      * Menghapus jurnal dan semua detailnya.
      */
-    public function destroy(JurnalUmum $jurnal)
-    {
-        $user = Auth::user();
+   public function destroy($id)
+{
+    $user = Auth::user();
+    $jurnal = JurnalUmum::findOrFail($id);
 
-        // Otorisasi: Cek apakah user punya hak akses ke jurnal ini
-        if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
-            $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-            if (!$managedUnitUsahaIds->contains($jurnal->unit_usaha_id)) {
-                throw new AuthorizationException('Anda tidak memiliki izin untuk menghapus jurnal ini.');
-            }
-        }
-
-        // Batasi hapus jika jurnal sudah disetujui & user bukan Admin BUMDes
-        // if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
-        //     return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
-        // }
-
-        try {
-            DB::beginTransaction();
-
-            $jurnal->detailJurnals()->delete();
-            $jurnal->delete();
-
-            DB::commit();
-            return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil dihapus.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal menghapus jurnal: ' . $e->getMessage());
+    if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+        $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+        if (!$managedUnitUsahaIds->contains($jurnal->unit_usaha_id)) {
+            throw new AuthorizationException('Anda tidak memiliki izin untuk menghapus jurnal ini.');
         }
     }
 
+    try {
+        DB::beginTransaction();
+
+        $jurnal->detailJurnals()->delete();
+        $jurnal->delete();
+
+        DB::commit();
+        return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil dihapus.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'Gagal menghapus jurnal: ' . $e->getMessage());
+    }
+}
+
+
+    // Batasi hapus jika jurnal sudah disetujui & user bukan Admin BUMDes
+    // if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+    //     return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
+    // }
 
 public function show($id, Request $request)
     {

@@ -135,22 +135,11 @@
                             </td>
                             <td class="text-right"><strong>Rp {{ number_format($jurnal->total_debit, 0, ',', '.') }}</strong></td>
                             <td class="text-right"><strong>Rp {{ number_format($jurnal->total_kredit, 0, ',', '.') }}</strong></td>
-                            <td class="text-center">
-                                @php
-                                    $canEditOrDelete = auth()->user()->hasRole(['admin_bumdes', 'bendahara_bumdes']) ||
-                                                       (auth()->user()->hasRole(['admin_unit_usaha', 'manajer_unit_usaha']) &&
-                                                        auth()->user()->unitUsahas->pluck('unit_usaha_id')->contains($jurnal->unit_usaha_id));
-                                @endphp
-                                @if($canEditOrDelete)
-                                <a href="{{ route('jurnal-umum.edit', $jurnal) }}" class="btn btn-info btn-xs">Edit Jurnal</a>
-
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-xs" title="Hapus Jurnal" data-toggle="modal" data-target="#deleteModal" data-id="{{ $jurnal->jurnal_id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @endif
-                            </td>
+                            <<form action="{{ route('jurnal-umum.destroy', $jurnal->jurnal_id) }}" method="POST" onsubmit="return confirm('Yakin hapus?')">
+    @csrf
+    @method('DELETE')
+    <button type="submit" class="btn btn-danger btn-xs">Hapus</button>
+</form>
                         </tr>
                         @foreach ($jurnal->detailJurnals as $detail)
                             <tr>
