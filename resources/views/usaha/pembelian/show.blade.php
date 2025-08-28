@@ -24,13 +24,6 @@
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
-            Kepada
-            <address>
-                <strong>BUMDes Anda</strong><br>
-                Alamat BUMDes Anda
-            </address>
-        </div>
-        <div class="col-sm-4 invoice-col">
             Dari
             <address>
                 <strong>{{ $penjualan->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
