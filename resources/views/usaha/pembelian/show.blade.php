@@ -1,18 +1,25 @@
 @extends('adminlte::page')
+
 @section('title', 'Detail Pembelian')
+
 @section('content_header')
     <h1>Detail Faktur Pembelian</h1>
 @stop
+
 @section('content')
 <div class="invoice p-3 mb-3">
+    {{-- BARIS HEADER --}}
     <div class="row">
         <div class="col-12">
             <h4>
-                <i class="fas fa-file-invoice"></i> Faktur Pembelian
+                {{-- PERBAIKAN: Menampilkan nama BUMDes secara dinamis seperti di detail penjualan --}}
+                <i class="fas fa-file-invoice"></i> {{ optional($bumdes)->nama_bumdes ?? 'BUMDes' }}
                 <small class="float-right">Tanggal: {{ \Carbon\Carbon::parse($pembelian->tanggal_pembelian)->format('d/m/Y') }}</small>
             </h4>
         </div>
     </div>
+
+    {{-- BARIS INFO --}}
     <div class="row invoice-info">
         <div class="col-sm-4 invoice-col">
             Dari Pemasok
@@ -24,9 +31,11 @@
             </address>
         </div>
         <div class="col-sm-4 invoice-col">
-            Dari
+            {{-- PERBAIKAN: Mengubah "Dari" menjadi "Kepada" agar konsisten --}}
+            Kepada
             <address>
-                <strong>{{ $penjualan->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
+                {{-- PERBAIKAN: Mengganti variabel $penjualan menjadi $pembelian --}}
+                <strong>{{ $pembelian->unitUsaha->nama_unit ?? 'Unit Usaha Tidak Ditemukan' }}</strong><br>
                 {{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}<br>
                 Telepon: {{ optional($bumdes)->telepon ?? '-' }}<br>
                 Email: {{ optional($bumdes)->email ?? '-' }}
@@ -34,6 +43,7 @@
         </div>
         <div class="col-sm-4 invoice-col">
             <b>No. Faktur #{{ $pembelian->no_faktur ?? '-' }}</b><br>
+            <br>
             <b>Status:</b>
             @if($pembelian->status_pembelian == 'Lunas')
                 <span class="badge badge-success">Lunas</span>
@@ -43,6 +53,7 @@
         </div>
     </div>
 
+    {{-- BARIS TABEL PRODUK --}}
     <div class="row">
         <div class="col-12 table-responsive">
             <table class="table table-striped">
@@ -68,8 +79,11 @@
         </div>
     </div>
 
+    {{-- BARIS TOTAL --}}
     <div class="row">
-        <div class="col-6"></div>
+        <div class="col-6">
+             {{-- Bisa ditambahkan notes atau metode pembayaran di sini --}}
+        </div>
         <div class="col-6">
             <p class="lead">Total Pembayaran</p>
             <div class="table-responsive">
@@ -83,9 +97,11 @@
         </div>
     </div>
 
+    {{-- BARIS TOMBOL AKSI --}}
     <div class="row no-print">
         <div class="col-12">
-            <button onclick="window.print();" class="btn btn-default"><i class="fas fa-print"></i> Cetak</button>
+            {{-- PERBAIKAN: Menyamakan tombol cetak menggunakan tag <a> --}}
+            <a href="#" onclick="window.print();" class="btn btn-default"><i class="fas fa-print"></i> Cetak</a>
             <a href="{{ route('usaha.pembelian.index') }}" class="btn btn-secondary float-right">
                 <i class="fas fa-arrow-left"></i> Kembali ke Daftar
             </a>
@@ -93,6 +109,7 @@
     </div>
 </div>
 @stop
+
 @section('css')
 <style>
     @media print {
