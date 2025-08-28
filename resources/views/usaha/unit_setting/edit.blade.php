@@ -64,7 +64,7 @@
 
                         <div class="form-group">
                             <label for="tanggal_mulai_operasi">Tanggal Mulai Operasi</label>
-                            <input type="date" name="tanggal_mulai_operasi" class="form-control @error('tanggal_mulai_operasi') is-invalid @enderror" id="tanggal_mulai_operasi" value="{{ old('tanggal_mulai_operasi', $unitUsaha->tanggal_mulai_operasi) }}">
+                            <input type="date" name="tanggal_mulai_operasi" value="{{ old('tanggal_mulai_operasi', $unitUsaha->tanggal_mulai_operasi) }}" class="form-control @error('tanggal_mulai_operasi') is-invalid @enderror" id="tanggal_mulai_operasi" value="{{ old('tanggal_mulai_operasi', $unitUsaha->tanggal_mulai_operasi) }}">
                             @error('tanggal_mulai_operasi')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

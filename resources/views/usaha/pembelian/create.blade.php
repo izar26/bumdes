@@ -91,7 +91,7 @@
 </div>
 @stop
 
-@section('plugins.Select2', true)
+@section('plugins.Select2', false)
 @section('js')
 <script>
     $(document).ready(function() {

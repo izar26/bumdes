@@ -91,8 +91,7 @@
 </form>
 @stop
 
-{{-- Aktifkan plugin Select2 untuk dropdown yang lebih baik --}}
-@section('plugins.Select2', true)
+@section('plugins.Select2', false)
 
 @section('js')
 <script>
