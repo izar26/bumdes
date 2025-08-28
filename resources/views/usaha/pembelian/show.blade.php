@@ -19,7 +19,13 @@
             <address>
                 <strong>{{ $pembelian->pemasok->nama_pemasok }}</strong><br>
                 {{ $pembelian->pemasok->alamat ?? '' }}<br>
-                Telepon: {{ $pembelian->pemasok->no_telepon ?? '' }}<br>
+                Telepon: {{ $pembelian-<div class="col-sm-4 invoice-col">
+            Kepada
+            <address>
+                <strong>BUMDes Anda</strong><br>
+                Alamat BUMDes Anda
+            </address>
+        </div>>pemasok->no_telepon ?? '' }}<br>
                 Email: {{ $pembelian->pemasok->email ?? '' }}
             </address>
         </div>

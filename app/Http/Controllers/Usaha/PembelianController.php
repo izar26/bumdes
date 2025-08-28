@@ -11,6 +11,7 @@ use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnal;
 use App\Models\Stok;
+use App\Models\Bungdes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -208,9 +209,10 @@ class PembelianController extends Controller
     {
         // Otorisasi: Pastikan user punya hak akses ke pembelian ini
         $this->authorizeUserUnitUsaha($pembelian->unit_usaha_id, 'Anda tidak memiliki izin untuk melihat detail pembelian ini.');
+    $bumdes = Bungdes::first();
 
         $pembelian->load('detailPembelians.produk', 'pemasok', 'unitUsaha');
-        return view('usaha.pembelian.show', compact('pembelian'));
+        return view('usaha.pembelian.show', compact('pembelian', 'bumdes'));
     }
 
     /**
