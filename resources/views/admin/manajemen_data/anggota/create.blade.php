@@ -133,7 +133,7 @@
                                 <hr>
                                 <div class="form-group">
                                     <label for="role">Jabatan</label>
-                                    <select class="form-control select2 @error('role') is-invalid @enderror" id="role" name="role" required>
+                                    <select class="form-control select @error('role') is-invalid @enderror" id="role" name="role" required>
                                         <option value="">-- Pilih Jabatan --</option>
                                         @foreach($roles as $role)
                                             <option value="{{ $role->name }}" {{ old('role') == $role->name ? 'selected' : '' }}>
