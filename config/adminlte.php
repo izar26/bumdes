@@ -619,8 +619,9 @@ return [
                 ],
             ],
         ],
+
         'FontAwesome' => [
-            'active' => true, // <-- PASTIKAN NILAI INI TRUE
+            'active' => true,
             'files' => [
                 [
                     'type' => 'css',

@@ -208,9 +208,9 @@ class JurnalUmumController extends Controller
         }
 
         // Batasi hapus jika jurnal sudah disetujui & user bukan Admin BUMDes
-        if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
-            return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
-        }
+        // if ($jurnal->status === 'disetujui' && !$user->hasRole(['admin_bumdes', 'bendahara_bumdes'])) {
+        //     return redirect()->back()->with('error', 'Jurnal sudah disetujui dan tidak dapat dihapus.');
+        // }
 
         try {
             DB::beginTransaction();
@@ -269,10 +269,7 @@ public function show($id, Request $request)
             return view('keuangan.jurnal.print', compact('jurnals', 'tahun', 'statusJurnal', 'bumdes'));
         }
 
-        // Kalau bukan print, berarti detail jurnal biasa
         $jurnal = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')->findOrFail($id);
 
-        // --- PERBAIKAN: Tampilkan view detail, bukan index ---
-        return view('keuangan.jurnal.show', compact('jurnal'));
     }
 }

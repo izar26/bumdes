@@ -122,7 +122,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin_unit_usaha|bendahara_bumdes|sekretaris_bumdes'])->prefix('keuangan')->group(function () {
         Route::get('jurnal-manual/create', [JurnalManualController::class, 'create'])->name('jurnal-manual.create');
         Route::post('jurnal-manual', [JurnalManualController::class, 'store'])->name('jurnal-manual.store');
-        Route::resource('jurnal-umum', JurnalUmumController::class);
+        Route::resource('jurnal-umum', JurnalUmumController::class)->parameters(['jurnal-umum' => 'jurnal']);
     });
 
 

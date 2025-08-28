@@ -142,7 +142,8 @@
                                                         auth()->user()->unitUsahas->pluck('unit_usaha_id')->contains($jurnal->unit_usaha_id));
                                 @endphp
                                 @if($canEditOrDelete)
-                                    <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
+                                <a href="{{ route('jurnal-umum.edit', $jurnal) }}" class="btn btn-info btn-xs">Edit Jurnal</a>
+
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button type="button" class="btn btn-danger btn-xs" title="Hapus Jurnal" data-toggle="modal" data-target="#deleteModal" data-id="{{ $jurnal->jurnal_id }}">
@@ -218,4 +219,4 @@ $(function () {
   });
 })
 </script>
-@stop   
+@stop
