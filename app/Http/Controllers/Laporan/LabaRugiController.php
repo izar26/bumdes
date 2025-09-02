@@ -22,10 +22,11 @@ class LabaRugiController extends Controller
         $user = Auth::user();
         $unitUsahas = null;
 
-        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
+        // Logika untuk mengambil unit usaha tetap sama
+        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes'])) {
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')
-                                    ->orderBy('nama_unit')
-                                    ->get();
+                                        ->orderBy('nama_unit')
+                                        ->get();
         }
         elseif ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $unitUsahas = $user->unitUsahas()
@@ -38,7 +39,9 @@ class LabaRugiController extends Controller
             $unitUsahas = collect();
         }
 
-        return view('laporan.laba_rugi.index', compact('unitUsahas'));
+        // --- PERBAIKAN DIMULAI: Kirim data user ke view ---
+        return view('laporan.laba_rugi.index', compact('unitUsahas', 'user'));
+        // --- AKHIR PERBAIKAN ---
     }
 
     /**
