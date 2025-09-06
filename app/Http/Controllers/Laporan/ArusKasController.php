@@ -8,6 +8,7 @@ use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -36,6 +37,7 @@ class ArusKasController extends Controller
      */
     public function generate(Request $request)
     {
+        // ... (validasi dan kode lain tetap sama)
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -43,13 +45,12 @@ class ArusKasController extends Controller
         ]);
 
         $user = Auth::user();
-        // --- PERBAIKAN DIMULAI: Hapus startOfDay() dan endOfDay() ---
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
-        // --- AKHIR PERBAIKAN ---
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
-
+        
+        // ... (Logika perhitungan arus kas tetap sama)
         $baseQuery = JurnalUmum::with('detailJurnals.akun')
             ->where('status', 'disetujui')
             ->whereHas('detailJurnals.akun', function ($q) {
@@ -125,7 +126,6 @@ class ArusKasController extends Controller
             }
         }
         
-        // --- PERBAIKAN DIMULAI: Gunakan toDateString() untuk perbandingan ---
         $saldoKasAwal = DB::table('detail_jurnals')
             ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
             ->join('akuns', 'detail_jurnals.akun_id', '=', 'akuns.akun_id')
@@ -134,13 +134,43 @@ class ArusKasController extends Controller
             ->where('jurnal_umums.tanggal_transaksi', '<', $startDate->toDateString())
             ->when($unitUsahaId, fn($q) => $q->where('jurnal_umums.unit_usaha_id', $unitUsahaId))
             ->sum(DB::raw('detail_jurnals.debit - detail_jurnals.kredit'));
-        // --- AKHIR PERBAIKAN ---
 
         $kenaikanPenurunanKas = $arusOperasi['total'] + $arusInvestasi['total'] + $arusPendanaan['total'];
         $saldoKasAkhir = $saldoKasAwal + $kenaikanPenurunanKas;
+        
+        // --- PERBAIKAN DIMULAI: Logika penandatangan dinamis ---
+        
+        // Selalu cari Direktur sebagai penandatangan utama (menyetujui)
+        $direktur = User::role('direktur_bumdes')->with('anggota')->first();
+        $penandaTangan1 = [
+            'jabatan' => 'Direktur',
+            'nama'    => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'
+        ];
 
-        $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => 'Nama Direktur Anda'];
-        $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => 'Nama Bendahara Anda'];
+        $penandaTangan2 = []; // Kosongkan dulu
+
+        // Jika laporan ini untuk unit usaha spesifik
+        if ($unitUsahaId) {
+            // Cari unit usaha tersebut dan penanggung jawabnya
+            $unitUsaha = UnitUsaha::with('penanggungJawab.anggota')->find($unitUsahaId);
+            $manajer = $unitUsaha ? $unitUsaha->penanggungJawab : null;
+            
+            $penandaTangan2 = [
+                'jabatan' => 'Manajer Unit Usaha',
+                'nama'    => $manajer && $manajer->anggota ? $manajer->anggota->nama_lengkap : '....................'
+            ];
+        } 
+        // Jika laporan ini untuk keseluruhan (tidak ada unit usaha yang dipilih)
+        else {
+            // Cari Bendahara sebagai penanggung jawab
+            $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
+            $penandaTangan2 = [
+                'jabatan' => 'Bendahara',
+                'nama'    => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'
+            ];
+        }
+
+        // --- AKHIR PERBAIKAN ---
 
         return view('laporan.arus_kas.show', compact(
             'bumdes', 'startDate', 'endDate',
@@ -150,3 +180,5 @@ class ArusKasController extends Controller
         ));
     }
 }
+
+
