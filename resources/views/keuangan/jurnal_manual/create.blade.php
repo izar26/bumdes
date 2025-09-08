@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-<form action="{{ route('jurnal-umum.store') }}" method="POST">
+<form action="{{ route('jurnal-manual.store') }}" method="POST">
     @csrf
     <div class="card">
         <div class="card-header">
