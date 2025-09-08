@@ -165,13 +165,16 @@
                 <td></td>
             </tr>
             <tr>
-                <td><strong>{{ $penandaTangan1['jabatan'] }}</strong></td>
-                <td><strong>{{ $penandaTangan2['jabatan'] }}</strong></td>
+                <td style="text-align: center;"><strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong></td>
+                <td style="text-align: center;"><strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong></td>
             </tr>
-            <tr class="ttd-space"><td></td><td></td></tr>
+            <tr style="height: 80px;">
+                <td></td>
+                <td></td>
+            </tr>
             <tr>
-                <td class="nama-terang">({{  '.........................................' }})</td>
-                <td class="nama-terang">({{  '.........................................' }})</td>
+                <td style="text-align: center;">( {{ $penandaTangan2['nama'] ?? '____________________' }} )</td>
+                <td style="text-align: center;">( {{ $penandaTangan1['nama'] ?? '____________________' }} )</td>
             </tr>
         </table>
 

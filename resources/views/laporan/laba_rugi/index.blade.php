@@ -37,19 +37,35 @@
                 @if(isset($unitUsahas) && !$unitUsahas->isEmpty())
                 <div class="form-group col-md-12">
                     <label for="unit_usaha_id">Filter Unit Usaha (Opsional)</label>
+
+                    {{-- --- PERBAIKAN LOGIKA DIMULAI --- --}}
+                    @php
+                        // Cek apakah pengguna adalah Manajer/Admin Unit Usaha dan hanya punya akses ke 1 unit
+                        $isSingleUnitManager = $user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha']) && $unitUsahas->count() === 1;
+                    @endphp
+
                     <select class="form-control" id="unit_usaha_id" name="unit_usaha_id"
-                        @if($unitUsahas->count() === 1) disabled @endif>
-                        <option value="">-- Tampilkan Semua Unit Usaha --</option>
+                        @if($isSingleUnitManager) disabled @endif>
+                        
+                        {{-- Opsi "Tampilkan Semua" hanya tidak tampil untuk manajer dengan 1 unit --}}
+                        @unless($isSingleUnitManager)
+                            <option value="">-- Tampilkan Semua (Termasuk Jurnal Pusat) --</option>
+                        @endunless
+
                         @foreach ($unitUsahas as $unit)
                             <option value="{{ $unit->unit_usaha_id }}"
-                                @if($unitUsahas->count() === 1) selected @endif>
+                                @if($isSingleUnitManager) selected @endif>
                                 {{ $unit->nama_unit }}
                             </option>
                         @endforeach
                     </select>
-                    @if($unitUsahas->count() === 1)
+                    
+                    {{-- Hidden input hanya dibuat jika dropdown disabled --}}
+                    @if($isSingleUnitManager)
                         <input type="hidden" name="unit_usaha_id" value="{{ $unitUsahas->first()->unit_usaha_id }}">
                     @endif
+                    {{-- --- AKHIR PERBAIKAN LOGIKA --- --}}
+
                 </div>
                 @endif
             </div>

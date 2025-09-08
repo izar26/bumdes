@@ -34,4 +34,10 @@ public function users()
     {
         return $this->hasMany(Produk::class, 'unit_usaha_id', 'unit_usaha_id');
     }
+    public function penanggungJawab()
+    {
+        // 'user_id' di tabel ini berelasi dengan 'user_id' di tabel users
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
 }
+
