@@ -26,8 +26,8 @@
 
         {{-- KOP SURAT (Struktur standar AdminLTE/Bootstrap) --}}
         <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
-            @if(optional($bumdes)->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
+            @if(optional($bumdes)->logo_bungdes)
+                <img src="{{ public_path('storage/' . $bumdes->logo_bungdes) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
             @endif
             <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
             <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
