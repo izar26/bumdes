@@ -75,7 +75,9 @@ class AnggotaController extends Controller
             ]);
 
             $user->assignRole($request->role);
-
+if (in_array($request->role, ['manajer_unit_usaha', 'admin_unit_usaha']) && $request->filled('unit_usaha_id')) {
+    $user->unitUsahas()->sync([$request->unit_usaha_id]);
+}
             $anggotaData = $request->except(['email', 'password', 'password_confirmation', 'role', 'username']);
 
             $anggotaData['user_id'] = $user->user_id;

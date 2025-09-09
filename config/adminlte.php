@@ -467,6 +467,7 @@ return [
             ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
             ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
             ['text' => 'Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-cash-register'],
+            ['text' => 'Tagihan', 'route' => 'usaha.tagihan.index', 'icon' => 'fas fa-fw fa-file-invoice']
         ],
     ],
     [

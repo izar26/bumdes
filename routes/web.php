@@ -38,6 +38,7 @@ use App\Http\Controllers\Laporan\NeracaController;
 use App\Http\Controllers\Laporan\NeracaSaldoController;
 use App\Http\Controllers\Laporan\PerubahanEkuitasController;
 use App\Http\Controllers\Laporan\ArusKasController;
+        use App\Http\Controllers\Usaha\TagihanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,12 +106,18 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('pembelian', PembelianController::class)->names('pembelian');
         Route::resource('pemasok', PemasokController::class)->names('pemasok');
         Route::resource('kategori', KategoriController::class)->except(['show'])->names('kategori');
+        Route::resource('tagihan', TagihanController::class);
+        Route::get('tagihan/cetak-massal', [TagihanController::class, 'cetakMassal'])->name('tagihan.cetak-massal');
+Route::post('   tagihan/cetak-selektif', [TagihanController::class, 'cetakSelektif'])->name('tagihan.cetak-selektif');
+
+
 
         // Khusus Admin Unit Usaha
         Route::middleware(['role:admin_unit_usaha'])->group(function () {
             Route::get('unit-setting', [AdminUnitUsahaController::class, 'edit'])->name('unit_setting.edit');
             Route::put('unit-setting', [AdminUnitUsahaController::class, 'update'])->name('unit_setting.update');
         });
+
     });
 
 

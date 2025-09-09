@@ -118,30 +118,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="penanggung_jawab_ids" class="font-weight-bold">
-                                Penanggung Jawab <span class="text-danger">*</span>
-                            </label>
-                            <select name="penanggung_jawab_ids[]"
-                                    id="penanggung_jawab_ids"
-                                    class="form-control select2 @error('penanggung_jawab_ids') is-invalid @enderror"
-                                    multiple="multiple"
-                                    style="width: 100%;"
-                                    required>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->user_id }}" {{ in_array($user->user_id, old('penanggung_jawab_ids', [])) ? 'selected' : '' }}>
-                                        {{ $user->name }} ({{ $user->getRoleNames()->first() }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('penanggung_jawab_ids')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            <small class="form-text text-muted">
-                                Pilih satu atau lebih penanggung jawab untuk unit usaha ini. <br> Jika Tidak Ada Buat User Baru Dengan Role Admin Unit
-                            </small>
-                        </div>
-
-                        <div class="form-group">
                             <label for="alamat_usaha" class="font-weight-bold">
                                 Alamat Usaha
                             </label>

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             BungdesSeeder::class,
             SyncUsersToAnggotaSeeder::class,
             LaporanSeeder::class,
+            PelangganSeeder::class,
         ]);
     }
 }
