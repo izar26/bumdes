@@ -3,192 +3,122 @@
 @section('title', 'Laporan Buku Besar')
 
 @section('content_header')
-    {{-- Dibiarkan kosong agar header default tidak mengganggu --}}
+    {{-- Dibiarkan kosong agar header default tidak mengganggu saat cetak --}}
 @stop
 
 @section('content')
+@php
+    // Safeguards
+    $bumdes = $bumdes ?? \App\Models\Bungdes::first();
+    $tanggalCetak = $tanggalCetak ?? now();
+    $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
+@endphp
 <div class="card">
     <div class="card-body">
 
         {{-- KOP SURAT --}}
-        <div class="kop">
-            @if(!empty($logo_bungdes))
-                <img src="{{ $logo_bungdes }}" alt="Logo">
-            @else
-                <i class="fas fa-landmark fa-2x"></i>
+        <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
+            {{-- --- PERBAIKAN DIMULAI DI SINI --- --}}
+            @if(optional($bumdes)->logo)
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
             @endif
-            <div class="kop-text">
-                <h1>{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h1>
-                <h2>{{ $bumdes->alamat ?? 'Alamat BUMDes Anda' }}</h2>
-                <p>Email: {{ $bumdes->email ?? '-' }} | Telp: {{ $bumdes->telepon ?? '-' }}</p>
-            </div>
-        </div>
-        <div class="garis-pembatas"></div>
-
-        {{-- JUDUL LAPORAN --}}
-        <div class="judul">
-            <h3>Laporan Buku Besar</h3>
-            <p>Periode: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}</strong></p>
+            {{-- --- AKHIR PERBAIKAN --- --}}
+            <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
+            <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
+            <h5 class="font-weight-bold mt-3 mb-1">Laporan Buku Besar</h5>
+            <p>Untuk Periode <strong>{{ $startDate->isoFormat('D MMMM Y') }}</strong> s/d <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
         {{-- INFORMASI AKUN --}}
-        <div class="info-akun">
-            <table class="table-info-akun">
-                <tr>
-                    <td style="width: 120px;"><strong>Kode Akun</strong></td>
-                    <td>: {{ $akun->kode_akun }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Nama Akun</strong></td>
-                    <td>: {{ $akun->nama_akun }}</td>
-                </tr>
-            </table>
+        <div class="mb-3">
+            <strong>Kode Akun:</strong> {{ $akun->kode_akun }} <br>
+            <strong>Nama Akun:</strong> {{ $akun->nama_akun }}
         </div>
 
         {{-- TABEL DATA --}}
-        <table class="table-laporan">
+        <table class="table table-bordered table-sm">
             <thead>
-                <tr>
-                    <th style="width: 12%;">Tanggal</th>
+                <tr class="text-center table-active">
+                    <th style="width: 15%">Tanggal</th>
                     <th>Keterangan</th>
-                    <th style="width: 18%;">Debit</th>
-                    <th style="width: 18%;">Kredit</th>
-                    <th style="width: 18%;">Saldo</th>
+                    <th style="width: 15%">Debit</th>
+                    <th style="width: 15%">Kredit</th>
+                    <th style="width: 15%">Saldo</th>
                 </tr>
             </thead>
             <tbody>
-                {{-- Saldo Awal --}}
-                <tr class="saldo-row">
+                <tr>
                     <td colspan="4"><strong>Saldo Awal</strong></td>
-                    {{-- PERBAIKAN: Format saldo awal --}}
                     <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoAwal, 0, ',', '.') }}</strong></td>
                 </tr>
-
                 @php $saldoBerjalan = $saldoAwal; @endphp
-
-                @forelse ($transaksis as $transaksi)
+                @foreach ($transaksis as $transaksi)
                     @php
-                        if ($akun->tipe_akun == 'Aset' || $akun->tipe_akun == 'Beban') {
+                        $akunNormalDebit = ['Aset', 'HPP', 'Beban'];
+                        if (in_array($akun->tipe_akun, $akunNormalDebit)) {
                             $saldoBerjalan += ($transaksi->debit - $transaksi->kredit);
                         } else {
                             $saldoBerjalan += ($transaksi->kredit - $transaksi->debit);
                         }
                     @endphp
                     <tr>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($transaksi->jurnal->tanggal_transaksi)->format('d/m/Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($transaksi->jurnal->tanggal_transaksi)->format('d M Y') }}</td>
                         <td>{{ $transaksi->jurnal->deskripsi }}</td>
-                        {{-- PERBAIKAN: Format debit --}}
                         <td class="text-right">{{ $transaksi->debit > 0 ? 'Rp ' . number_format($transaksi->debit, 0, ',', '.') : '-' }}</td>
-                        {{-- PERBAIKAN: Format kredit --}}
                         <td class="text-right">{{ $transaksi->kredit > 0 ? 'Rp ' . number_format($transaksi->kredit, 0, ',', '.') : '-' }}</td>
-                        {{-- PERBAIKAN: Format saldo berjalan --}}
                         <td class="text-right">{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="text-center" style="padding: 20px;">Tidak ada transaksi pada periode ini.</td>
-                    </tr>
-                @endforelse
-
-                {{-- Saldo Akhir --}}
-                <tr class="saldo-row">
+                @endforeach
+                <tr class="table-active">
                     <td colspan="4"><strong>Saldo Akhir</strong></td>
-                    {{-- PERBAIKAN: Format saldo akhir --}}
                     <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
         {{-- TANDA TANGAN --}}
-        <table class="footer">
+        <table style="margin-top: 60px; width: 100%;" class="table-borderless">
             <tr>
-                <td style="width: 50%;"></td>
-                <td style="width: 50%;">
-                    {{ 'Cianjur' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                <td style="text-align: center; width: 50%;"></td>
+                <td style="text-align: center; width: 50%;">
+                    {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
-                <td>Menyetujui,</td>
+                <td style="text-align: center;">Mengetahui,</td>
+                <td style="text-align: center;">Menyetujui,</td>
             </tr>
             <tr>
-                <td>
-                    <strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong>
-                </td>
-                <td>
-                    <strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong>
-                </td>
+                <td style="text-align: center;"><strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong></td>
+                <td style="text-align: center;"><strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong></td>
             </tr>
-            <tr class="ttd-space">
-                <td></td>
-                <td></td>
-            </tr>
+            <tr style="height: 80px;"><td></td><td></td></tr>
             <tr>
-                <td class="nama-terang">
-                    ({{ $penandaTangan1['nama'] ?? '.........................................' }})
-                </td>
-                <td class="nama-terang">
-                    ({{ $penandaTangan2['nama'] ?? '.........................................' }})
-                </td>
+                <td style="text-align: center;">( {{ $penandaTangan2['nama'] ?? '____________________' }} )</td>
+                <td style="text-align: center;">( {{ $penandaTangan1['nama'] ?? '____________________' }} )</td>
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
-
     </div>
 </div>
 @stop
 
 @section('css')
 <style>
-    /* Styling Laporan Standar */
-    .kop { display: flex; align-items: center; }
-    .kop img { height: 75px; margin-right: 15px; }
-    .kop-text { flex: 1; text-align: center; }
-    .kop-text h1 { margin: 0; font-size: 22px; text-transform: uppercase; color: #006666; }
-    .kop-text h2 { margin: 2px 0 0; font-size: 14px; font-weight: normal; color: #333; }
-    .kop-text p { margin: 2px 0; font-size: 12px; }
-    .garis-pembatas { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 4px; margin-top: 5px; margin-bottom: 20px; }
-    .judul { text-align: center; margin-bottom: 20px; }
-    .judul h3 { margin: 5px 0; font-size: 16px; text-transform: uppercase; }
-    .judul p { margin: 2px 0; }
-    .info-akun { margin-bottom: 15px; }
-    .table-info-akun, .table-info-akun td { border: none !important; padding: 2px !important; }
-
-    /* Styling Tabel Laporan */
-    .table-laporan { border-collapse: collapse; width: 100%; font-size: 12px; }
-    .table-laporan th { background: #008080; color: white; border: 1px solid #006666; padding: 8px; text-align: center; }
-    .table-laporan td { border: 1px solid #ccc; padding: 6px; vertical-align: top; }
-    .table-laporan tr.saldo-row { background: #e6f2f2; font-weight: bold; }
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-
-    /* Styling Footer Tanda Tangan */
-    .footer { margin-top: 50px; width: 100%; border: none; }
-    .footer td { border: none; padding: 5px; text-align: center; }
-    .ttd-space { height: 70px; }
-    .nama-terang { text-decoration: underline; font-weight: bold; }
-
-    /* Aturan untuk Mencetak */
     @media print {
-        /* Sembunyikan elemen AdminLTE */
-        .main-sidebar, .main-header, .content-header, .no-print, .main-footer {
+        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
             display: none !important;
         }
-        /* Atur agar konten mengisi seluruh halaman */
         .content-wrapper, .content, .card, .card-body {
             margin: 0 !important;
             padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
         }
-        /* Pastikan warna background tercetak */
-        .table-laporan th, .kop {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
     }
 </style>
-@stop   
+@stop
+

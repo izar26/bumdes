@@ -3,175 +3,167 @@
 @section('title', 'Laporan Laba Rugi')
 
 @section('content_header')
-    {{-- Dibiarkan kosong agar header default tidak mengganggu --}}
+    {{-- Dibiarkan kosong agar header default tidak mengganggu saat cetak --}}
 @stop
+
 @section('content')
+@php
+    // Safeguards untuk memastikan variabel ada dan memiliki struktur default
+    $bumdes = $bumdes ?? \App\Models\Bungdes::first();
+    $startDate = $startDate ?? now();
+    $endDate = $endDate ?? now();
+    $tanggalCetak = $tanggalCetak ?? now();
+    $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
+    $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
+    $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
+@endphp
 <div class="card">
     <div class="card-body">
-        <div class="kop">
-            @if($bumdes && $bumdes->logo)
-                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo">
-            @else
-                <img src="https://placehold.co/75x75/008080/FFFFFF?text=Logo" alt="Logo">
+
+        {{-- KOP SURAT --}}
+        <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
+            @if(optional($bumdes)->logo)
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
             @endif
-            <div class="kop-text">
-                <h1>{{ $bumdes->nama_bumdes ?? 'BUMDes Anda' }}</h1>
-                <h2>{{ $bumdes->alamat ?? 'Alamat BUMDes Anda' }}</h2>
-                <p>Email: {{ $bumdes->email ?? '-' }} | Telp: {{ $bumdes->telepon ?? '-' }}</p>
-            </div>
-        </div>
-        <div class="garis-pembatas"></div>
-
-        <div class="judul">
-            <h3>Laporan Laba Rugi</h3>
-            <p>Untuk Periode yang Berakhir pada <strong>{{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}</strong></p>
+            <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
+            <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
+            <h5 class="font-weight-bold mt-3 mb-1">Laporan Laba Rugi</h5>
+            <p>Untuk Periode <strong>{{ $startDate->isoFormat('D MMMM Y') }}</strong> s/d <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
-        <table class="table-laporan table-laba-rugi">
-            <tbody>
-                {{-- BAGIAN PENDAPATAN --}}
-                <tr class="header-row"><td colspan="2"><strong>Pendapatan</strong></td></tr>
-                @forelse ($pendapatans as $pendapatan)
+        {{-- TABEL DATA --}}
+        <table class="table table-borderless table-sm">
+             <tbody>
+                {{-- PENDAPATAN --}}
+                <tr class="table-active">
+                    <td colspan="2"><strong>Pendapatan</strong></td>
+                </tr>
+                @forelse ($pendapatans as $item)
                     <tr>
-                        <td class="item-name">{{ $pendapatan['nama_akun'] }}</td>
-                        <td class="item-value">Rp {{ number_format($pendapatan['total'], 0, ',', '.') }}</td>
+                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
+                        <td class="text-right" style="width: 25%">{{ 'Rp ' . number_format($item['total'], 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td class="item-name">Tidak ada data pendapatan</td>
-                        <td class="item-value">Rp 0</td>
+                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada pendapatan</em></td>
+                        <td class="text-right"></td>
                     </tr>
                 @endforelse
-                <tr class="total-row">
+                <tr class="bg-light">
                     <td><strong>Total Pendapatan</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format($totalPendapatan, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ 'Rp ' . number_format($totalPendapatan, 0, ',', '.') }}</strong></td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
 
-                {{-- BAGIAN HARGA POKOK PENJUALAN (HPP) --}}
-                <tr class="header-row"><td colspan="2"><strong>Harga Pokok Penjualan</strong></td></tr>
-                @forelse ($hpps as $hpp)
+                {{-- HPP --}}
+                <tr class="table-active">
+                    <td colspan="2"><strong>Harga Pokok Penjualan (HPP)</strong></td>
+                </tr>
+                 @forelse ($hpps as $item)
                     <tr>
-                        <td class="item-name">{{ $hpp['nama_akun'] }}</td>
-                        <td class="item-value">(Rp {{ number_format($hpp['total'], 0, ',', '.') }})</td>
+                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
+                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
                     </tr>
                 @empty
                     <tr>
-                        <td class="item-name">Tidak ada data HPP</td>
-                        <td class="item-value">Rp 0</td>
+                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada HPP</em></td>
+                        <td class="text-right"></td>
                     </tr>
                 @endforelse
-                <tr class="total-row">
+                <tr class="bg-light">
                     <td><strong>Total HPP</strong></td>
-                    <td class="item-value"><strong>(Rp {{ number_format($totalHpp, 0, ',', '.') }})</strong></td>
+                    <td class="text-right"><strong>({{ 'Rp ' . number_format($totalHpp, 0, ',', '.') }})</strong></td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
 
-                {{-- BAGIAN LABA KOTOR --}}
-                @php
-                    $labaKotorLabel = $labaKotor >= 0 ? 'Laba Kotor' : 'Rugi Kotor';
-                @endphp
-                <tr class="grand-total-row">
-                    <td><strong>{{ $labaKotorLabel }}</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format(abs($labaKotor), 0, ',', '.') }}</strong></td>
+                {{-- LABA KOTOR --}}
+                <tr class="table-secondary font-weight-bold">
+                    <td>LABA KOTOR</td>
+                    <td class="text-right">{{ 'Rp ' . number_format($labaKotor, 0, ',', '.') }}</td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
+                 <tr><td colspan="2">&nbsp;</td></tr>
 
-                {{-- BAGIAN BEBAN OPERASIONAL --}}
-                <tr class="header-row"><td colspan="2"><strong>Beban Operasional</strong></td></tr>
-                @forelse ($bebans as $beban)
+                {{-- BEBAN --}}
+                <tr class="table-active">
+                    <td colspan="2"><strong>Beban Operasional</strong></td>
+                </tr>
+                @forelse ($bebans as $item)
                     <tr>
-                        <td class="item-name">{{ $beban['nama_akun'] }}</td>
-                        <td class="item-value">(Rp {{ number_format($beban['total'], 0, ',', '.') }})</td>
+                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
+                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
                     </tr>
                 @empty
                     <tr>
-                        <td class="item-name">Tidak ada data beban operasional</td>
-                        <td class="item-value">Rp 0</td>
+                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada beban</em></td>
+                        <td class="text-right"></td>
                     </tr>
                 @endforelse
-                <tr class="total-row">
+                <tr class="bg-light">
                     <td><strong>Total Beban Operasional</strong></td>
-                    <td class="item-value"><strong>(Rp {{ number_format($totalBeban, 0, ',', '.') }})</strong></td>
+                    <td class="text-right"><strong>({{ 'Rp ' . number_format($totalBeban, 0, ',', '.') }})</strong></td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
 
-                {{-- BAGIAN LABA RUGI OPERASIONAL --}}
-                @php
-                    $labaOperasionalLabel = $labaOperasional >= 0 ? 'Laba Operasional' : 'Rugi Operasional';
-                @endphp
-                <tr class="grand-total-row">
-                    <td><strong>{{ $labaOperasionalLabel }}</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format(abs($labaOperasional), 0, ',', '.') }}</strong></td>
+                 {{-- LABA OPERASIONAL --}}
+                <tr class="table-secondary font-weight-bold">
+                    <td>LABA OPERASIONAL</td>
+                    <td class="text-right">{{ 'Rp ' . number_format($labaOperasional, 0, ',', '.') }}</td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
+                 <tr><td colspan="2">&nbsp;</td></tr>
 
-                {{-- BAGIAN PENDAPATAN LAIN-LAIN --}}
-                <tr class="header-row"><td colspan="2"><strong>Pendapatan Lain-lain</strong></td></tr>
-                @forelse ($pendapatanLains as $pendapatanLain)
+                {{-- PENDAPATAN & BEBAN LAIN --}}
+                 <tr class="table-active">
+                    <td colspan="2"><strong>Pendapatan & Beban Lain-lain</strong></td>
+                </tr>
+                {{-- --- PERBAIKAN SINTAKS DIMULAI DI SINI --- --}}
+                @forelse ($pendapatanLains as $item)
                     <tr>
-                        <td class="item-name">{{ $pendapatanLain['nama_akun'] }}</td>
-                        <td class="item-value">Rp {{ number_format($pendapatanLain['total'], 0, ',', '.') }}</td>
+                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
+                        <td class="text-right">{{ 'Rp ' . number_format($item['total'], 0, ',', '.') }}</td>
                     </tr>
                 @empty
-                    <tr>
-                        <td class="item-name">Tidak ada data pendapatan lain-lain</td>
-                        <td class="item-value">Rp 0</td>
-                    </tr>
+                    {{-- Dikosongkan agar tidak ada pesan duplikat --}}
                 @endforelse
-                <tr class="total-row">
-                    <td><strong>Total Pendapatan Lain-lain</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format($totalPendapatanLain, 0, ',', '.') }}</strong></td>
-                </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
-
-                {{-- BAGIAN BEBAN LAIN-LAIN --}}
-                <tr class="header-row"><td colspan="2"><strong>Beban Lain-lain</strong></td></tr>
-                @forelse ($bebanLains as $bebanLain)
+                @forelse ($bebanLains as $item)
                     <tr>
-                        <td class="item-name">{{ $bebanLain['nama_akun'] }}</td>
-                        <td class="item-value">(Rp {{ number_format($bebanLain['total'], 0, ',', '.') }})</td>
+                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
+                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
                     </tr>
                 @empty
-                    <tr>
-                        <td class="item-name">Tidak ada data beban lain-lain</td>
-                        <td class="item-value">Rp 0</td>
-                    </tr>
+                    {{-- Dikosongkan agar tidak ada pesan duplikat --}}
                 @endforelse
-                <tr class="total-row">
-                    <td><strong>Total Beban Lain-lain</strong></td>
-                    <td class="item-value"><strong>(Rp {{ number_format($totalBebanLain, 0, ',', '.') }})</strong></td>
+                @if(empty($pendapatanLains) && empty($bebanLains))
+                     <tr>
+                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada pendapatan atau beban lain-lain</em></td>
+                        <td class="text-right"></td>
+                    </tr>
+                @endif
+                {{-- --- AKHIR PERBAIKAN SINTAKS --- --}}
+                
+                {{-- LABA BERSIH --}}
+                <tr class="table-success font-weight-bold" style="border-top: 3px double #000;">
+                    <td>LABA BERSIH</td>
+                    <td class="text-right">{{ 'Rp ' . number_format($labaRugiBersih, 0, ',', '.') }}</td>
                 </tr>
-                <tr><td colspan="2" class="spacer"></td></tr>
 
-                {{-- BAGIAN LABA BERSIH --}}
-                @php
-                    $labaBersihLabel = $labaRugiBersih >= 0 ? 'Laba Bersih Sebelum Pajak' : 'Rugi Bersih Sebelum Pajak';
-                @endphp
-                <tr class="grand-total-row">
-                    <td><strong>{{ $labaBersihLabel }}</strong></td>
-                    <td class="item-value"><strong>Rp {{ number_format(abs($labaRugiBersih), 0, ',', '.') }}</strong></td>
-                </tr>
             </tbody>
         </table>
 
-        <table class="footer">
+        {{-- TANDA TANGAN --}}
+        <table style="margin-top: 60px; width: 100%;" class="table-borderless">
             <tr>
-                <td style="width: 50%;"></td>
-                <td style="width: 50%;">{{ $bumdes->kota ?? 'Kota Anda' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</td>
+                <td style="text-align: center; width: 50%;"></td>
+                <td style="text-align: center; width: 50%;">
+                    {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
+                </td>
             </tr>
             <tr>
-                <td>Menyetujui,</td>
-                <td></td>
+                <td style="text-align: center;">Mengetahui,</td>
+                <td style="text-align: center;">Menyetujui,</td>
             </tr>
             <tr>
                 <td style="text-align: center;"><strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong></td>
                 <td style="text-align: center;"><strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong></td>
             </tr>
-            <tr style="height: 80px;">
-                <td></td>
-                <td></td>
-            </tr>
+            <tr style="height: 80px;"><td></td><td></td></tr>
             <tr>
                 <td style="text-align: center;">( {{ $penandaTangan2['nama'] ?? '____________________' }} )</td>
                 <td style="text-align: center;">( {{ $penandaTangan1['nama'] ?? '____________________' }} )</td>
@@ -187,39 +179,17 @@
 
 @section('css')
 <style>
-    /* Styling Laporan Standar */
-    .kop { display: flex; align-items: center; }
-    .kop img { height: 75px; margin-right: 15px; }
-    .kop-text { flex: 1; text-align: center; }
-    .kop-text h1 { margin: 0; font-size: 22px; text-transform: uppercase; color: #006666; }
-    .kop-text h2 { margin: 2px 0 0; font-size: 14px; font-weight: normal; color: #333; }
-    .kop-text p { margin: 2px 0; font-size: 12px; }
-    .garis-pembatas { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 4px; margin-top: 5px; margin-bottom: 20px; }
-    .judul { text-align: center; margin-bottom: 20px; }
-    .judul h3 { margin: 5px 0; font-size: 16px; text-transform: uppercase; }
-    .judul p { margin: 2px 0; }
-
-    /* Styling Tabel Laporan Laba Rugi */
-    .table-laporan { width: 100%; }
-    .table-laba-rugi, .table-laba-rugi td { border: none !important; }
-    .table-laba-rugi .header-row td { font-size: 14px; padding-top: 15px; }
-    .table-laba-rugi .item-name { padding-left: 30px !important; }
-    .table-laba-rugi .item-value { text-align: right; width: 30%; }
-    .table-laba-rugi .total-row td { border-top: 1px solid #000 !important; padding-top: 5px; }
-    .table-laba-rugi .grand-total-row td { border-top: 3px double #000 !important; font-size: 14px; padding-top: 8px; font-weight: bold; }
-    .table-laba-rugi .spacer { border: none; padding: 10px; }
-
-    /* Styling Footer Tanda Tangan */
-    .footer { margin-top: 50px; width: 100%; border: none; }
-    .footer td { border: none; padding: 5px; text-align: center; }
-    .ttd-space { height: 70px; }
-    .nama-terang { text-decoration: underline; font-weight: bold; }
-
-    /* Aturan untuk Mencetak */
     @media print {
-        .main-sidebar, .main-header, .content-header, .no-print, .main-footer { display: none !important; }
-        .content-wrapper, .content, .card, .card-body { margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
-        .kop { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
+            display: none !important;
+        }
+        .content-wrapper, .content, .card, .card-body {
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
     }
 </style>
 @stop
+

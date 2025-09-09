@@ -8,7 +8,7 @@ use App\Models\Akun;
 use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
-use App\Models\User; // Pastikan model User di-import
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -16,7 +16,7 @@ use Carbon\Carbon;
 class LabaRugiController extends Controller
 {
     /**
-     * Menampilkan halaman form filter laporan Laba Rugi.
+     * Menampilkan halaman form filter.
      */
     public function index()
     {
@@ -43,22 +43,25 @@ class LabaRugiController extends Controller
     }
 
     /**
-     * Memproses filter dan menampilkan laporan Laba Rugi.
+     * Memproses filter dan menampilkan laporan.
      */
     public function generate(Request $request)
     {
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id'
+            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
+            'tanggal_cetak' => 'nullable|date', // 1. Tambahkan validasi
         ]);
 
         $user = Auth::user();
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $unitUsahaId = $request->unit_usaha_id;
-
         $bumdes = Bungdes::first();
+        
+        // 2. Proses tanggal cetak
+        $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
 
         $pendapatanTipes = ['Pendapatan'];
         $hppTipes = ['HPP'];
@@ -73,12 +76,14 @@ class LabaRugiController extends Controller
                 ->where('jurnal_umums.status', 'disetujui')
                 ->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate->toDateString(), $endDate->toDateString()]);
 
-            if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
                 $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
                 $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
             }
-            elseif (!empty($unitUsahaId)) {
-                $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+            elseif ($user->hasAnyRole(['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes'])) {
+                if (!empty($unitUsahaId)) {
+                    $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+                }
             }
 
             return $query->select(
@@ -90,13 +95,13 @@ class LabaRugiController extends Controller
             ->get();
         };
 
-        // ... (Logika perhitungan Laba Rugi tetap sama) ...
+        // ... (Logika perhitungan laba rugi tetap sama) ...
         $pendapatanResults = $calculateSaldoes($pendapatanTipes);
         $pendapatans = [];
         $totalPendapatan = 0;
         foreach ($pendapatanResults as $result) {
             $saldo = $result->total_kredit - $result->total_debit;
-            if ($saldo > 0) {
+            if ($saldo != 0) {
                 $pendapatans[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
                 $totalPendapatan += $saldo;
             }
@@ -106,7 +111,7 @@ class LabaRugiController extends Controller
         $totalHpp = 0;
         foreach ($hppResults as $result) {
             $saldo = $result->total_debit - $result->total_kredit;
-            if ($saldo > 0) {
+            if ($saldo != 0) {
                 $hpps[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
                 $totalHpp += $saldo;
             }
@@ -117,7 +122,7 @@ class LabaRugiController extends Controller
         $totalBeban = 0;
         foreach ($bebanResults as $result) {
             $saldo = $result->total_debit - $result->total_kredit;
-            if ($saldo > 0) {
+            if ($saldo != 0) {
                 $bebans[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
                 $totalBeban += $saldo;
             }
@@ -130,62 +135,26 @@ class LabaRugiController extends Controller
         $totalBebanLain = 0;
         foreach ($pendapatanBebanLainResults as $result) {
             $namaAkun = strtolower($result->nama_akun);
-            $saldo = $result->total_kredit - $result->total_debit;
             if (str_contains($namaAkun, 'beban') || str_contains($namaAkun, 'kerugian')) {
                 $saldo = $result->total_debit - $result->total_kredit;
-                if ($saldo > 0) {
+                if ($saldo != 0) {
                     $bebanLains[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
                     $totalBebanLain += $saldo;
                 }
             } else {
-                if ($saldo > 0) {
+                $saldo = $result->total_kredit - $result->total_debit;
+                if ($saldo != 0) {
                     $pendapatanLains[] = ['nama_akun' => $result->nama_akun, 'total' => $saldo];
                     $totalPendapatanLain += $saldo;
                 }
             }
         }
         $labaRugiBersih = $labaOperasional + $totalPendapatanLain - $totalBebanLain;
-
-
-        // --- LOGIKA BARU PENANDATANGAN DINAMIS ---
-        $penandaTangan1 = []; // Penyetuju
-        $penandaTangan2 = []; // Penanggung Jawab
-
-        if ($unitUsahaId) {
-            // Laporan untuk Unit Usaha Spesifik
-            $unitUsaha = UnitUsaha::with('penanggungJawab.anggota')->find($unitUsahaId);
-            $manajer = $unitUsaha ? $unitUsaha->penanggungJawab : null;
-            
-            $penandaTangan1 = [
-                'jabatan' => 'Manajer Unit Usaha',
-                'nama'    => $manajer && $manajer->anggota ? $manajer->anggota->nama_lengkap : '....................'
-            ];
-
-            $adminUnit = User::role('admin_unit_usaha')
-                            ->whereHas('unitUsahas', function ($query) use ($unitUsahaId) {
-                                $query->where('unit_usahas.unit_usaha_id', $unitUsahaId);
-                            })
-                            ->with('anggota')->first();
-            
-            $penandaTangan2 = [
-                'jabatan' => 'Admin Unit Usaha',
-                'nama'    => $adminUnit && $adminUnit->anggota ? $adminUnit->anggota->nama_lengkap : '....................'
-            ];
-        } else {
-            // Laporan Keseluruhan / Pusat
-            $direktur = User::role('direktur_bumdes')->with('anggota')->first();
-            $penandaTangan1 = [
-                'jabatan' => 'Direktur',
-                'nama'    => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'
-            ];
-
-            $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
-            $penandaTangan2 = [
-                'jabatan' => 'Bendahara',
-                'nama'    => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'
-            ];
-        }
-        // --- AKHIR LOGIKA BARU ---
+        
+        $direktur = User::role('direktur_bumdes')->with('anggota')->first();
+        $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'];
+        $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
+        $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
 
         return view('laporan.laba_rugi.show', compact(
             'bumdes', 'startDate', 'endDate',
@@ -194,7 +163,8 @@ class LabaRugiController extends Controller
             'bebans', 'totalBeban', 'labaOperasional',
             'pendapatanLains', 'totalPendapatanLain',
             'bebanLains', 'totalBebanLain', 'labaRugiBersih',
-            'penandaTangan1', 'penandaTangan2'
+            'penandaTangan1', 'penandaTangan2',
+            'tanggalCetak' // 3. Kirim ke view
         ));
     }
 }

@@ -5,125 +5,150 @@ namespace App\Http\Controllers\Laporan;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Akun;
-use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class NeracaSaldoController extends Controller
 {
+    /**
+     * Menampilkan halaman form filter.
+     */
     public function index()
     {
         $user = Auth::user();
         $unitUsahas = collect();
 
-        if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes', 'manajer_unit_usaha', 'admin_unit_usaha'])) {
-             if ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes'])) {
-                $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
-            } else {
-                $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->select('unit_usahas.*')->get();
-            }
+        if ($user->hasAnyRole(['bendahara_bumdes', 'direktur_bumdes', 'admin_bumdes', 'sekretaris_bumdes'])) {
+            $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->orderBy('nama_unit')->get();
+        } elseif ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+            $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+            $unitUsahas = UnitUsaha::whereIn('unit_usaha_id', $unitUsahaIds)
+                                    ->where('status_operasi', 'Aktif')
+                                    ->orderBy('nama_unit')
+                                    ->get();
         }
-        return view('laporan.neraca_saldo.index', compact('unitUsahas'));
+
+        return view('laporan.neraca_saldo.index', compact('unitUsahas', 'user'));
     }
 
+    /**
+     * Memproses filter dan menampilkan laporan.
+     */
     public function generate(Request $request)
     {
-        // 1. VALIDASI DIUBAH UNTUK MENERIMA DUA TIPE FILTER
         $request->validate([
-            'filter_type' => 'required|in:monthly,daily',
-            'month' => 'required_if:filter_type,monthly|nullable|date_format:Y-m',
-            'report_date' => 'required_if:filter_type,daily|nullable|date',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id'
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
+            'tanggal_cetak' => 'nullable|date',
         ]);
 
         $user = Auth::user();
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
+        $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
 
-        // 2. TENTUKAN TANGGAL LAPORAN BERDASARKAN TIPE FILTER
-        $reportDate = null;
-        if ($request->filter_type === 'monthly') {
-            $reportDate = Carbon::parse($request->month)->endOfMonth();
-        } else { // daily
-            $reportDate = Carbon::parse($request->report_date);
-        }
+        // Helper function untuk menghitung data Neraca Saldo pada tanggal tertentu
+        $getNeracaSaldoData = function(Carbon $reportDate) use ($user, $unitUsahaId) {
+            $baseQuery = DB::table('akuns')
+                ->leftJoin('detail_jurnals', 'akuns.akun_id', '=', 'detail_jurnals.akun_id')
+                ->leftJoin('jurnal_umums', function($join) use ($reportDate) {
+                    $join->on('detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
+                         ->where('jurnal_umums.status', 'disetujui')
+                         ->where('jurnal_umums.tanggal_transaksi', '<=', $reportDate);
+                })
+                ->where('akuns.is_header', 0)
+                ->select('akuns.akun_id', 'akuns.kode_akun', 'akuns.nama_akun', 'akuns.tipe_akun',
+                         DB::raw('SUM(detail_jurnals.debit) as total_debit'),
+                         DB::raw('SUM(detail_jurnals.kredit) as total_kredit'));
 
-        // Query untuk Neraca Saldo sudah benar (mengambil semua akun secara kumulatif).
-        // Tidak perlu diubah, hanya menggunakan $reportDate yang baru.
-        $query = Akun::select('akuns.kode_akun', 'akuns.nama_akun', 'akuns.saldo_normal')
-            ->selectRaw('SUM(detail_jurnals.debit) as total_debit')
-            ->selectRaw('SUM(detail_jurnals.kredit) as total_kredit')
-            ->join('detail_jurnals', 'akuns.akun_id', '=', 'detail_jurnals.akun_id')
-            ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
-            ->where('jurnal_umums.status', 'disetujui')
-            ->where('jurnal_umums.tanggal_transaksi', '<=', $reportDate);
-
-        // Logika filter unit usaha yang disatukan
-        if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-            $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-        }
-        elseif ($user->hasRole(['bendahara_bumdes', 'sekretaris_bumdes']) && !empty($unitUsahaId)) {
-            $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
-        }
-
-        $results = $query->groupBy('akuns.akun_id', 'akuns.kode_akun', 'akuns.nama_akun', 'akuns.saldo_normal')
-            ->orderBy('akuns.kode_akun')
-            ->get();
-
-        // Memproses data untuk memisahkan saldo ke kolom Debit dan Kredit akhir
-        $laporanData = [];
-        $totalDebit = 0;
-        $totalKredit = 0;
-
-        foreach ($results as $akun) {
-            $saldo = 0;
-            $saldoDebit = 0;
-            $saldoKredit = 0;
-
-            if ($akun->saldo_normal == 'D') {
-                $saldo = $akun->total_debit - $akun->total_kredit;
-                if ($saldo > 0) {
-                    $saldoDebit = $saldo;
-                } else {
-                    $saldoKredit = abs($saldo);
-                }
-            } else { // Saldo normal Kredit
-                $saldo = $akun->total_kredit - $akun->total_debit;
-                 if ($saldo > 0) {
-                    $saldoKredit = $saldo;
-                } else {
-                    $saldoDebit = abs($saldo);
+            if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
+                $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
+                $baseQuery->where(function($q) use ($managedUnitIds) {
+                    $q->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds)
+                      ->orWhereNull('jurnal_umums.unit_usaha_id');
+                });
+            } elseif ($user->hasAnyRole(['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes'])) {
+                if (!empty($unitUsahaId)) {
+                    $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
                 }
             }
 
-            // Hanya tampilkan akun yang memiliki saldo
-            if($saldo != 0) {
-                $laporanData[] = (object)[
+            return $baseQuery
+                ->groupBy('akuns.akun_id', 'akuns.kode_akun', 'akuns.nama_akun', 'akuns.tipe_akun')
+                ->orderBy('akuns.kode_akun')
+                ->get()
+                ->keyBy('akun_id'); // Jadikan collection yang key-nya adalah akun_id
+        };
+
+        // Hitung data untuk Saldo Awal dan Saldo Akhir
+        $dataAwal = $getNeracaSaldoData($startDate->copy()->subDay());
+        $dataAkhir = $getNeracaSaldoData($endDate);
+        
+        // Gabungkan semua akun dari kedua periode agar tidak ada yang terlewat
+        $allAkunIds = $dataAwal->keys()->merge($dataAkhir->keys())->unique();
+        $allAkuns = Akun::whereIn('akun_id', $allAkunIds)->orderBy('kode_akun')->get();
+
+        $laporanData = [];
+        
+        foreach ($allAkuns as $akun) {
+            $akunAwal = $dataAwal->get($akun->akun_id);
+            $akunAkhir = $dataAkhir->get($akun->akun_id);
+
+            $akunNormalDebit = ['Aset', 'HPP', 'Beban'];
+            
+            // Hitung Saldo Awal
+            $debitAwal = 0; $kreditAwal = 0;
+            if($akunAwal){
+                if (in_array($akunAwal->tipe_akun, $akunNormalDebit)) {
+                    $saldo = ($akunAwal->total_debit ?? 0) - ($akunAwal->total_kredit ?? 0);
+                    if ($saldo >= 0) { $debitAwal = $saldo; } else { $kreditAwal = abs($saldo); }
+                } else {
+                    $saldo = ($akunAwal->total_kredit ?? 0) - ($akunAwal->total_debit ?? 0);
+                    if ($saldo >= 0) { $kreditAwal = $saldo; } else { $debitAwal = abs($saldo); }
+                }
+            }
+
+            // Hitung Saldo Akhir
+            $debitAkhir = 0; $kreditAkhir = 0;
+            if($akunAkhir){
+                 if (in_array($akunAkhir->tipe_akun, $akunNormalDebit)) {
+                    $saldo = ($akunAkhir->total_debit ?? 0) - ($akunAkhir->total_kredit ?? 0);
+                    if ($saldo >= 0) { $debitAkhir = $saldo; } else { $kreditAkhir = abs($saldo); }
+                } else {
+                    $saldo = ($akunAkhir->total_kredit ?? 0) - ($akunAkhir->total_debit ?? 0);
+                    if ($saldo >= 0) { $kreditAkhir = $saldo; } else { $debitAkhir = abs($saldo); }
+                }
+            }
+
+            if ($debitAwal != 0 || $kreditAwal != 0 || $debitAkhir != 0 || $kreditAkhir != 0) {
+                 $laporanData[] = (object)[
                     'kode_akun' => $akun->kode_akun,
                     'nama_akun' => $akun->nama_akun,
-                    'debit' => $saldoDebit,
-                    'kredit' => $saldoKredit,
+                    'debit_awal' => $debitAwal,
+                    'kredit_awal' => $kreditAwal,
+                    'debit_akhir' => $debitAkhir,
+                    'kredit_akhir' => $kreditAkhir,
                 ];
-                $totalDebit += $saldoDebit;
-                $totalKredit += $saldoKredit;
             }
         }
-
-        $penandaTangan1 = [ 'jabatan' => 'Direktur', 'nama' => 'Nama Direktur Anda' ];
-        $penandaTangan2 = [ 'jabatan' => 'Bendahara', 'nama' => 'Nama Bendahara Anda' ];
+        
+        // Menyiapkan data penandatangan standar
+        $direktur = User::role('direktur_bumdes')->with('anggota')->first();
+        $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'];
+        $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
+        $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
 
         return view('laporan.neraca_saldo.show', compact(
-            'reportDate',
-            'laporanData',
-            'totalDebit',
-            'totalKredit',
-            'bumdes',
-            'penandaTangan1',
-            'penandaTangan2'
+            'bumdes', 'startDate', 'endDate', 'tanggalCetak', 'laporanData',
+            'penandaTangan1', 'penandaTangan2'
         ));
     }
 }
+

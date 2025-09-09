@@ -78,21 +78,9 @@
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-80 me-2 mx-2" title="Filter"><i class="fas fa-filter"></i></button>
                     <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary w-80 me-2 mx-2" title="Refresh"><i class="fas fa-sync"></i></a>
-                    <a href="{{ route('jurnal-umum.show', [
-    'jurnal_umum' => 'print',
-    'year' => request('year'),
-    'approval_status' => request('approval_status'),
-    'start_date' => request('start_date'),
-    'end_date' => request('end_date'),
-    'unit_usaha_id' => request('unit_usaha_id')
-]) }}"
-    target="_blank"
-    class="btn btn-success w-100"
-    title="Cetak Laporan">
-    <i class="fas fa-print"></i>
-</a>
-
-
+                    <button type="button" class="btn btn-success" title="Cetak Laporan" data-toggle="modal" data-target="#printModal">
+                        <i class="fas fa-print"></i>
+                    </button>
                 </div>
             </div>
         </form>
@@ -198,6 +186,41 @@
           <button type="submit" class="btn btn-danger">Hapus</button>
         </form>
       </div>
+    </div>
+  </div>
+</div>
+
+{{-- 2. Modal untuk Mengatur Tanggal Cetak --}}
+<div class="modal fade" id="printModal" tabindex="-1" role="dialog" aria-labelledby="printModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="printModalLabel">Atur Tanggal Cetak Laporan</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {{-- Form ini akan mengirim semua parameter filter + tanggal cetak --}}
+      <form id="printForm" action="{{ route('jurnal-umum.show', 'print') }}" method="GET" target="_blank">
+        <div class="modal-body">
+            <p>Laporan akan dicetak sesuai dengan filter yang sedang aktif. Silakan tentukan tanggal yang akan tertera pada laporan.</p>
+            <div class="form-group">
+                <label for="tanggal_cetak">Tanggal Cetak</label>
+                <input type="date" class="form-control" id="tanggal_cetak" name="tanggal_cetak" value="{{ date('Y-m-d') }}" required>
+            </div>
+
+            {{-- Hidden inputs untuk membawa semua parameter filter saat ini --}}
+            <input type="hidden" name="year" value="{{ request('year', date('Y')) }}">
+            <input type="hidden" name="approval_status" value="{{ request('approval_status', 'semua') }}">
+            <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+            <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+            <input type="hidden" name="unit_usaha_id" value="{{ request('unit_usaha_id') }}">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success"><i class="fas fa-print"></i> Cetak Sekarang</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
