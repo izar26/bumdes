@@ -5,29 +5,26 @@ namespace App\Http\Controllers\Laporan;
 use App\Http\Controllers\Controller;
 use App\Models\Akun;
 use App\Models\DetailJurnal;
-use App\Models\UnitUsaha; // <-- Tambahkan ini
+use App\Models\UnitUsaha;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // <-- Tambahkan ini
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Models\Bungdes; // pastikan pakai model yang benar
+use App\Models\Bungdes;
 
 class BukuBesarController extends Controller
 {
     /**
      * Menampilkan halaman form filter laporan Buku Besar.
      */
- public function index()
+    public function index()
     {
         $user = Auth::user();
         $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get();
 
         $unitUsahas = collect();
         if ($user->hasRole('bendahara_bumdes')) {
-            // Bendahara bisa filter semua unit usaha
             $unitUsahas = UnitUsaha::where('status_operasi', 'Aktif')->get();
         } else {
-            // Peran lain hanya melihat unit usahanya sendiri
-            // Meskipun tidak error di sini, ini adalah praktik yang baik untuk juga lebih spesifik
             $unitUsahas = $user->unitUsahas()->where('status_operasi', 'Aktif')->get(['unit_usahas.*']);
         }
 
@@ -50,25 +47,18 @@ class BukuBesarController extends Controller
         $akunId = $request->akun_id;
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
-        $akun = Akun::findOrFail($akunId);
+        $akun = Akun::findOrFail($akunId); // $akun sudah berisi data akun yang dipilih
         $unitUsahaId = $request->unit_usaha_id;
 
-        // 🔹 Ambil data BUMDes untuk logo, alamat, dsb.
         $bumdes = Bungdes::first();
 
-        // Query dasar untuk detail jurnal
         $baseQuery = DetailJurnal::where('akun_id', $akunId)
             ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
             ->where('jurnal_umums.status', 'disetujui');
 
-        // Terapkan filter unit usaha berdasarkan peran
         if ($user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
-            // =======================================================
-            // PERBAIKAN DI SINI: Tambahkan nama tabel 'unit_usahas'
-            // =======================================================
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $baseQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
-
         } elseif ($user->hasRole('bendahara_bumdes') && !empty($unitUsahaId)) {
             $baseQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
         }
@@ -77,7 +67,20 @@ class BukuBesarController extends Controller
         $saldoAwalQuery = (clone $baseQuery)->where('jurnal_umums.tanggal_transaksi', '<', $startDate);
         $saldoAwalDebit = (clone $saldoAwalQuery)->sum('detail_jurnals.debit');
         $saldoAwalKredit = (clone $saldoAwalQuery)->sum('detail_jurnals.kredit');
-        $saldoAwal = $saldoAwalDebit - $saldoAwalKredit;
+
+        // =======================================================
+        // PERBAIKAN OPERASI PENJUMLAHAN DEBIT KREDIT (SALDO AWAL)
+        // =======================================================
+        $saldoAwal = 0;
+
+        // Asumsi: tabel 'akuns' punya kolom 'saldo_normal' dengan isi 'D' atau 'K'
+        if ($akun->saldo_normal == 'D') {
+            // Untuk akun dengan saldo normal DEBIT (Aset, Beban)
+            $saldoAwal = $saldoAwalDebit - $saldoAwalKredit;
+        } else {
+            // Untuk akun dengan saldo normal KREDIT (Kewajiban, Ekuitas, Pendapatan)
+            $saldoAwal = $saldoAwalKredit - $saldoAwalDebit;
+        }
 
         // Ambil daftar transaksi sesuai rentang tanggal
         $transaksis = (clone $baseQuery)
@@ -93,7 +96,7 @@ class BukuBesarController extends Controller
             'endDate',
             'saldoAwal',
             'transaksis',
-            'bumdes' // 🔹 kirim ke view
+            'bumdes'
         ));
     }
 }
