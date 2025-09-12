@@ -8,10 +8,12 @@
 
 @section('content')
 @php
-    // Safeguards untuk memastikan variabel ada dan memiliki struktur default
+    // Safeguards
     $bumdes = $bumdes ?? \App\Models\Bungdes::first();
     $startDate = $startDate ?? now();
     $endDate = $endDate ?? now();
+    $tanggalCetak = $tanggalCetak ?? now();
+    $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
     $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
     $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
     $arusOperasi = $arusOperasi ?? ['items' => [], 'total' => 0];
@@ -24,10 +26,10 @@
 <div class="card">
     <div class="card-body">
 
-        {{-- KOP SURAT (Struktur standar AdminLTE/Bootstrap) --}}
+        {{-- KOP SURAT --}}
         <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
             @if(optional($bumdes)->logo)
-                <img src="{{ public_path('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
+                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
             @endif
             <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
             <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
@@ -35,7 +37,7 @@
             <p>Untuk Periode <strong>{{ $startDate->isoFormat('D MMMM Y') }}</strong> s/d <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
-        {{-- TABEL DATA (Struktur standar AdminLTE/Bootstrap) --}}
+        {{-- TABEL DATA --}}
         <table class="table table-borderless table-sm">
             <tbody>
                 {{-- ARUS KAS DARI AKTIVITAS OPERASI --}}
@@ -117,12 +119,12 @@
             </tbody>
         </table>
 
-        {{-- TANDA TANGAN (Struktur standar) --}}
+        {{-- TANDA TANGAN --}}
         <table style="margin-top: 60px; width: 100%;" class="table-borderless">
             <tr>
                 <td style="text-align: center; width: 50%;"></td>
                 <td style="text-align: center; width: 50%;">
-                    {{ optional($bumdes)->alamat ?? 'Lokasi BUMDes' }}, {{ now()->translatedFormat('d F Y') }}
+                    {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
@@ -133,28 +135,22 @@
                 <td style="text-align: center;"><strong>{{ $penandaTangan2['jabatan'] ?? 'Bendahara' }}</strong></td>
                 <td style="text-align: center;"><strong>{{ $penandaTangan1['jabatan'] ?? 'Direktur' }}</strong></td>
             </tr>
-            <tr style="height: 80px;">
-                <td></td>
-                <td></td>
-            </tr>
+            <tr style="height: 80px;"><td></td><td></td></tr>
             <tr>
                 <td style="text-align: center;">( {{ $penandaTangan2['nama'] ?? '____________________' }} )</td>
                 <td style="text-align: center;">( {{ $penandaTangan1['nama'] ?? '____________________' }} )</td>
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
-
     </div>
 </div>
 @stop
 
 @section('css')
 <style>
-    /* Hanya CSS untuk mencetak, agar konsisten dengan laporan lain */
     @media print {
         .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
             display: none !important;

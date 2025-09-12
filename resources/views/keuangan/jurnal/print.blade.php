@@ -205,31 +205,22 @@
         <tr>
             <td style="width: 50%;"></td>
             <td style="width: 50%;">
-                {{  'Cianjur' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                {{-- 1. Gunakan variabel $lokasi dan $tanggalCetak --}}
+                {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
             </td>
         </tr>
         <tr>
-            <td>Menyetujui,</td>
+            <td style="text-align: center;">Mengetahui,</td>
+            <td style="text-align: center;">Menyetujui,</td>
         </tr>
         <tr>
-            <td>
-                <strong>Direktur'</strong>
-            </td>
-            <td>
-                <strong>Bendahara</strong>
-            </td>
+            <td><strong>{{ $penandaTangan2['jabatan'] }}</strong></td>
+            <td><strong>{{ $penandaTangan1['jabatan'] }}</strong></td>
         </tr>
-        <tr class="ttd-space">
-            <td></td>
-            <td></td>
-        </tr>
+        <tr class="ttd-space"><td></td><td></td></tr>
         <tr>
-            <td class="nama-terang">
-                ({{ $penandaTangan1['nama'] ?? '.........................................' }})
-            </td>
-            <td class="nama-terang">
-                ({{ $penandaTangan2['nama'] ?? '.........................................' }})
-            </td>
+            <td class="nama-terang">({{ $penandaTangan2['nama'] }})</td>
+            <td class="nama-terang">({{ $penandaTangan1['nama'] }})</td>
         </tr>
     </table>
 
