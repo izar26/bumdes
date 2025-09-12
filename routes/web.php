@@ -38,7 +38,14 @@ use App\Http\Controllers\Laporan\NeracaController;
 use App\Http\Controllers\Laporan\NeracaSaldoController;
 use App\Http\Controllers\Laporan\PerubahanEkuitasController;
 use App\Http\Controllers\Laporan\ArusKasController;
-        use App\Http\Controllers\Usaha\TagihanController;
+use App\Http\Controllers\Usaha\TagihanController;
+use App\Http\Controllers\Usaha\PelangganController;
+use App\Http\Controllers\Usaha\TarifController;
+use App\Http\Controllers\Usaha\PetugasController;
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -106,12 +113,23 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('pembelian', PembelianController::class)->names('pembelian');
         Route::resource('pemasok', PemasokController::class)->names('pemasok');
         Route::resource('kategori', KategoriController::class)->except(['show'])->names('kategori');
-        Route::resource('tagihan', TagihanController::class);
-        Route::get('tagihan/cetak-massal', [TagihanController::class, 'cetakMassal'])->name('tagihan.cetak-massal');
-Route::post('   tagihan/cetak-selektif', [TagihanController::class, 'cetakSelektif'])->name('tagihan.cetak-selektif');
+ Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index'); // Ini halaman utama
+    Route::get('tagihan/cetak-massal', [TagihanController::class, 'cetakMassal'])->name('tagihan.cetak-massal');
+    Route::post('tagihan/cetak-selektif', [TagihanController::class, 'cetakSelektif'])->name('tagihan.cetak-selektif');
+    Route::post('tagihan/simpan-semua-massal', [TagihanController::class, 'simpanSemuaMassal'])->name('tagihan.simpanSemuaMassal');
+    Route::put('tagihan/{tagihan}/tandai-lunas', [TagihanController::class, 'tandaiLunas'])->name('tagihan.tandaiLunas');
+    Route::post('tagihan/tandai-lunas-selektif', [TagihanController::class, 'tandaiLunasSelektif'])->name('tagihan.tandaiLunasSelektif');
+
+    // Tambahkan route lainnya yang relevan seperti show, destroy, dll. jika ada
+    Route::get('tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
+    Route::delete('tagihan/{tagihan}', [TagihanController::class, 'destroy'])->name('tagihan.destroy');
 
 
 
+Route::resource('tagihan', TagihanController::class);
+ Route::resource('pelanggan', PelangganController::class);
+  Route::resource('tarif', TarifController::class);
+   Route::resource('petugas', PetugasController::class);
         // Khusus Admin Unit Usaha
         Route::middleware(['role:admin_unit_usaha'])->group(function () {
             Route::get('unit-setting', [AdminUnitUsahaController::class, 'edit'])->name('unit_setting.edit');

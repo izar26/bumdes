@@ -53,5 +53,18 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('direktur_or_sekretaris_bumdes', fn($user) =>
             $user->hasAnyRole(['admin_bumdes', 'sekretaris_bumdes'])
         );
+
+    Gate::define('mengelola-jenis-usaha', function (User $user, string $jenis_usaha = null) {
+
+    if (is_null($jenis_usaha)) {
+        return false;
+    }
+
+    if (!$user->kelolaanUnitUsaha) {
+        return false;
+    }
+
+    return $user->kelolaanUnitUsaha->contains('jenis_usaha', $jenis_usaha);
+    });
     }
 }

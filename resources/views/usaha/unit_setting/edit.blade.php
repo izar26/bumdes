@@ -51,16 +51,26 @@
                                 </span>
                             @enderror
                         </div>
-
-                        <div class="form-group">
-                            <label for="jenis_usaha">Jenis Usaha</label>
-                            <input type="text" name="jenis_usaha" class="form-control @error('jenis_usaha') is-invalid @enderror" id="jenis_usaha" value="{{ old('jenis_usaha', $unitUsaha->jenis_usaha) }}" placeholder="Masukkan jenis usaha">
-                            @error('jenis_usaha')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
+<div class="form-group">
+    <label for="jenis_usaha" class="font-weight-bold">
+        Jenis Usaha <span class="text-danger">*</span>
+    </label>
+    <select name="jenis_usaha"
+            class="form-control select2 @error('jenis_usaha') is-invalid @enderror"
+            id="jenis_usaha"
+            required>
+        <option value="">Pilih Jenis Usaha</option>
+        <option value="Perdagangan" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'Perdagangan' ? 'selected' : '' }}>Perdagangan</option>
+        <option value="Jasa" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'Jasa' ? 'selected' : '' }}>Jasa</option>
+        <option value="Manufaktur" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'Manufaktur' ? 'selected' : '' }}>Manufaktur</option>
+        <option value="Pertanian" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'Pertanian' ? 'selected' : '' }}>Pertanian</option>
+        <option value="PAM" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'PAM' ? 'selected' : '' }}>PAM</option>
+        <option value="Lainnya" {{ old('jenis_usaha', $unitUsaha->jenis_usaha ?? '') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+    </select>
+    @error('jenis_usaha')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+</div>
 
                         <div class="form-group">
                             <label for="tanggal_mulai_operasi">Tanggal Mulai Operasi</label>

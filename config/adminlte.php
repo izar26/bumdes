@@ -301,200 +301,161 @@ return [
     */
 
 
-    // ... konfigurasi lainnya
-  // config/adminlte.php
-// config/adminlte.php
-'menu' => [
 
-    // Navbar items
-    [
-        'type'         => 'fullscreen-widget',
-        'topnav_right' => true,
-    ],
-    [
-        'text'         => 'Profil Saya',
-        'route'        => 'profile.edit',
-        'icon'         => 'fas fa-fw fa-user-circle',
-        'topnav_right' => true,
-    ],
+    'menu' => [
 
-    // Sidebar items
-    [
-        'text'    => 'Dashboard',
-        'route'   => 'dashboard',
-        'icon'    => 'fas fa-fw fa-tachometer-alt',
-        'classes' => 'text-bold',
-    ],
-
-    // --- PROFIL DESA ---
-    // Akses: Admin BUMDes & Direktur BUMDes
-    [
-        'header' => 'ADMIN PROFIL DESA',
-        'can'    => 'admin_bumdes', // Menggunakan array untuk Gate
-    ],
-    [
-        'text'  => 'Profil Desa',
-        'route' => 'admin.profil.edit',
-        'icon'  => 'fas fa-fw fa-building',
-        'can'   => 'admin_bumdes',
-    ],
-    [
-        'text'    => 'Kelola Konten Website',
-        'icon'    => 'fas fa-fw fa-desktop',
-        'can'     => 'admin_bumdes',
-        'submenu' => [
-            ['text' => 'Kelola Berita', 'route' => 'admin.berita.index'],
-            ['text' => 'Kelola Potensi', 'route' => 'admin.potensi.index'],
-            ['text' => 'Pengaturan Halaman', 'route' => 'admin.homepage_setting.edit'],
-            ['text' => 'Link Media Sosial', 'route' => 'admin.social_link.index'],
+        // Navbar items
+        [
+            'type'         => 'fullscreen-widget',
+            'topnav_right' => true,
         ],
-    ],
-
-    // --- ADMINISTRASI BUMDES ---
-    // Akses: Admin BUMDes
-    [
-        'header' => 'ADMINISTRASI BUMDES',
-        'can'    => 'admin_bumdes',
-    ],
-    [
-        'text'    => 'Manajemen Data',
-        'icon'    => 'fas fa-fw fa-briefcase',
-        'can'     => 'admin_bumdes',
-        'submenu' => [
-            ['text' => 'Data Bumdes', 'route' => 'admin.manajemen-data.bungdes.index'],
-            ['text' => 'Manajemen User', 'route' => 'admin.manajemen-data.user.index'],
-            ['text' => 'Manajemen Anggota', 'route' => 'admin.manajemen-data.anggota.index'],
-        ],
-    ],
-    [
-        'text'    => 'Kelola Unit Usaha',
-        'icon'    => 'fas fa-fw fa-industry',
-        'can'     => 'admin_bumdes',
-        'submenu' => [
-            ['text' => 'Daftar Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.index'],
-            ['text' => 'Tambah Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.create'],
-        ],
-    ],
-
-    [
-        'header' => 'KEUANGAN & LAPORAN',
-        'can'    => ['bendahara_bumdes', 'direktur_bumdes' ],
-    ],
-    [
-        'text'    => 'Jurnal & Keuangan',
-        'icon'    => 'fas fa-fw fa-wallet',
-        'can'     => ['admin_unit_usaha', 'bendahara_bumdes'],
-        'submenu' => [
-            ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
-            ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => 'admin_unit_usaha'],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => 'admin_unit_usaha'],
-            ['text' => 'Manajemen Akun', 'route' => 'keuangan.akun.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => 'bendahara_bumdes']
-
-        ],
-    ],
-    [
-        'text'    => 'Approval Jurnal',
-        'icon'    => 'fas fa-fw fa-check-circle',
-        'route'   => 'approval-jurnal.index',
-        'can' => ['manajer_unit_usaha' ,'direktur_bumdes' ],
-    ],
-    [
-        'text'    => 'Laporan',
-        'icon'    => 'fas fa-fw fa-file-alt',
-        'can'     => ['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes'],
-        'submenu' => [
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
-            ['text' => 'Neraca', 'route' => 'laporan.neraca.index', 'icon' => 'fas fa-fw fa-balance-scale'],
-            ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index', 'icon' => 'fas fa-fw fa-table'],
-            ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
-            [
-        'text' => 'Arus Kas',
-        'route'  => 'laporan.arus-kas.index',
-        'icon' => 'fas fa-fw fa-exchange-alt',
-    ],
-        ],
-    ],
-
-
-    [
-        'header' => 'MANAJEMEN USAHA',
-        'can'    => 'manajer_unit_usaha',
-    ],
-
-    [
-        'text' => 'Laporan',
-        'icon' => 'fas fa-fw fa-file-alt',
-
-        'submenu' => [
-            ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book', 'can' => ['manajer_unit_usaha']],
-            ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => ['manajer_unit_usaha']],
-            ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes','can' => 'manajer_unit_usaha'],
-            ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart', 'can' => 'manajer_unit_usaha'],
-        ]
+        [
+            'text'         => 'Profil Saya',
+            'route'        => 'profile.edit',
+            'icon'         => 'fas fa-fw fa-user-circle',
+            'topnav_right' => true,
         ],
 
+        // Sidebar items
+        [
+            'text'    => 'Dashboard',
+            'route'   => 'dashboard',
+            'icon'    => 'fas fa-fw fa-tachometer-alt',
+            'classes' => 'text-bold',
+        ],
 
+        // --- PROFIL DESA ---
+        [
+            'header' => 'ADMIN PROFIL DESA',
+            'can'    => ['admin_bumdes'], // Menggunakan array
+        ],
+        [
+            'text'  => 'Profil Desa',
+            'route' => 'admin.profil.edit',
+            'icon'  => 'fas fa-fw fa-building',
+            'can'   => ['admin_bumdes'],
+        ],
+        [
+            'text'    => 'Kelola Konten Website',
+            'icon'    => 'fas fa-fw fa-desktop',
+            'can'     => ['admin_bumdes'],
+            'submenu' => [
+                ['text' => 'Kelola Berita', 'route' => 'admin.berita.index'],
+                ['text' => 'Kelola Potensi', 'route' => 'admin.potensi.index'],
+                ['text' => 'Pengaturan Halaman', 'route' => 'admin.homepage_setting.edit'],
+                ['text' => 'Link Media Sosial', 'route' => 'admin.social_link.index'],
+            ],
+        ],
 
-    // [
-    //     'header' => 'MANAJEMEN ASET',
-    //     'can'    => 'bendahara_bumdes',
-    // ],
-    // [
-    //     'text'    => 'Manajemen Aset',
-    //     'icon'    => 'fas fa-fw fa-boxes',
-    //     'can'     => 'bendahara_bumdes',
-    //     'submenu' => [
-    //         ['text' => 'Pencatatan Aset', 'route' => 'bumdes.aset.index'],
-    //         ['text' => 'Penyusutan Aset', 'route' => 'bumdes.aset.penyusutan'],
-    //         ['text' => 'Pemeliharaan Aset', 'route' => 'bumdes.aset.pemeliharaan'],
-    //     ],
-    // ],
+        // --- ADMINISTRASI BUMDES ---
+        [
+            'header' => 'ADMINISTRASI BUMDES',
+            'can'    => ['admin_bumdes'], // Menggunakan array
+        ],
+        [
+            'text'    => 'Manajemen Data',
+            'icon'    => 'fas fa-fw fa-briefcase',
+            'can'     => ['admin_bumdes'],
+            'submenu' => [
+                ['text' => 'Data Bumdes', 'route' => 'admin.manajemen-data.bungdes.index'],
+                ['text' => 'Manajemen User', 'route' => 'admin.manajemen-data.user.index'],
+                ['text' => 'Manajemen Anggota', 'route' => 'admin.manajemen-data.anggota.index'],
+            ],
+        ],
+        [
+            'text'    => 'Kelola Unit Usaha',
+            'icon'    => 'fas fa-fw fa-industry',
+            'can'     => ['admin_bumdes'],
+            'submenu' => [
+                ['text' => 'Daftar Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.index'],
+                ['text' => 'Tambah Unit Usaha', 'route' => 'admin.manajemen-data.unit_usaha.create'],
+            ],
+        ],
 
-    [
-        'header' => 'MANAJEMEN USAHA',
-        'can'    => [ 'admin_unit_usaha'],
-    ],
-    [
-        'text'    => 'Manajemen Usaha',
-        'icon'    => 'fas fa-fw fa-store',
-        'can'     => ['admin_unit_usaha'],
-        'submenu' => [
-            ['text' => 'Kategori Produk', 'route' => 'usaha.kategori.index', 'icon' => 'fas fa-fw fa-tags'],
-            ['text' => 'Daftar Pemasok', 'route' => 'usaha.pemasok.index', 'icon' => 'fas fa-fw fa-truck'],
-            ['text' => 'Daftar Produk', 'route' => 'usaha.produk.index', 'icon' => 'fas fa-fw fa-boxes'],
-            ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
-            ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
-            ['text' => 'Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-cash-register'],
-            ['text' => 'Tagihan', 'route' => 'usaha.tagihan.index', 'icon' => 'fas fa-fw fa-file-invoice']
+        [
+            'header' => 'KEUANGAN & LAPORAN BUMDES',
+            'can'    => ['bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes' ],
+        ],
+        [
+            'text'    => 'Jurnal & Keuangan',
+            'icon'    => 'fas fa-fw fa-wallet',
+            'can'     => ['admin_unit_usaha', 'bendahara_bumdes'],
+            'submenu' => [
+                ['text' => 'Buat Jurnal Baru', 'route' => 'jurnal-manual.create', 'icon' => 'fas fa-fw fa-plus-circle'],
+                ['text' => 'Jurnal Umum', 'route' => 'jurnal-umum.index', 'icon' => 'fas fa-fw fa-book'],
+                ['text' => 'Manajemen Akun', 'route' => 'keuangan.akun.index', 'icon' => 'fas fa-fw fa-chart-line', 'can' => ['bendahara_bumdes']],
+            ],
+        ],
+        [
+            'text'    => 'Approval Jurnal',
+            'icon'    => 'fas fa-fw fa-check-circle',
+            'route'   => 'approval-jurnal.index',
+            'can'     => ['manajer_unit_usaha' ,'direktur_bumdes' ],
+        ],
+        [
+            'text'    => 'Laporan BUMDes',
+            'icon'    => 'fas fa-fw fa-file-alt',
+            'can'     => ['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes'],
+            'submenu' => [
+                ['text' => 'Buku Besar', 'route' => 'laporan.buku-besar.index', 'icon' => 'fas fa-fw fa-book'],
+                ['text' => 'Laba Rugi', 'route' => 'laporan.laba-rugi.index', 'icon' => 'fas fa-fw fa-chart-line'],
+                ['text' => 'Neraca', 'route' => 'laporan.neraca.index', 'icon' => 'fas fa-fw fa-balance-scale'],
+                ['text' => 'Neraca Saldo', 'route' => 'laporan.neraca-saldo.index', 'icon' => 'fas fa-fw fa-table'],
+                ['text' => 'Perubahan Ekuitas', 'route' => 'laporan.perubahan-ekuitas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
+                ['text' => 'Arus Kas', 'route'  => 'laporan.arus-kas.index', 'icon' => 'fas fa-fw fa-exchange-alt'],
+            ],
+        ],
+
+        [
+            'header' => 'MANAJEMEN UNIT USAHA',
+            'can'    => ['manajer_unit_usaha', 'admin_unit_usaha'],
+        ],
+        [
+            'text' => 'Kelola PAM',
+            'icon' => 'fas fa-fw fa-water',
+            'can' => ['admin_unit_usaha'], // Gate dinamis Anda
+            'submenu' => [
+                ['text' => 'Tagihan', 'route' => 'usaha.tagihan.index', 'icon' => 'fas fa-fw fa-file-invoice'],
+                ['text' => 'Pelanggan', 'route' => 'usaha.pelanggan.index', 'icon' => 'fas fa-fw fa-users'],
+                ['text' => 'Tarif', 'route' => 'usaha.tarif.index', 'icon' => 'fas fa-fw fa-tags'],
+                ['text' => 'Petugas', 'route' => 'usaha.petugas.index', 'icon' => 'fas fa-fw fa-user-gear']
+            ]
+        ],
+        [
+            'text'    => 'Kelola Unit USaha', // Contoh untuk jenis usaha lain
+            'icon'    => 'fas fa-fw fa-store',
+            'can'     => ['admin_unit_usaha'], // Gate dinamis Anda
+            'submenu' => [
+                ['text' => 'Kategori Produk', 'route' => 'usaha.kategori.index', 'icon' => 'fas fa-fw fa-tags'],
+                ['text' => 'Daftar Pemasok', 'route' => 'usaha.pemasok.index', 'icon' => 'fas fa-fw fa-truck'],
+                ['text' => 'Daftar Produk', 'route' => 'usaha.produk.index', 'icon' => 'fas fa-fw fa-boxes'],
+                ['text' => 'Manajemen Stok', 'route' => 'usaha.stok.index', 'icon' => 'fas fa-fw fa-cubes'],
+                ['text' => 'Penjualan', 'route' => 'usaha.penjualan.index', 'icon' => 'fas fa-fw fa-shopping-cart'],
+                ['text' => 'Pembelian', 'route' => 'usaha.pembelian.index', 'icon' => 'fas fa-fw fa-cash-register'],
+            ],
+        ],
+        [
+            'header' => 'PENGATURAN UNIT USAHA',
+            'can'    => ['admin_unit_usaha'],
+        ],
+        [
+            'text'   => 'Pengaturan Unit Usaha',
+            'icon'   => 'fas fa-fw fa-building',
+            'route'  => 'usaha.unit_setting.edit',
+            'can'    => ['admin_unit_usaha'],
+        ],
+
+        [
+            'header' => 'MANAJEMEN ANGGOTA',
+            'can'    => ['anggota'], // Menggunakan array
+        ],
+        [
+            'text'    => 'Beranda Anggota',
+            'route'   => 'anggota.index',
+            'icon'    => 'fas fa-fw fa-home',
+            'can'     => ['anggota'],
         ],
     ],
-    [
-        'header' => 'PENGATURAN UNIT USAHA',
-        'can'    => 'admin_unit_usaha',
-    ],
-    [
-        'text'   => 'Kelola Unit Usaha',
-        'icon'   => 'fas fa-fw fa-building',
-        'route'  => 'usaha.unit_setting.edit',
-        'active' => ['usaha/unit-setting*'],
-        'can'    => 'admin_unit_usaha',
-    ],
-
-    // --- MANAJEMEN ANGGOTA ---
-    // Akses: Anggota
-    [
-        'header' => 'MANAJEMEN ANGGOTA',
-        'can'    => 'anggota',
-    ],
-    [
-        'text'    => 'Beranda Anggota',
-        'route'   => 'anggota.index',
-        'icon'    => 'fas fa-fw fa-home',
-        'can'     => 'anggota',
-    ],
-],
 
     /*
     |--------------------------------------------------------------------------
@@ -551,7 +512,7 @@ return [
 
     'plugins' => [
         'Datatables' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',

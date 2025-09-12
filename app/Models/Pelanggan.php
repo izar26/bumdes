@@ -17,6 +17,7 @@ class Pelanggan extends Model
         'nama',
         'alamat',
         'status_pelanggan',
+        'kontak'
     ];
 
     // Relasi menjadi lebih bersih tanpa parameter tambahan

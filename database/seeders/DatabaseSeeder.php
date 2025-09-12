@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             SyncUsersToAnggotaSeeder::class,
             LaporanSeeder::class,
             PelangganSeeder::class,
+            TarifSeeder::class,
+            PetugasSeeder::class,
         ]);
     }
 }

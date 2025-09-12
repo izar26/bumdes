@@ -3,186 +3,142 @@
 namespace App\Http\Controllers\Usaha;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Tagihan;
 use App\Models\Pelanggan;
 use App\Models\Petugas;
+use App\Models\Tarif;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class TagihanController extends Controller
 {
     /**
-     * Menampilkan daftar semua tagihan.
+     * Menampilkan halaman utama untuk daftar & input tagihan (mode massal).
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Ambil data tagihan, eager load relasi 'pelanggan' untuk efisiensi query
-        // Diurutkan berdasarkan yang terbaru, dan dibagi per 10 data per halaman
-        $semua_tagihan = Tagihan::with('pelanggan')->latest()->paginate(10);
+        $bulan_terpilih = $request->input('periode_bulan', date('n'));
+        $tahun_terpilih = $request->input('periode_tahun', date('Y'));
 
-        // Arahkan ke view 'tagihan.index' dengan membawa data
-        return view('usaha.tagihan.index', compact('semua_tagihan'));
-    }
+        $periode_sekarang = Carbon::create($tahun_terpilih, $bulan_terpilih, 1);
+        $periode_lalu = $periode_sekarang->copy()->subMonth();
 
-    /**
-     * Menampilkan form untuk membuat tagihan baru.
-     */
-    public function create()
-    {
-        // Ambil semua data pelanggan dan petugas untuk ditampilkan di form (dropdown)
         $semua_pelanggan = Pelanggan::where('status_pelanggan', 'Aktif')->orderBy('nama')->get();
         $semua_petugas = Petugas::orderBy('nama_petugas')->get();
 
-        return view('usaha.tagihan.create', compact('semua_pelanggan', 'semua_petugas'));
+        $tagihan_periode_lalu = Tagihan::where('periode_tagihan', $periode_lalu->toDateString())->get()->keyBy('pelanggan_id');
+        $tagihan_periode_sekarang = Tagihan::where('periode_tagihan', $periode_sekarang->toDateString())->with('petugas')->get()->keyBy('pelanggan_id');
+
+        $data_tabel = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
+            $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
+            $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
+            return (object) [
+                'pelanggan' => $pelanggan,
+                'tagihan' => $tagihan_sekarang,
+                'meter_awal' => $tagihan_lalu->meter_akhir ?? 0,
+            ];
+        });
+
+        return view('usaha.tagihan.index', [
+            'data_tabel' => $data_tabel,
+            'semua_petugas' => $semua_petugas,
+            'bulan_terpilih' => $bulan_terpilih,
+            'tahun_terpilih' => $tahun_terpilih,
+        ]);
     }
 
     /**
-     * Menyimpan tagihan baru ke dalam database.
+     * Menyimpan SEMUA perubahan dari mode edit massal.
      */
-    public function store(Request $request)
+    public function simpanSemuaMassal(Request $request)
     {
-        // Validasi input dari form
-        $validator = Validator::make($request->all(), [
-            'pelanggan_id' => 'required|exists:pelanggan,id',
-            'petugas_id' => 'nullable|exists:petugas,id',
+        $request->validate([
+            'petugas_id' => 'required|exists:petugas,id',
             'periode_tagihan' => 'required|date',
-            'meter_awal' => 'required|numeric|min:0',
-            'meter_akhir' => 'required|numeric|gt:meter_awal',
-            // Validasi untuk rincian (diasumsikan dikirim dalam bentuk array)
-            'rincian' => 'required|array|min:1',
-            'rincian.*.deskripsi' => 'required|string|max:255',
-            'rincian.*.subtotal' => 'required|numeric|min:0',
-        ]);
+            'tagihan' => 'required|array',
+            'tagihan.*.meter_awal' => 'required|numeric|min:0',
+            'tagihan.*.meter_akhir' => 'nullable|numeric|min:0'
+        ], ['petugas_id.required' => 'Silakan pilih petugas yang bertugas.']);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
+        $periode = $request->periode_tagihan;
+        $petugas_id = $request->petugas_id;
 
-        // Gunakan DB Transaction untuk memastikan semua query berhasil
-        // Jika ada satu saja yang gagal, semua akan dibatalkan (rollback)
         DB::beginTransaction();
         try {
-            // 1. Hitung total dan buat data tagihan utama
-            $total_pemakaian = $request->meter_akhir - $request->meter_awal;
-            $total_harus_dibayar = collect($request->rincian)->sum('subtotal');
+            foreach ($request->tagihan as $pelanggan_id => $data) {
+                if (isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '') {
+                    if ($data['meter_akhir'] < $data['meter_awal']) {
+                        $pelanggan = Pelanggan::find($pelanggan_id);
+                        throw new \Exception('Meter akhir untuk pelanggan ' . ($pelanggan->nama ?? '#'.$pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
+                    }
 
-            $tagihan = Tagihan::create([
-                'pelanggan_id' => $request->pelanggan_id,
-                'petugas_id' => $request->petugas_id,
-                'periode_tagihan' => $request->periode_tagihan,
-                'tanggal_cetak' => now(),
-                'meter_awal' => $request->meter_awal,
-                'meter_akhir' => $request->meter_akhir,
-                'total_pemakaian_m3' => $total_pemakaian,
-                'total_harus_dibayar' => $total_harus_dibayar,
-                'status_pembayaran' => 'Belum Lunas',
-            ]);
+                    $tagihan_sementara = new Tagihan(['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode, 'meter_awal' => $data['meter_awal'], 'meter_akhir' => $data['meter_akhir']]);
+                    $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara);
 
-            // 2. Simpan setiap item rincian tagihan
-            foreach ($request->rincian as $item) {
-                $tagihan->rincian()->create([
-                    'deskripsi' => $item['deskripsi'],
-                    'kuantitas' => $item['kuantitas'] ?? 1,
-                    'harga_satuan' => $item['harga_satuan'] ?? $item['subtotal'],
-                    'subtotal' => $item['subtotal'],
-                ]);
+                    $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
+                        'petugas_id' => $petugas_id,
+                        'meter_awal' => $data['meter_awal'],
+                        'meter_akhir' => $data['meter_akhir'],
+                        'tanggal_cetak' => now(),
+                        'status_pembayaran' => 'Belum Lunas',
+                    ]);
+                    unset($data_untuk_disimpan['rincian_dihitung']);
+
+                    $tagihan = Tagihan::updateOrCreate(
+                        ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
+                        $data_untuk_disimpan
+                    );
+
+                    $tagihan->rincian()->delete();
+                    $tagihan->rincian()->createMany($hasil_kalkulasi['rincian_dihitung']);
+                }
             }
-
-            DB::commit(); // Simpan semua perubahan jika berhasil
-
-            return redirect()->route('usaha.tagihan.show', $tagihan)->with('success', 'Tagihan baru berhasil dibuat!');
-
+            DB::commit();
         } catch (\Exception $e) {
-            DB::rollBack(); // Batalkan semua jika ada error
-            // Sebaiknya di-log errornya: Log::error($e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data.')->withInput();
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
+        return redirect()->back()->with('success', 'Semua perubahan tagihan berhasil disimpan!');
     }
 
     /**
-     * Menampilkan detail satu tagihan.
-     * Laravel otomatis mengambil data Tagihan berdasarkan ID di URL (Route Model Binding)
+     * [PRIVATE METHOD] Otak dari semua kalkulasi tagihan.
+     */
+    private function kalkulasiTagihanData(Tagihan $tagihan)
+    {
+        $semua_tarif = Tarif::all();
+        $total_pemakaian = $tagihan->meter_akhir - $tagihan->meter_awal;
+        $rincian_dihitung = [];
+        $subtotal_pemakaian = 0;
+
+        $sisa_pemakaian = $total_pemakaian;
+        $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')->sortBy('batas_bawah');
+        foreach ($tarif_pemakaian as $tarif) { if ($sisa_pemakaian <= 0) break; $batas_atas = $tarif->batas_atas ?? 999999; $rentang_blok = $batas_atas - ($tarif->batas_bawah > 0 ? ($tarif->batas_bawah - 1) : 0); $pemakaian_di_blok = min($sisa_pemakaian, $rentang_blok); $biaya_blok = $pemakaian_di_blok * $tarif->harga; $subtotal_pemakaian += $biaya_blok; $sisa_pemakaian -= $pemakaian_di_blok; if ($pemakaian_di_blok > 0) { $rincian_dihitung[] = ['deskripsi' => $tarif->deskripsi, 'kuantitas' => $pemakaian_di_blok, 'harga_satuan' => $tarif->harga, 'subtotal' => $biaya_blok]; } }
+
+        $biaya_lainnya = 0;
+        $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
+        foreach ($tarif_biaya_tetap as $biaya) { $biaya_lainnya += $biaya->harga; $rincian_dihitung[] = ['deskripsi' => $biaya->deskripsi, 'kuantitas' => 1, 'harga_satuan' => $biaya->harga, 'subtotal' => $biaya->harga]; }
+
+        $tunggakan = 0; $denda = 0;
+        $tagihan_terakhir = Tagihan::where('pelanggan_id', $tagihan->pelanggan_id)->where('periode_tagihan', '<', $tagihan->periode_tagihan)->latest('periode_tagihan')->first();
+        if ($tagihan_terakhir && $tagihan_terakhir->status_pembayaran == 'Belum Lunas') { $tunggakan = $tagihan_terakhir->total_harus_dibayar; $tarif_denda = $semua_tarif->where('jenis_tarif', 'denda')->first(); if ($tarif_denda) { $denda = $tarif_denda->harga; $rincian_dihitung[] = ['deskripsi' => $tarif_denda->deskripsi, 'kuantitas' => 1, 'harga_satuan' => $denda, 'subtotal' => $denda]; } }
+
+        return [
+            'total_pemakaian_m3'    => $total_pemakaian, 'subtotal_pemakaian'    => $subtotal_pemakaian,
+            'biaya_lainnya'         => $biaya_lainnya, 'denda'                 => $denda, 'tunggakan'             => $tunggakan,
+            'total_harus_dibayar'   => $subtotal_pemakaian + $biaya_lainnya + $denda + $tunggakan,
+            'rincian_dihitung'      => $rincian_dihitung,
+        ];
+    }
+
+    /**
+     * Menampilkan detail satu tagihan untuk dicetak.
      */
     public function show(Tagihan $tagihan)
     {
-        // Eager load semua relasi yang dibutuhkan di halaman detail
         $tagihan->load(['pelanggan', 'petugas', 'rincian']);
-
         return view('usaha.tagihan.show', compact('tagihan'));
-    }
-
-    /**
-     * Menampilkan form untuk mengedit tagihan.
-     */
-    public function edit(Tagihan $tagihan)
-    {
-        // Sama seperti method create, kita butuh data pelanggan dan petugas
-        $semua_pelanggan = Pelanggan::where('status_pelanggan', 'Aktif')->orderBy('nama')->get();
-        $semua_petugas = Petugas::orderBy('nama_petugas')->get();
-
-        // Eager load rincian tagihan untuk ditampilkan di form
-        $tagihan->load('rincian');
-
-        return view('usaha.tagihan.edit', compact('tagihan', 'semua_pelanggan', 'semua_petugas'));
-    }
-
-    /**
-     * Memperbarui data tagihan di database.
-     */
-    public function update(Request $request, Tagihan $tagihan)
-    {
-        $validator = Validator::make($request->all(), [
-            'pelanggan_id' => 'required|exists:pelanggan,id',
-            'petugas_id' => 'nullable|exists:petugas,id',
-            'periode_tagihan' => 'required|date',
-            'meter_awal' => 'required|numeric|min:0',
-            'meter_akhir' => 'required|numeric|gt:meter_awal',
-            'rincian' => 'required|array|min:1',
-            'rincian.*.deskripsi' => 'required|string|max:255',
-            'rincian.*.subtotal' => 'required|numeric|min:0',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
-        DB::beginTransaction();
-        try {
-            // 1. Update data tagihan utama
-            $total_pemakaian = $request->meter_akhir - $request->meter_awal;
-            $total_harus_dibayar = collect($request->rincian)->sum('subtotal');
-
-            $tagihan->update([
-                'pelanggan_id' => $request->pelanggan_id,
-                'petugas_id' => $request->petugas_id,
-                'periode_tagihan' => $request->periode_tagihan,
-                'meter_awal' => $request->meter_awal,
-                'meter_akhir' => $request->meter_akhir,
-                'total_pemakaian_m3' => $total_pemakaian,
-                'total_harus_dibayar' => $total_harus_dibayar,
-            ]);
-
-            // 2. Hapus rincian lama dan buat yang baru dari input form
-            $tagihan->rincian()->delete();
-            foreach ($request->rincian as $item) {
-                $tagihan->rincian()->create([
-                    'deskripsi' => $item['deskripsi'],
-                    'kuantitas' => $item['kuantitas'] ?? 1,
-                    'harga_satuan' => $item['harga_satuan'] ?? $item['subtotal'],
-                    'subtotal' => $item['subtotal'],
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('usaha.tagihan.show', $tagihan)->with('success', 'Tagihan berhasil diperbarui!');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui data.')->withInput();
-        }
     }
 
     /**
@@ -191,67 +147,61 @@ class TagihanController extends Controller
     public function destroy(Tagihan $tagihan)
     {
         try {
-            // Karena di migrasi kita set 'onDelete('cascade')' untuk rincian,
-            // maka saat tagihan dihapus, semua rinciannya akan ikut terhapus.
             $tagihan->delete();
             return redirect()->route('usaha.tagihan.index')->with('success', 'Tagihan berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()->route('usaha.tagihan.index')->with('error', 'Gagal menghapus tagihan.');
         }
     }
-     public function cetakMassal(Request $request)
+
+    /**
+     * Mengubah status satu tagihan menjadi 'Lunas'.
+     */
+    public function tandaiLunas(Tagihan $tagihan)
     {
-        // 1. Validasi input filter dari form <select>
-        $validator = Validator::make($request->all(), [
-            'periode_bulan' => 'required|integer|between:1,12',
-            'periode_tahun' => 'required|integer|digits:4',
-        ]);
-
-        // Jika validasi gagal, kembalikan pengguna ke halaman sebelumnya dengan pesan error
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput()
-                ->with('error', 'Filter periode tidak valid. Silakan pilih bulan dan tahun.');
+        try {
+            $tagihan->status_pembayaran = 'Lunas'; $tagihan->save();
+            if (request()->ajax()) { return response()->json(['success' => true, 'message' => 'Tagihan untuk ' . $tagihan->pelanggan->nama . ' berhasil dilunasi.']); }
+            return redirect()->back()->with('success', 'Tagihan berhasil dilunasi.');
+        } catch (\Exception $e) {
+            if (request()->ajax()) { return response()->json(['success' => false, 'message' => 'Gagal mengubah status.'], 500); }
+            return redirect()->back()->with('error', 'Gagal mengubah status.');
         }
+    }
 
-        $periode = $request->periode_tahun . '-' . str_pad($request->periode_bulan, 2, '0', STR_PAD_LEFT) . '-01';
-
-        $semua_tagihan = Tagihan::with(['pelanggan', 'petugas', 'rincian'])
-            ->where('periode_tagihan', $periode)
-            ->get();
-
-        // Jika tidak ada tagihan yang ditemukan, kembalikan juga dengan pesan
-        if ($semua_tagihan->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada tagihan yang ditemukan untuk periode tersebut.')->withInput();
+    /**
+     * Mengubah status beberapa tagihan yang dipilih menjadi 'Lunas'.
+     */
+    public function tandaiLunasSelektif(Request $request)
+    {
+        $request->validate(['tagihan_ids' => 'required|array|min:1', 'tagihan_ids.*' => 'exists:tagihan,id']);
+        try {
+            Tagihan::whereIn('id', $request->tagihan_ids)->where('status_pembayaran', 'Belum Lunas')->update(['status_pembayaran' => 'Lunas']);
+            return redirect()->back()->with('success', count($request->tagihan_ids) . ' tagihan berhasil ditandai lunas.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui status tagihan.');
         }
+    }
 
-        // 4. Jika data ditemukan, kirim ke view khusus untuk dicetak
+    /**
+     * Mencetak tagihan yang dipilih dari halaman index.
+     */
+    public function cetakSelektif(Request $request)
+    {
+        $request->validate(['tagihan_ids'   => 'required|array|min:1', 'tagihan_ids.*' => 'exists:tagihan,id'], ['tagihan_ids.required' => 'Tidak ada tagihan yang dipilih.']);
+        $semua_tagihan = Tagihan::with(['pelanggan', 'petugas', 'rincian'])->whereIn('id', $request->input('tagihan_ids'))->get();
         return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
     }
 
- public function cetakSelektif(Request $request)
+    /**
+     * Mencetak semua tagihan dalam satu periode bulan tertentu.
+     */
+    public function cetakMassal(Request $request)
     {
-        // 1. Validasi input: pastikan 'tagihan_ids' dikirim, berupa array, dan tidak kosong.
-        $request->validate([
-            'tagihan_ids'   => 'required|array|min:1',
-            'tagihan_ids.*' => 'exists:tagihan,id' // Pastikan setiap ID ada di database
-        ], [
-            'tagihan_ids.required' => 'Tidak ada tagihan yang dipilih. Silakan centang tagihan yang ingin dicetak.'
-        ]);
-
-        $selectedIds = $request->input('tagihan_ids');
-
-        // 2. Ambil semua data tagihan berdasarkan ID yang dipilih dari checkbox.
-        // Kita tetap EAGER LOAD relasi untuk efisiensi.
-        $semua_tagihan = Tagihan::with(['pelanggan', 'petugas', 'rincian'])
-            ->whereIn('id', $selectedIds)
-            ->get();
-
-        // 3. Kirim data ke view cetak yang SAMA SEPERTI SEBELUMNYA.
-        // Kita bisa menggunakan ulang view `cetak-massal.blade.php` karena ia hanya
-        // butuh variabel `$semua_tagihan` untuk di-loop. Sangat efisien!
+        $request->validate(['periode_bulan' => 'required|integer|between:1,12', 'periode_tahun' => 'required|integer|digits:4']);
+        $periode = Carbon::create($request->periode_tahun, $request->periode_bulan, 1)->toDateString();
+        $semua_tagihan = Tagihan::with(['pelanggan', 'petugas', 'rincian'])->where('periode_tagihan', $periode)->get();
+        if ($semua_tagihan->isEmpty()) { return redirect()->back()->with('error', 'Tidak ada tagihan yang ditemukan untuk periode tersebut.'); }
         return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
     }
-    
 }

@@ -121,7 +121,12 @@ class User extends Authenticatable
 
     public function managedUnit()
     {
-        // Relasi ini mengasumsikan 'user_id' di tabel 'unit_usahas' adalah penanggung jawab/manajer
         return $this->hasOne(UnitUsaha::class, 'user_id', 'user_id');
     }
+
+       public function kelolaanUnitUsaha()
+    {
+        return $this->belongsToMany(UnitUsaha::class, 'unit_usaha_user', 'user_id', 'unit_usaha_id');
+    }
 }
+
