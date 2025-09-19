@@ -31,6 +31,7 @@
                         <tr>
                             <th>#</th>
                             <th>Nama Petugas</th>
+                            <th>Status</th>
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -39,6 +40,13 @@
                         <tr>
                             <td>{{ $loop->iteration + $semua_petugas->firstItem() - 1 }}</td>
                             <td id="nama-petugas-{{$petugas->id}}">{{ $petugas->nama_petugas }}</td>
+                            <td>
+                                @if($petugas->status == 'Aktif')
+                                    <span class="badge badge-success">{{ $petugas->status }}</span>
+                                @else
+                                    <span class="badge badge-danger">{{ $petugas->status }}</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 {{-- Tombol Edit sekarang memicu modal --}}
                                 <button type="button" class="btn btn-sm btn-warning edit-btn"
@@ -46,6 +54,7 @@
                                         data-target="#editPetugasModal"
                                         data-id="{{ $petugas->id }}"
                                         data-nama="{{ $petugas->nama_petugas }}"
+                                        data-status="{{ $petugas->status }}"
                                         title="Edit">
                                     <i class="fa fa-edit"></i>
                                 </button>
@@ -57,7 +66,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="3" class="text-center">Tidak ada data petugas.</td>
+                            <td colspan="4" class="text-center">Tidak ada data petugas.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -111,6 +120,13 @@
                             <label for="nama_petugas_edit">Nama Petugas</label>
                             <input type="text" name="nama_petugas" id="nama_petugas_edit" class="form-control" required>
                         </div>
+                        <div class="form-group">
+                            <label for="status_edit">Status Petugas</label>
+                            <select name="status" id="status_edit" class="form-control" required>
+                                <option value="Aktif">Aktif</option>
+                                <option value="Tidak Aktif">Tidak Aktif</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -126,12 +142,13 @@
 <script>
 $(document).ready(function() {
     // Membuka kembali modal TAMBAH jika ada error validasi
-    @if($errors->any())
-        // Cek apakah error berasal dari 'store' (bukan 'update')
-        // Ini asumsi, cara lebih baik adalah dengan flash session
-        @if(old('nama_petugas'))
-           $('#addPetugasModal').modal('show');
-        @endif
+    @if($errors->any() && old('nama_petugas') && !old('status'))
+        $('#addPetugasModal').modal('show');
+    @endif
+
+    // Membuka kembali modal EDIT jika ada error validasi
+    @if($errors->any() && old('status'))
+        $('#editPetugasModal').modal('show');
     @endif
 
     // Script untuk mengisi data ke modal EDIT
@@ -139,6 +156,7 @@ $(document).ready(function() {
         // Ambil data dari atribut data-* di tombol
         const id = $(this).data('id');
         const nama = $(this).data('nama');
+        const status = $(this).data('status'); // Ambil status baru
 
         // Buat URL action untuk form
         const url = '{{ url("usaha/petugas") }}/' + id;
@@ -146,6 +164,7 @@ $(document).ready(function() {
         // Set action form dan isi value input di dalam modal edit
         $('#editPetugasForm').attr('action', url);
         $('#nama_petugas_edit').val(nama);
+        $('#status_edit').val(status); // Set nilai dropdown status
     });
 });
 </script>

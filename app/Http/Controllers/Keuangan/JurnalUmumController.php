@@ -50,7 +50,7 @@ class JurnalUmumController extends Controller
 
         if ($user->hasRole(['admin_bumdes', 'bendahara_bumdes']) && $request->filled('unit_usaha_id')) {
             $jurnalQuery->where('unit_usaha_id', $request->unit_usaha_id);
-        }
+        }   
 
         $totalQuery = clone $jurnalQuery;
         $totals = $totalQuery->select(
@@ -234,7 +234,7 @@ public function show($id, Request $request)
         if ($id === 'print') {
             // --- PERBAIKAN DIMULAI DI SINI ---
             $request->validate(['tanggal_cetak' => 'nullable|date']);
-            
+
             $bumdes = Bungdes::first();
             $user = Auth::user();
             $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
@@ -268,7 +268,7 @@ public function show($id, Request $request)
             $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'];
             $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
             $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
-            
+
             // Variabel tahun dan statusJurnal untuk judul
             $tahun = $request->year ?? 'Semua';
             $statusJurnal = $request->approval_status ?? 'semua';
