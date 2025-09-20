@@ -32,15 +32,15 @@ class Tagihan extends Model
         'tanggal_cetak' => 'date',
     ];
 
-    public function pelanggan(): BelongsTo
-    {
-        return $this->belongsTo(Pelanggan::class); // <-- LEBIH RINGKAS
-    }
+   public function pelanggan(): BelongsTo
+{
+    return $this->belongsTo(Pelanggan::class, 'pelanggan_id');
+}
 
-    public function petugas(): BelongsTo
-    {
-        return $this->belongsTo(Petugas::class); // <-- LEBIH RINGKAS
-    }
+public function petugas(): BelongsTo
+{
+    return $this->belongsTo(Petugas::class, 'petugas_id');
+}
 
     public function rincian(): HasMany
     {

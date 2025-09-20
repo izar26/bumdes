@@ -22,7 +22,8 @@ class Pelanggan extends Model
 
     // Relasi menjadi lebih bersih tanpa parameter tambahan
     public function tagihan(): HasMany
-    {
-        return $this->hasMany(Tagihan::class); // <-- LEBIH RINGKAS
-    }
+{
+    return $this->hasMany(Tagihan::class, 'pelanggan_id');
+}
+
 }

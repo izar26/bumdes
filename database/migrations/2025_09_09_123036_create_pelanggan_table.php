@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pelanggan', function (Blueprint $table) {
-            $table->id(); // Sesuai desain: id_pelanggan
+            $table->id();
             $table->string('nama', 100);
             $table->string('alamat', 255);
             $table->enum('status_pelanggan', ['Aktif', 'Nonaktif'])->default('Aktif');

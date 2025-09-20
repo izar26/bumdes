@@ -231,7 +231,7 @@ class JurnalUmumController extends Controller
     {
         if ($id === 'print') {
             $request->validate(['tanggal_cetak' => 'nullable|date']);
-            
+
             $bumdes = Bungdes::first();
             $user = Auth::user();
             $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();

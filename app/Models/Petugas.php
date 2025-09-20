@@ -14,10 +14,12 @@ class Petugas extends Model
 
     protected $fillable = [
         'nama_petugas',
+        'status',
     ];
 
-    public function tagihan(): HasMany
-    {
-        return $this->hasMany(Tagihan::class); // <-- LEBIH RINGKAS
-    }
+   public function tagihan(): HasMany
+{
+    return $this->hasMany(Tagihan::class, 'petugas_id');
+}
+
 }
