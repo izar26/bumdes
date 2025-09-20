@@ -8,18 +8,20 @@
 
 @section('content')
 @php
+    // Perhitungan total bisa tetap di sini atau dipindahkan ke controller
     $totalDebitAll = $jurnals->sum('total_debit');
     $totalKreditAll = $jurnals->sum('total_kredit');
-    $statusAll = abs($totalDebitAll - $totalKreditAll) < 0.01 && $totalDebitAll > 0 ? 'Seimbang' : 'Tidak Seimbang';
-    $badgeClassAll = $statusAll === 'Seimbang' ? 'badge-success' : 'badge-danger';
+    $isBalanced = abs($totalDebitAll - $totalKreditAll) < 0.01;
+    $statusAll = $isBalanced && $totalDebitAll > 0 ? 'Seimbang' : 'Tidak Seimbang';
+    $badgeClassAll = $isBalanced ? 'badge-success' : 'badge-danger';
 @endphp
 
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
-            <div class="small mt-2">
-                <br>
+            <br>
+             <div class="small mt-2">
                 <strong>Total Debit:</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
                 <strong>Total Kredit:</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
             </div>
@@ -61,17 +63,20 @@
                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                 </div>
 
-                @if(auth()->user()->hasRole(['admin_bumdes','bendahara_bumdes']))
+                @if(auth()->user()->hasAnyRole(['admin_bumdes','bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']))
                 <div class="col-md-2">
                     <label class="form-label">Unit Usaha</label>
+                    {{-- --- PERBAIKAN TAMPILAN FILTER DIMULAI DI SINI --- --}}
                     <select name="unit_usaha_id" class="form-control">
-                        <option value="">Semua</option>
+                        <option value="">Semua (Gabungan)</option>
+                        <option value="pusat" {{ request('unit_usaha_id') == 'pusat' ? 'selected' : '' }}>-- Hanya BUMDes Pusat --</option>
                         @foreach($unitUsahas as $unit)
                             <option value="{{ $unit->unit_usaha_id }}" {{ request('unit_usaha_id') == $unit->unit_usaha_id ? 'selected' : '' }}>
                                 {{ $unit->nama_unit }}
                             </option>
                         @endforeach
                     </select>
+                    {{-- --- AKHIR PERBAIKAN TAMPILAN FILTER --- --}}
                 </div>
                 @endif
 
@@ -104,6 +109,11 @@
                             <td>
                                 <strong>{{ $jurnal->deskripsi }}</strong>
                                 <br>
+                                @if($jurnal->unitUsaha)
+                                    <span class="badge badge-info">{{ $jurnal->unitUsaha->nama_unit }}</span>
+                                @else
+                                    <span class="badge badge-secondary">BUMDes Pusat</span>
+                                @endif
                                 @switch($jurnal->status)
                                     @case('menunggu')
                                         <span class="badge badge-warning">Menunggu</span>
@@ -125,17 +135,21 @@
                             <td class="text-right"><strong>Rp {{ number_format($jurnal->total_kredit, 0, ',', '.') }}</strong></td>
                             <td class="text-center">
                                 @php
-                                    $canEditOrDelete = auth()->user()->hasRole(['admin_bumdes', 'bendahara_bumdes']) ||
-                                                       (auth()->user()->hasRole(['admin_unit_usaha', 'manajer_unit_usaha']) &&
+                                    $canEditOrDelete = auth()->user()->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']) ||
+                                                       (auth()->user()->hasAnyRole(['admin_unit_usaha', 'manajer_unit_usaha']) &&
                                                         auth()->user()->unitUsahas->pluck('unit_usaha_id')->contains($jurnal->unit_usaha_id));
                                 @endphp
-                                @if($canEditOrDelete)
+                                @if($canEditOrDelete && $jurnal->status != 'disetujui')
                                     <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button type="button" class="btn btn-danger btn-xs" title="Hapus Jurnal" data-toggle="modal" data-target="#deleteModal" data-id="{{ $jurnal->jurnal_id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                @elseif ($jurnal->status == 'disetujui' && auth()->user()->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']))
+                                     <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal (akan mereset status)">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                 @endif
                             </td>
                         </tr>
@@ -161,7 +175,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">{{ $jurnals->links() }}</div>
+        <div class="mt-3">{{ $jurnals->appends(request()->query())->links() }}</div>
     </div>
 </div>
 
@@ -176,7 +190,7 @@
         </button>
       </div>
       <div class="modal-body">
-        Yakin ingin menghapus jurnal ini?
+        Yakin ingin menghapus jurnal ini? Tindakan ini tidak dapat dibatalkan.
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -190,7 +204,7 @@
   </div>
 </div>
 
-{{-- 2. Modal untuk Mengatur Tanggal Cetak --}}
+{{-- Print Modal --}}
 <div class="modal fade" id="printModal" tabindex="-1" role="dialog" aria-labelledby="printModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -200,7 +214,6 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      {{-- Form ini akan mengirim semua parameter filter + tanggal cetak --}}
       <form id="printForm" action="{{ route('jurnal-umum.show', 'print') }}" method="GET" target="_blank">
         <div class="modal-body">
             <p>Laporan akan dicetak sesuai dengan filter yang sedang aktif. Silakan tentukan tanggal yang akan tertera pada laporan.</p>
@@ -209,9 +222,9 @@
                 <input type="date" class="form-control" id="tanggal_cetak" name="tanggal_cetak" value="{{ date('Y-m-d') }}" required>
             </div>
 
-            {{-- Hidden inputs untuk membawa semua parameter filter saat ini --}}
+            {{-- Hidden inputs to carry over current filters --}}
             <input type="hidden" name="year" value="{{ request('year', date('Y')) }}">
-            <input type="hidden" name="approval_status" value="{{ request('approval_status', 'semua') }}">
+            <input type="hidden" name="approval_status" value="{{ request('approval_status', 'disetujui') }}">
             <input type="hidden" name="start_date" value="{{ request('start_date') }}">
             <input type="hidden" name="end_date" value="{{ request('end_date') }}">
             <input type="hidden" name="unit_usaha_id" value="{{ request('unit_usaha_id') }}">

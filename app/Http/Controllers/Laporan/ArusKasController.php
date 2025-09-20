@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Laporan;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
@@ -28,9 +27,9 @@ class ArusKasController extends Controller
         } elseif ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $unitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $unitUsahas = UnitUsaha::whereIn('unit_usaha_id', $unitUsahaIds)
-                                    ->where('status_operasi', 'Aktif')
-                                    ->orderBy('nama_unit')
-                                    ->get();
+                ->where('status_operasi', 'Aktif')
+                ->orderBy('nama_unit')
+                ->get();
         }
 
         return view('laporan.arus_kas.index', compact('unitUsahas', 'user'));
@@ -44,8 +43,9 @@ class ArusKasController extends Controller
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id',
-            'tanggal_cetak' => 'nullable|date', // 1. Tambahkan validasi
+            // --- PERUBAHAN 1: Mengizinkan nilai 'pusat' ---
+            'unit_usaha_id' => 'nullable|string',
+            'tanggal_cetak' => 'nullable|date',
         ]);
 
         $user = Auth::user();
@@ -53,28 +53,24 @@ class ArusKasController extends Controller
         $endDate = Carbon::parse($request->end_date);
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
-        
-        // 2. Proses tanggal cetak
         $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
 
         $baseQuery = JurnalUmum::with('detailJurnals.akun')
             ->where('status', 'disetujui')
             ->whereHas('detailJurnals.akun', function ($q) {
+                // Hanya ambil jurnal yang melibatkan akun Kas & Setara Kas
                 $q->where('kode_akun', 'like', '1.1.01.%');
-            });
+            })
+            ->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
 
-        $baseQuery->whereBetween('tanggal_transaksi', [$startDate->toDateString(), $endDate->toDateString()]);
-
+        // --- PERUBAHAN 2: Menambahkan logika filter unit usaha ---
         if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-            $baseQuery->where(function($q) use ($managedUnitIds) {
-                $q->whereIn('unit_usaha_id', $managedUnitIds);
-                if(empty(request('unit_usaha_id'))) {
-                    $q->orWhereNull('unit_usaha_id');
-                }
-            });
+            $baseQuery->whereIn('unit_usaha_id', $managedUnitIds);
         } elseif ($user->hasAnyRole(['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes'])) {
-            if (!empty($unitUsahaId)) {
+            if ($unitUsahaId === 'pusat') {
+                $baseQuery->whereNull('unit_usaha_id');
+            } elseif (!empty($unitUsahaId)) {
                 $baseQuery->where('unit_usaha_id', $unitUsahaId);
             }
         }
@@ -86,40 +82,49 @@ class ArusKasController extends Controller
         $arusPendanaan = ['items' => [], 'total' => 0];
 
         foreach ($jurnals as $jurnal) {
-            $kasMasuk = 0; $kasKeluar = 0; $akunLawan = null;
+            $kasMasuk = 0; $kasKeluar = 0; $akunLawanList = [];
+            
             foreach ($jurnal->detailJurnals as $detail) {
                 if (str_starts_with($detail->akun->kode_akun, '1.1.01.')) {
                     $kasMasuk += $detail->debit;
                     $kasKeluar += $detail->kredit;
                 } else {
-                    $akunLawan = $detail->akun;
+                    $akunLawanList[] = $detail->akun;
                 }
             }
-            if (!$akunLawan) continue;
+            
+            // Logika sederhana: ambil akun lawan pertama sebagai representasi
+            if (empty($akunLawanList)) continue;
+            $akunLawan = $akunLawanList[0]; 
 
             $pergerakanKas = $kasMasuk - $kasKeluar;
             $item = ['deskripsi' => $jurnal->deskripsi, 'jumlah' => $pergerakanKas];
             
+            // Klasifikasi berdasarkan tipe akun lawan
             switch ($akunLawan->tipe_akun) {
                 case 'Pendapatan': case 'Beban': case 'HPP':
+                case 'Pendapatan & Beban Lainnya':
                     $arusOperasi['items'][] = $item; $arusOperasi['total'] += $pergerakanKas; break;
                 case 'Aset':
-                    if(str_starts_with($akunLawan->kode_akun, '1.1.03.') || str_starts_with($akunLawan->kode_akun, '1.1.05.')){
+                    // Piutang, Persediaan, Beban Dibayar Dimuka dianggap Operasi
+                    if(str_starts_with($akunLawan->kode_akun, '1.1.03.') || str_starts_with($akunLawan->kode_akun, '1.1.05.') || str_starts_with($akunLawan->kode_akun, '1.1.07.')){
                          $arusOperasi['items'][] = $item; $arusOperasi['total'] += $pergerakanKas;
-                    } else {
+                    } else { // Aset tetap/jangka panjang dianggap Investasi
                          $arusInvestasi['items'][] = $item; $arusInvestasi['total'] += $pergerakanKas;
                     }
                     break;
                 case 'Kewajiban': case 'Ekuitas':
+                    // Utang Usaha dianggap Operasi
                     if(str_starts_with($akunLawan->kode_akun, '2.1.01.')){
                          $arusOperasi['items'][] = $item; $arusOperasi['total'] += $pergerakanKas;
-                    } else {
+                    } else { // Modal dan Utang Jangka Panjang dianggap Pendanaan
                         $arusPendanaan['items'][] = $item; $arusPendanaan['total'] += $pergerakanKas;
                     }
                     break;
             }
         }
         
+        // --- PERUBAHAN 3: Menambahkan logika filter pada query saldo awal ---
         $saldoKasAwalQuery = DB::table('detail_jurnals')
             ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
             ->join('akuns', 'detail_jurnals.akun_id', '=', 'akuns.akun_id')
@@ -129,12 +134,15 @@ class ArusKasController extends Controller
 
         if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
             $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
-            $saldoKasAwalQuery->where(function($q) use ($managedUnitIds) {
-                $q->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds)->orWhereNull('jurnal_umums.unit_usaha_id');
-            });
-        } elseif ($unitUsahaId) {
-             $saldoKasAwalQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+            $saldoKasAwalQuery->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
+        } elseif ($user->hasAnyRole(['bendahara_bumdes', 'sekretaris_bumdes', 'direktur_bumdes', 'admin_bumdes'])) {
+            if ($unitUsahaId === 'pusat') {
+                $saldoKasAwalQuery->whereNull('jurnal_umums.unit_usaha_id');
+            } elseif (!empty($unitUsahaId)) {
+                $saldoKasAwalQuery->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
+            }
         }
+        // --- AKHIR PERUBAHAN ---
 
         $saldoKasAwal = $saldoKasAwalQuery->sum(DB::raw('detail_jurnals.debit - detail_jurnals.kredit'));
         $kenaikanPenurunanKas = $arusOperasi['total'] + $arusInvestasi['total'] + $arusPendanaan['total'];
@@ -153,4 +161,3 @@ class ArusKasController extends Controller
         ));
     }
 }
-

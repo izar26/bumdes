@@ -8,21 +8,27 @@
 
 @section('content')
 @php
-    // Safeguards
+    // Safeguards untuk memastikan variabel ada
     $bumdes = $bumdes ?? \App\Models\Bungdes::first();
     $tanggalCetak = $tanggalCetak ?? now();
     $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
+    
+    // Inisialisasi saldo berjalan dengan saldo awal
+    $saldoBerjalan = $saldoAwal;
+
+    // Menentukan apakah akun memiliki saldo normal Debit.
+    // Ini untuk menghindari penulisan array berulang di dalam loop.
+    // Pastikan tipe akun 'assets' (jika ada) juga dimasukkan untuk konsistensi.
+    $akunNormalDebit = ['Aset', 'HPP', 'Beban', 'assets']; 
 @endphp
 <div class="card">
     <div class="card-body">
 
         {{-- KOP SURAT --}}
         <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
-            {{-- --- PERBAIKAN DIMULAI DI SINI --- --}}
             @if(optional($bumdes)->logo)
-                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
+                <img src="{{ asset('storage/'. $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
             @endif
-            {{-- --- AKHIR PERBAIKAN --- --}}
             <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
             <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
             <h5 class="font-weight-bold mt-3 mb-1">Laporan Buku Besar</h5>
@@ -49,29 +55,38 @@
             <tbody>
                 <tr>
                     <td colspan="4"><strong>Saldo Awal</strong></td>
-                    <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoAwal, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ 'Rp '. number_format($saldoAwal, 0, ',', '.') }}</strong></td>
                 </tr>
-                @php $saldoBerjalan = $saldoAwal; @endphp
-                @foreach ($transaksis as $transaksi)
+                
+                @forelse ($transaksis as $transaksi)
                     @php
-                        $akunNormalDebit = ['Aset', 'HPP', 'Beban'];
-                        if (in_array($akun->tipe_akun, $akunNormalDebit)) {
-                            $saldoBerjalan += ($transaksi->debit - $transaksi->kredit);
-                        } else {
-                            $saldoBerjalan += ($transaksi->kredit - $transaksi->debit);
-                        }
+                    // --- INI BAGIAN YANG DIPERBAIKI ---
+                    // Logika perhitungan saldo yang benar sesuai dengan prinsip akuntansi.
+
+                    if (in_array($akun->tipe_akun, $akunNormalDebit)) {
+                        // Untuk Akun Aset/Beban: Saldo Awal + Debit - Kredit
+                        $saldoBerjalan += ($transaksi->debit - $transaksi->kredit);
+                    } else {
+                        // Untuk Akun Kewajiban/Ekuitas/Pendapatan: Saldo Awal + Kredit - Debit
+                        $saldoBerjalan += ($transaksi->kredit - $transaksi->debit);
+                    }
                     @endphp
                     <tr>
                         <td class="text-center">{{ \Carbon\Carbon::parse($transaksi->jurnal->tanggal_transaksi)->format('d M Y') }}</td>
                         <td>{{ $transaksi->jurnal->deskripsi }}</td>
-                        <td class="text-right">{{ $transaksi->debit > 0 ? 'Rp ' . number_format($transaksi->debit, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $transaksi->kredit > 0 ? 'Rp ' . number_format($transaksi->kredit, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ $transaksi->debit > 0 ? 'Rp '. number_format($transaksi->debit, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right">{{ $transaksi->kredit > 0 ? 'Rp '. number_format($transaksi->kredit, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right">{{ 'Rp '. number_format($saldoBerjalan, 0, ',', '.') }}</td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center">Tidak ada transaksi pada periode ini.</td>
+                    </tr>
+                @endforelse
+                
                 <tr class="table-active">
                     <td colspan="4"><strong>Saldo Akhir</strong></td>
-                    <td class="text-right"><strong>{{ 'Rp ' . number_format($saldoBerjalan, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ 'Rp '. number_format($saldoBerjalan, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>

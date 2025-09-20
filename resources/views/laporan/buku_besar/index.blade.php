@@ -46,7 +46,6 @@
                     <input type="date" class="form-control" id="end_date" name="end_date" value="{{ date('Y-m-t') }}" required>
                 </div>
                 
-                {{-- 1. Tambahkan input Tanggal Cetak --}}
                 <div class="form-group col-md-4">
                     <label for="tanggal_cetak">Tanggal Cetak (Opsional)</label>
                     <input type="date" class="form-control" id="tanggal_cetak" name="tanggal_cetak" value="{{ date('Y-m-d') }}">
@@ -61,9 +60,15 @@
                         $isSingleUnitManager = $user->hasRole(['manajer_unit_usaha', 'admin_unit_usaha']) && $unitUsahas->count() === 1;
                     @endphp
                     <select class="form-control" id="unit_usaha_id" name="unit_usaha_id" @if($isSingleUnitManager) disabled @endif>
+                        
+                        {{-- --- PERUBAHAN DIMULAI DI SINI --- --}}
                         @unless($isSingleUnitManager)
                             <option value="">-- Tampilkan Laporan Gabungan --</option>
+                            {{-- Menambahkan opsi khusus untuk BUMDes Pusat --}}
+                            <option value="pusat">-- Hanya BUMDes Pusat --</option>
                         @endunless
+                        {{-- --- AKHIR PERUBAHAN --- --}}
+
                         @foreach ($unitUsahas as $unit)
                             <option value="{{ $unit->unit_usaha_id }}" @if($isSingleUnitManager) selected @endif>
                                 {{ $unit->nama_unit }}

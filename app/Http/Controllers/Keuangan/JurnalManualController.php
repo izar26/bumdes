@@ -21,20 +21,19 @@ class JurnalManualController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get(); // Hanya ambil akun detail
+        // Mengambil semua akun detail, diurutkan berdasarkan kode
+        $akuns = Akun::where('is_header', 0)->orderBy('kode_akun')->get();
         $unitUsahas = collect();
 
-        // Admin BUMDes dan Bendahara bisa memilih unit usaha mana saja (termasuk "Pusat"/null)
-        if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes', 'direktur_bumdes'])) {
+        if ($user->hasAnyRole(['bendahara_bumdes', 'admin_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
         } 
-        // Admin/Manajer Unit Usaha hanya bisa memilih unit usahanya sendiri
-        elseif ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
+        elseif ($user->hasAnyRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
             $unitUsahas = $user->unitUsahas()
-                              ->where('status_operasi', 'Aktif')
-                              ->select('unit_usahas.unit_usaha_id', 'unit_usahas.nama_unit')
-                              ->orderBy('nama_unit')
-                              ->get();
+                                ->where('status_operasi', 'Aktif')
+                                ->select('unit_usahas.unit_usaha_id', 'unit_usahas.nama_unit')
+                                ->orderBy('nama_unit')
+                                ->get();
         }
 
         return view('keuangan.jurnal_manual.create', compact('akuns', 'unitUsahas'));
@@ -47,7 +46,6 @@ class JurnalManualController extends Controller
     {
         $user = Auth::user();
 
-        // Validasi dasar
         $rules = [
             'tanggal_transaksi' => 'required|date',
             'deskripsi' => 'required|string|max:500',
@@ -56,18 +54,21 @@ class JurnalManualController extends Controller
             'details.*.debit' => 'required|numeric|min:0',
             'details.*.kredit' => 'required|numeric|min:0',
             'details.*.keterangan' => 'nullable|string|max:255',
-            'unit_usaha_id' => 'nullable|exists:unit_usahas,unit_usaha_id', // Boleh null untuk jurnal pusat
+            'unit_usaha_id' => 'nullable|string', // Boleh null atau 'pusat'
         ];
 
-        // --- PERBAIKAN LOGIKA VALIDASI UNIT USAHA ---
-        // Jika pengguna adalah admin/manajer unit, mereka WAJIB memilih unit usaha
-        // dan unit usaha yang dipilih HARUS salah satu yang mereka kelola.
+        // Validasi khusus untuk user unit usaha
         if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
             $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id')->toArray();
             $rules['unit_usaha_id'] = [
-                'required', // Wajib diisi
-                Rule::in($managedUnitUsahaIds) // Harus ada di dalam daftar unit yang dikelola
+                'required',
+                Rule::in($managedUnitUsahaIds)
             ];
+        } else {
+             // Untuk admin BUMDes, pastikan jika bukan 'pusat', ID-nya ada di database
+             if ($request->unit_usaha_id !== 'pusat') {
+                 $rules['unit_usaha_id'] = 'nullable|exists:unit_usahas,unit_usaha_id';
+             }
         }
         
         $request->validate($rules);
@@ -75,38 +76,44 @@ class JurnalManualController extends Controller
         try {
             DB::beginTransaction();
 
-            $totalDebit = collect($request->details)->sum('debit');
-            $totalKredit = collect($request->details)->sum('kredit');
+            $totalDebit = collect($request->details)->sum(function($detail) {
+                return (float) str_replace(['.', ','], ['', '.'], $detail['debit']);
+            });
+            $totalKredit = collect($request->details)->sum(function($detail) {
+                return (float) str_replace(['.', ','], ['', '.'], $detail['kredit']);
+            });
 
-            if (round($totalDebit, 2) !== round($totalKredit, 2) || $totalDebit == 0) {
+            // Pengecekan keseimbangan yang lebih aman
+            if (abs($totalDebit - $totalKredit) > 0.01 || $totalDebit == 0) {
                 throw new \Exception('Total Debit dan Kredit tidak seimbang atau nol.');
             }
 
             $jurnal = JurnalUmum::create([
                 'user_id' => $user->user_id,
-                'unit_usaha_id' => $request->unit_usaha_id, // Langsung dari request
+                // Handle 'pusat' sebagai NULL
+                'unit_usaha_id' => $request->unit_usaha_id === 'pusat' ? null : $request->unit_usaha_id,
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'deskripsi' => $request->deskripsi,
                 'total_debit' => $totalDebit,
                 'total_kredit' => $totalKredit,
-                // Status default 'menunggu' sudah di-set di model/database
             ]);
 
             foreach ($request->details as $detail) {
-                // Pastikan salah satu antara debit atau kredit tidak nol
-                if ($detail['debit'] > 0 || $detail['kredit'] > 0) {
+                 $debitValue = (float) str_replace(['.', ','], ['', '.'], $detail['debit']);
+                 $kreditValue = (float) str_replace(['.', ','], ['', '.'], $detail['kredit']);
+
+                if ($debitValue > 0 || $kreditValue > 0) {
                     DetailJurnal::create([
                         'jurnal_id' => $jurnal->jurnal_id,
                         'akun_id' => $detail['akun_id'],
-                        'debit' => $detail['debit'],
-                        'kredit' => $detail['kredit'],
+                        'debit' => $debitValue,
+                        'kredit' => $kreditValue,
                         'keterangan' => $detail['keterangan'] ?? null,
                     ]);
                 }
             }
 
             DB::commit();
-            // Ganti nama route jika berbeda
             return redirect()->route('jurnal-umum.index')->with('success', 'Jurnal berhasil disimpan dan menunggu persetujuan.');
 
         } catch (\Exception $e) {
