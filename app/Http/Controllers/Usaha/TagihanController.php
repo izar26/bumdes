@@ -14,9 +14,6 @@ use Carbon\Carbon;
 
 class TagihanController extends Controller
 {
-    /**
-     * Menampilkan halaman utama untuk daftar & input tagihan (mode massal).
-     */
     public function index(Request $request)
     {
         $bulan_terpilih = $request->input('periode_bulan', date('n'));
@@ -57,9 +54,6 @@ class TagihanController extends Controller
         ]);
     }
 
-    /**
-     * Menyimpan tagihan secara massal.
-     */
     public function simpanSemuaMassal(Request $request)
 {
     $request->validate([
@@ -67,18 +61,16 @@ class TagihanController extends Controller
         'tagihan' => 'required|array',
         'tagihan.*.meter_awal' => 'required|numeric|min:0',
         'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',
-        'petugas_massal_id' => 'required|numeric|exists:petugas,id', // <--- Tambah validasi untuk petugas massal
+        'petugas_massal_id' => 'required|numeric|exists:petugas,id',
     ]);
 
     $periode = $request->periode_tagihan;
-    $petugas_id_massal = $request->petugas_massal_id; // <--- Ambil nilai petugas massal
+    $petugas_id_massal = $request->petugas_massal_id;
 
     DB::beginTransaction();
     try {
         foreach ($request->tagihan as $pelanggan_id => $data) {
-            // Cek apakah data meter akhir terisi
             if (isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '') {
-                // Tambahkan validasi perbandingan meter_akhir vs meter_awal
                 if ($data['meter_akhir'] < $data['meter_awal']) {
                     $pelanggan = Pelanggan::find($pelanggan_id);
                     throw new \Exception('Meter akhir untuk pelanggan ' . ($pelanggan->nama ?? '#' . $pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
@@ -93,9 +85,8 @@ class TagihanController extends Controller
                 ]);
 $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
 
-                // Siapkan data untuk disimpan atau diupdate
                 $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
-                    'petugas_id' => $petugas_id_massal, // <--- Gunakan petugas massal di sini
+                    'petugas_id' => $petugas_id_massal,
                     'meter_awal' => $data['meter_awal'],
                     'meter_akhir' => $data['meter_akhir'],
                     'tanggal_cetak' => now(),
@@ -103,13 +94,11 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
                 ]);
                 unset($data_untuk_disimpan['rincian_dihitung']);
 
-                // Simpan atau perbarui tagihan
                 $tagihan = Tagihan::updateOrCreate(
                     ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
                     $data_untuk_disimpan
                 );
 
-                // Hapus dan buat ulang rincian
                 $tagihan->rincian()->delete();
                 $tagihan->rincian()->createMany($hasil_kalkulasi['rincian_dihitung']);
             }
@@ -122,10 +111,6 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
     return redirect()->back()->with('success', 'Semua perubahan tagihan berhasil disimpan!');
 }
 
-    /**
-     * Memperbarui nilai meter_akhir dari tagihan bulan lalu.
-     * Digunakan oleh permintaan AJAX.
-     */
     public function updateMeterAkhirLalu(Request $request)
     {
         $request->validate([
@@ -156,18 +141,11 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return response()->json(['success' => true, 'message' => 'Meter akhir bulan lalu berhasil diperbarui.']);
     }
 
-    /**
-     * Menandai tagihan sebagai lunas.
-     */
     public function tandaiLunas(Request $request, Tagihan $tagihan)
     {
         $tagihan->update(['status_pembayaran' => 'Lunas']);
         return back()->with('success', 'Tagihan berhasil ditandai lunas.');
     }
-
-    /**
-     * Menandai tagihan-tagihan terpilih sebagai lunas secara massal.
-     */
     public function tandaiLunasSelektif(Request $request)
     {
         $request->validate(['tagihan_ids' => 'required|array']);
@@ -175,9 +153,6 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return back()->with('success', 'Tagihan terpilih berhasil ditandai lunas.');
     }
 
-    /**
-     * Menampilkan struk tagihan untuk dicetak.
-     */
     public function show($id)
     {
         $tagihan = Tagihan::with('pelanggan', 'petugas')->findOrFail($id);
@@ -185,9 +160,6 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return view('usaha.tagihan.show', compact('tagihan', 'rincian'));
     }
 
-    /**
-     * Mencetak tagihan massal untuk satu bulan.
-     */
     public function cetakMassal(Request $request)
     {
         $periode = Carbon::create($request->periode_tahun, $request->periode_bulan, 1);
@@ -197,9 +169,6 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
     }
 
-    /**
-     * Mencetak tagihan yang dipilih secara selektif.
-     */
     public function cetakSelektif(Request $request)
     {
         $request->validate(['tagihan_ids' => 'required|array']);
@@ -209,19 +178,12 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
     }
 
-    /**
-     * Menghapus tagihan.
-     */
     public function destroy(Tagihan $tagihan)
     {
         $tagihan->delete();
         return back()->with('success', 'Tagihan berhasil dihapus.');
     }
 
-    /**
-     * [PRIVATE METHOD] Otak dari semua kalkulasi tagihan.
-     * Sekarang menerima parameter tunggakan dan denda.
-     */
  private function kalkulasiTagihanData(Tagihan $tagihan, $tunggakan_manual = 0)
 {
     $semua_tarif = Tarif::all();
@@ -247,7 +209,7 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
             // Blok pertama: minimal charge penuh
             if ($total_pemakaian_real > 0) {
                 if ($total_pemakaian_real <= $kapasitas) {
-                    $kuantitas = $kapasitas; // tetap hitung penuh
+                    $kuantitas = $kapasitas; 
                     $sisa = 0;
                 } else {
                     $kuantitas = min($sisa, $kapasitas);
@@ -289,7 +251,6 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
     }
 
     // ===== Hitung denda dinamis =====
-    // asumsinya ada field $tagihan->bulan_tagihan (format YYYY-MM misalnya)
     $denda_per_bulan = 5000;
     $denda = 0;
 
@@ -348,7 +309,6 @@ public function rekap(Request $request)
 
     $periode = \Carbon\Carbon::create($tahun_terpilih, $bulan_terpilih, 1)->toDateString();
 
-    // Modifikasi di sini: hanya ambil tagihan yang bukan 'Batal'
     $tagihan_bulan_ini = Tagihan::where('periode_tagihan', $periode)
                                 ->where('status_pembayaran', '!=', 'Batal')
                                 ->get();
