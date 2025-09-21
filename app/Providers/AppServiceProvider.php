@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\View\Components\ConfirmModal;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\Paginator;
 use App\Models\Bungdes;
 use App\Models\Anggota;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Blade::component('akun-row', \App\View\Components\AkunRow::class);
         Blade::component('confirm-modal', ConfirmModal::class);
+        Paginator::useBootstrapFour();
 
         // Menggunakan View::composer untuk membagikan data ke semua view
         View::composer('*', function ($view) {
