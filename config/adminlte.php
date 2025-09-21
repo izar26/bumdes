@@ -415,10 +415,11 @@ return [
             'icon' => 'fas fa-fw fa-water',
             'can' => ['admin_unit_usaha'], // Gate dinamis Anda
             'submenu' => [
-                ['text' => 'Tagihan', 'route' => 'usaha.tagihan.index', 'icon' => 'fas fa-fw fa-file-invoice'],
                 ['text' => 'Pelanggan', 'route' => 'usaha.pelanggan.index', 'icon' => 'fas fa-fw fa-users'],
+                ['text' => 'Tagihan', 'route' => 'usaha.tagihan.index', 'icon' => 'fas fa-fw fa-file-invoice'],
+                ['text' => 'Petugas', 'route' => 'usaha.petugas.index', 'icon' => 'fas fa-fw fa-user-gear'],
                 ['text' => 'Tarif', 'route' => 'usaha.tarif.index', 'icon' => 'fas fa-fw fa-tags'],
-                ['text' => 'Petugas', 'route' => 'usaha.petugas.index', 'icon' => 'fas fa-fw fa-user-gear']
+                ['text' => 'Rekap', 'route' => 'usaha.tagihan.rekap', 'icon' => 'fas fa-fw fa-chart-bar']
             ]
         ],
         [

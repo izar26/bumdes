@@ -119,10 +119,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tagihan/simpan-semua-massal', [TagihanController::class, 'simpanSemuaMassal'])->name('tagihan.simpanSemuaMassal');
     Route::put('tagihan/{tagihan}/tandai-lunas', [TagihanController::class, 'tandaiLunas'])->name('tagihan.tandaiLunas');
     Route::post('tagihan/tandai-lunas-selektif', [TagihanController::class, 'tandaiLunasSelektif'])->name('tagihan.tandaiLunasSelektif');
+    Route::get('tagihan/rekap', [TagihanController::class, 'rekap'])->name('tagihan.rekap');
 
     // Tambahkan route lainnya yang relevan seperti show, destroy, dll. jika ada
     Route::get('tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
     Route::delete('tagihan/{tagihan}', [TagihanController::class, 'destroy'])->name('tagihan.destroy');
+
+Route::put('tagihan/{tagihan}/batalkan', [TagihanController::class, 'batalkanTagihan'])->name('tagihan.batalkanTagihan');
+    Route::put('tagihan/update-meter-akhir-lalu', [TagihanController::class, 'updateMeterAkhirLalu'])->name('tagihan.updateMeterAkhirLalu');
 
 
 

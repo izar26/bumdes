@@ -92,9 +92,12 @@
         .rincian-table .rate {
             width: 15%;
             text-align: right;
+
+ padding-right: 8px;
         }
         .rincian-table .qty {
             width: 10%;
+             padding-left: 8px;
         }
         .rincian-table .currency {
             width: 5%;
@@ -167,12 +170,18 @@
                 top: 0;
             }
         }
+td.rate, td.qty, td.amount {
+    text-align: right;
+}
+td.description {
+    text-align: left;
+}
     </style>
 </head>
 <body class="hold-transition sidebar-mini">
     <div class="wrapper">
         <!-- Content Header (Page header) -->
-       
+
 
         <!-- Main content -->
         <section class="content">
@@ -193,7 +202,7 @@
                                     <div class="judul-bagian compact-section">ARSIP BUKTI TAGIHAN AIR UNTUK PELANGGAN</div>
 
                                     <table class="compact-section">
-                                        <tr><td>Pelanggan ID</td><td>: {{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
+                                        <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
                                         <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                                         <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
                                         <tr><td>Periode</td><td>: {{ \Carbon\Carbon::parse($tagihan->periode_tagihan)->locale('id')->isoFormat('MMM Y') }}</td></tr>
@@ -219,7 +228,7 @@
 
                                     <div class="flex-container compact-section">
                                         <div class="logo">
-                                            <img src="https://i.imgur.com/xV68K8M.png" alt="Logo Tirta Sarana Sejahtera">
+                                          <img src="{{ asset('pam.jpeg')}}" alt="Logo Tirta Sarana Sejahtera">
                                         </div>
                                         <div style="flex-grow: 1; text-align: center;">
                                             <div class="judul-bagian">BUKTI PEMBAYARAN TAGIHAN AIR BERSIH</div>
@@ -233,7 +242,7 @@
                                     <div class="flex-container compact-section">
                                         <div style="width: 48%;">
                                             <table>
-                                                <tr><td>Pelanggan ID</td><td>: {{ $tagihan->pelanggan->id_pelanggan_cetak ?? 'N/A' }}</td></tr>
+                                                <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
                                                 <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                                                 <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
                                                 <tr><td>Periode</td><td>: {{ \Carbon\Carbon::parse($tagihan->periode_tagihan)->locale('id')->isoFormat('MMM Y') }}</td></tr>
@@ -244,22 +253,26 @@
                                             </table>
                                         </div>
                                         <div style="width: 52%;">
-                                            <table class="rincian-table">
-                                                @foreach ($tagihan->rincian as $rincian)
-                                                <tr>
-                                                    <td class="description">{{ $rincian->deskripsi }}</td>
-                                                    <td class="rate">{{ number_format($rincian->harga_satuan, 0, ',', '.') }}</td>
-                                                    <td class="qty">{{ $rincian->kuantitas }}</td>
-                                                    <td class="currency">Rp.</td>
-                                                    <td class="amount">{{ number_format($rincian->subtotal, 0, ',', '.') }}</td>
-                                                </tr>
-                                                @endforeach
-                                                <tr>
-                                                    <td colspan="3" class="text-right">Jml</td>
-                                                    <td class="currency">Rp.</td>
-                                                    <td class="amount"><b>{{ number_format($tagihan->subtotal_pemakaian + $tagihan->biaya_lainnya, 0, ',', '.') }}</b></td>
-                                                </tr>
-                                            </table>
+                                         <table>
+    <thead>
+        <tr>
+            <th>Deskripsi</th>
+            <th>Harga Satuan</th>
+            <th>Qty</th>
+            <th>Jumlah</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($tagihan->rincian as $rincian)
+        <tr>
+            <td class="description">{{ $rincian->deskripsi }}</td>
+            <td class="rate">{{ number_format($rincian->harga_satuan, 0, ',', '.') }}</td>
+            <td class="qty">{{ number_format($rincian->kuantitas, 0, ',', '.') }}</td>
+            <td class="amount">Rp. {{ number_format($rincian->subtotal, 0, ',', '.') }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
                                         </div>
                                     </div>
 
