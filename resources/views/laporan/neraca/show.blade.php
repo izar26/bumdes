@@ -10,7 +10,9 @@
 @php
     // Helper function untuk format Rupiah
     function format_rp($value) {
-        if ($value == 0) return 'Rp -';
+        // PERUBAHAN 2: Mengubah format angka nol dari 'Rp -' menjadi 'Rp 0'
+        if ($value == 0) return 'Rp 0';
+        
         if ($value < 0) {
             return '(Rp ' . number_format(abs($value), 0, ',', '.') . ')';
         }
@@ -32,11 +34,18 @@
         </div>
 
         {{-- TABEL DATA --}}
-        <table class="table table-borderless table-sm" style="width: 100%;">
+        <!-- PERUBAHAN 1: Menambahkan kelas 'table-bordered' dan menghapus 'table-borderless' -->
+        <table class="table table-bordered table-sm" style="width: 100%;">
+            <thead>
+                <tr class="text-center table-active">
+                    <th>Keterangan</th>
+                    <th style="width: 25%">Saldo</th>
+                </tr>
+            </thead>
             <tbody>
                 {{-- ASET --}}
-                <tr class="table-active"><td colspan="2"><strong>ASET</strong></td></tr>
-                <tr><td class="pl-4"><strong>Aset Lancar</strong></td><td class="text-right" style="width: 25%"></td></tr>
+                <tr class="bg-light font-weight-bold"><td colspan="2">ASET</td></tr>
+                <tr><td class="pl-4"><strong>Aset Lancar</strong></td><td class="text-right"></td></tr>
                 <tr><td class="pl-5">Kas</td><td class="text-right">{{ format_rp($kas) }}</td></tr>
                 <tr><td class="pl-5">Setara Kas</td><td class="text-right">{{ format_rp($setara_kas) }}</td></tr>
                 <tr><td class="pl-5">Piutang</td><td class="text-right">{{ format_rp($piutang) }}</td></tr>
@@ -45,11 +54,9 @@
                 <tr><td class="pl-5">Perlengkapan</td><td class="text-right">{{ format_rp($perlengkapan) }}</td></tr>
                 <tr><td class="pl-5">Pembayaran Dimuka</td><td class="text-right">{{ format_rp($pembayaran_dimuka) }}</td></tr>
                 <tr><td class="pl-5">Aset Lancar Lainnya</td><td class="text-right">{{ format_rp($aset_lancar_lainnya) }}</td></tr>
-                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Aset Lancar</td><td class="text-right">{{ format_rp($total_aset_lancar) }}</td></tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
-
+                <tr class="font-weight-bold table-secondary"><td class="pl-4">Total Aset Lancar</td><td class="text-right">{{ format_rp($total_aset_lancar) }}</td></tr>
+                
                 <tr><td class="pl-4"><strong>Investasi</strong></td><td class="text-right">{{ format_rp($investasi) }}</td></tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
 
                 <tr><td class="pl-4"><strong>Aset Tetap</strong></td><td></td></tr>
                 <tr><td class="pl-5">Tanah</td><td class="text-right">{{ format_rp($tanah) }}</td></tr>
@@ -58,31 +65,28 @@
                 <tr><td class="pl-5">Meubelair</td><td class="text-right">{{ format_rp($meubelair) }}</td></tr>
                 <tr><td class="pl-5">Gedung dan Bangunan</td><td class="text-right">{{ format_rp($gedung) }}</td></tr>
                 <tr><td class="pl-5">Akumulasi Penyusutan Aset Tetap</td><td class="text-right">{{ format_rp($akumulasi_penyusutan) }}</td></tr>
-                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Aset Tetap</td><td class="text-right">{{ format_rp($total_aset_tetap) }}</td></tr>
+                <tr class="font-weight-bold table-secondary"><td class="pl-4">Total Aset Tetap</td><td class="text-right">{{ format_rp($total_aset_tetap) }}</td></tr>
                 
-                <tr class="table-secondary font-weight-bold" style="border-top: 1px solid #6c757d; border-bottom: 2px solid #6c757d;">
+                <tr class="font-weight-bold table-primary">
                     <td>TOTAL ASET</td><td class="text-right">{{ format_rp($total_aset) }}</td>
                 </tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
-
+                
                 {{-- KEWAJIBAN & EKUITAS --}}
-                <tr class="table-active"><td colspan="2"><strong>KEWAJIBAN DAN EKUITAS</strong></td></tr>
+                <tr class="bg-light font-weight-bold"><td colspan="2">KEWAJIBAN DAN EKUITAS</td></tr>
                 <tr><td class="pl-4"><strong>Kewajiban Jangka Pendek</strong></td><td></td></tr>
                 <tr><td class="pl-5">Utang Usaha</td><td class="text-right">{{ format_rp($utang_usaha) }}</td></tr>
                 <tr><td class="pl-5">Utang Pajak</td><td class="text-right">{{ format_rp($utang_pajak) }}</td></tr>
                 <tr><td class="pl-5">Utang Gaji/Upah dan Tunjangan</td><td class="text-right">{{ format_rp($utang_gaji) }}</td></tr>
                 <tr><td class="pl-5">Utang Jangka Pendek Lainnya</td><td class="text-right">{{ format_rp($utang_pendek_lainnya) }}</td></tr>
-                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Kewajiban Jangka Pendek</td><td class="text-right">{{ format_rp($total_kewajiban_pendek) }}</td></tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
+                <tr class="font-weight-bold table-secondary"><td class="pl-4">Total Kewajiban Jangka Pendek</td><td class="text-right">{{ format_rp($total_kewajiban_pendek) }}</td></tr>
                 
                 <tr><td class="pl-4"><strong>Kewajiban Jangka Panjang</strong></td><td class="text-right">{{ format_rp($utang_panjang) }}</td></tr>
-                <tr class="bg-light font-weight-bold"><td class="pl-4">TOTAL KEWAJIBAN</td><td class="text-right">{{ format_rp($total_kewajiban) }}</td></tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
+                <tr class="font-weight-bold table-info"><td class="pl-4">TOTAL KEWAJIBAN</td><td class="text-right">{{ format_rp($total_kewajiban) }}</td></tr>
 
                 <tr><td class="pl-4"><strong>Ekuitas Akhir</strong></td><td class="text-right">{{ format_rp($ekuitas_akhir) }}</td></tr>
-                <tr class="bg-light font-weight-bold"><td class="pl-4">TOTAL EKUITAS</td><td class="text-right">{{ format_rp($ekuitas_akhir) }}</td></tr>
+                <tr class="font-weight-bold table-info"><td class="pl-4">TOTAL EKUITAS</td><td class="text-right">{{ format_rp($ekuitas_akhir) }}</td></tr>
                 
-                <tr class="table-secondary font-weight-bold" style="border-top: 1px solid #6c757d; border-bottom: 2px solid #6c757d;">
+                <tr class="font-weight-bold table-primary">
                     <td>TOTAL KEWAJIBAN DAN EKUITAS</td><td class="text-right">{{ format_rp($total_kewajiban_ekuitas) }}</td>
                 </tr>
             </tbody>
@@ -117,3 +121,4 @@
     </div>
 </div>
 @stop
+
