@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Laporan Neraca Komparatif')
+@section('title', 'Laporan Posisi Keuangan')
 
 @section('content_header')
     {{-- Dibiarkan kosong agar header default tidak mengganggu saat cetak --}}
@@ -8,14 +8,14 @@
 
 @section('content')
 @php
-    // Safeguards
-    $bumdes = $bumdes ?? \App\Models\Bungdes::first();
-    $startDate = $startDate ?? now();
-    $endDate = $endDate ?? now();
-    $tanggalCetak = $tanggalCetak ?? now();
-    $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
-    $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
-    $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
+    // Helper function untuk format Rupiah
+    function format_rp($value) {
+        if ($value == 0) return 'Rp -';
+        if ($value < 0) {
+            return '(Rp ' . number_format(abs($value), 0, ',', '.') . ')';
+        }
+        return 'Rp ' . number_format($value, 0, ',', '.');
+    }
 @endphp
 <div class="card">
     <div class="card-body">
@@ -27,78 +27,64 @@
             @endif
             <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
             <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
-            <h5 class="font-weight-bold mt-3 mb-1">Laporan Posisi Keuangan Komparatif</h5>
-            <p>Membandingkan Posisi Keuangan per <strong>{{ $startDate->copy()->subDay()->isoFormat('D MMMM Y') }}</strong> dan <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
+            <h5 class="font-weight-bold mt-3 mb-1">Laporan Posisi Keuangan</h5>
+            <p>Untuk Posisi per <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
         {{-- TABEL DATA --}}
-        <table class="table table-bordered table-sm">
-            <thead>
-                <tr class="text-center table-active">
-                    <th>Keterangan</th>
-                    <th style="width: 25%">Saldo per {{ $startDate->copy()->subDay()->isoFormat('D MMM Y') }} (Awal)</th>
-                    <th style="width: 25%">Saldo per {{ $endDate->isoFormat('D MMM Y') }} (Akhir)</th>
-                </tr>
-            </thead>
+        <table class="table table-borderless table-sm" style="width: 100%;">
             <tbody>
                 {{-- ASET --}}
-                <tr class="bg-light font-weight-bold"><td colspan="3">ASET</td></tr>
-                @foreach ($allAsetNames as $namaAkun)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $namaAkun }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAwal['Aset'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAkhir['Aset'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-                <tr class="font-weight-bold table-secondary">
-                    <td>TOTAL ASET</td>
-                    <td class="text-right">Rp {{ number_format(array_sum($dataAwal['Aset']), 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format(array_sum($dataAkhir['Aset']), 0, ',', '.') }}</td>
+                <tr class="table-active"><td colspan="2"><strong>ASET</strong></td></tr>
+                <tr><td class="pl-4"><strong>Aset Lancar</strong></td><td class="text-right" style="width: 25%"></td></tr>
+                <tr><td class="pl-5">Kas</td><td class="text-right">{{ format_rp($kas) }}</td></tr>
+                <tr><td class="pl-5">Setara Kas</td><td class="text-right">{{ format_rp($setara_kas) }}</td></tr>
+                <tr><td class="pl-5">Piutang</td><td class="text-right">{{ format_rp($piutang) }}</td></tr>
+                <tr><td class="pl-5">Penyisihan Piutang</td><td class="text-right">{{ format_rp($penyisihan_piutang) }}</td></tr>
+                <tr><td class="pl-5">Persediaan</td><td class="text-right">{{ format_rp($persediaan) }}</td></tr>
+                <tr><td class="pl-5">Perlengkapan</td><td class="text-right">{{ format_rp($perlengkapan) }}</td></tr>
+                <tr><td class="pl-5">Pembayaran Dimuka</td><td class="text-right">{{ format_rp($pembayaran_dimuka) }}</td></tr>
+                <tr><td class="pl-5">Aset Lancar Lainnya</td><td class="text-right">{{ format_rp($aset_lancar_lainnya) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Aset Lancar</td><td class="text-right">{{ format_rp($total_aset_lancar) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+
+                <tr><td class="pl-4"><strong>Investasi</strong></td><td class="text-right">{{ format_rp($investasi) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+
+                <tr><td class="pl-4"><strong>Aset Tetap</strong></td><td></td></tr>
+                <tr><td class="pl-5">Tanah</td><td class="text-right">{{ format_rp($tanah) }}</td></tr>
+                <tr><td class="pl-5">Kendaraan</td><td class="text-right">{{ format_rp($kendaraan) }}</td></tr>
+                <tr><td class="pl-5">Peralatan dan Mesin</td><td class="text-right">{{ format_rp($peralatan) }}</td></tr>
+                <tr><td class="pl-5">Meubelair</td><td class="text-right">{{ format_rp($meubelair) }}</td></tr>
+                <tr><td class="pl-5">Gedung dan Bangunan</td><td class="text-right">{{ format_rp($gedung) }}</td></tr>
+                <tr><td class="pl-5">Akumulasi Penyusutan Aset Tetap</td><td class="text-right">{{ format_rp($akumulasi_penyusutan) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Aset Tetap</td><td class="text-right">{{ format_rp($total_aset_tetap) }}</td></tr>
+                
+                <tr class="table-secondary font-weight-bold" style="border-top: 1px solid #6c757d; border-bottom: 2px solid #6c757d;">
+                    <td>TOTAL ASET</td><td class="text-right">{{ format_rp($total_aset) }}</td>
                 </tr>
-                <tr><td colspan="3">&nbsp;</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
 
                 {{-- KEWAJIBAN & EKUITAS --}}
-                <tr class="bg-light font-weight-bold"><td colspan="3">KEWAJIBAN DAN EKUITAS</td></tr>
+                <tr class="table-active"><td colspan="2"><strong>KEWAJIBAN DAN EKUITAS</strong></td></tr>
+                <tr><td class="pl-4"><strong>Kewajiban Jangka Pendek</strong></td><td></td></tr>
+                <tr><td class="pl-5">Utang Usaha</td><td class="text-right">{{ format_rp($utang_usaha) }}</td></tr>
+                <tr><td class="pl-5">Utang Pajak</td><td class="text-right">{{ format_rp($utang_pajak) }}</td></tr>
+                <tr><td class="pl-5">Utang Gaji/Upah dan Tunjangan</td><td class="text-right">{{ format_rp($utang_gaji) }}</td></tr>
+                <tr><td class="pl-5">Utang Jangka Pendek Lainnya</td><td class="text-right">{{ format_rp($utang_pendek_lainnya) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Kewajiban Jangka Pendek</td><td class="text-right">{{ format_rp($total_kewajiban_pendek) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
                 
-                {{-- KEWAJIBAN --}}
-                @foreach ($allKewajibanNames as $namaAkun)
-                     <tr>
-                        <td style="padding-left: 30px;">{{ $namaAkun }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAwal['Kewajiban'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAkhir['Kewajiban'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-                <tr class="font-weight-bold">
-                    <td style="padding-left: 30px;"><strong>Total Kewajiban</strong></td>
-                    <td class="text-right"><strong>Rp {{ number_format(array_sum($dataAwal['Kewajiban']), 0, ',', '.') }}</strong></td>
-                    <td class="text-right"><strong>Rp {{ number_format(array_sum($dataAkhir['Kewajiban']), 0, ',', '.') }}</strong></td>
-                </tr>
+                <tr><td class="pl-4"><strong>Kewajiban Jangka Panjang</strong></td><td class="text-right">{{ format_rp($utang_panjang) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">TOTAL KEWAJIBAN</td><td class="text-right">{{ format_rp($total_kewajiban) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
 
-                {{-- EKUITAS --}}
-                @foreach ($allEkuitasNames as $namaAkun)
-                     <tr>
-                        <td style="padding-left: 30px;">{{ $namaAkun }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAwal['Ekuitas'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($dataAkhir['Ekuitas'][$namaAkun] ?? 0, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-                <tr>
-                    <td style="padding-left: 30px;">Laba (Rugi) Tahun Berjalan</td>
-                    <td class="text-right">{{ 'Rp ' . number_format($dataAwal['labaDitahan'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="text-right">{{ 'Rp ' . number_format($dataAkhir['labaDitahan'] ?? 0, 0, ',', '.') }}</td>
+                <tr><td class="pl-4"><strong>Ekuitas Akhir</strong></td><td class="text-right">{{ format_rp($ekuitas_akhir) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">TOTAL EKUITAS</td><td class="text-right">{{ format_rp($ekuitas_akhir) }}</td></tr>
+                
+                <tr class="table-secondary font-weight-bold" style="border-top: 1px solid #6c757d; border-bottom: 2px solid #6c757d;">
+                    <td>TOTAL KEWAJIBAN DAN EKUITAS</td><td class="text-right">{{ format_rp($total_kewajiban_ekuitas) }}</td>
                 </tr>
-                <tr class="font-weight-bold">
-                    <td style="padding-left: 30px;"><strong>Total Ekuitas</strong></td>
-                    <td class="text-right"><strong>Rp {{ number_format($dataAwal['totalEkuitas'] ?? 0, 0, ',', '.') }}</strong></td>
-                    <td class="text-right"><strong>Rp {{ number_format($dataAkhir['totalEkuitas'] ?? 0, 0, ',', '.') }}</strong></td>
-                </tr>
-
-                <tr class="font-weight-bold table-secondary">
-                    <td>TOTAL KEWAJIBAN DAN EKUITAS</td>
-                    <td class="text-right">Rp {{ number_format((array_sum($dataAwal['Kewajiban']) + ($dataAwal['totalEkuitas'] ?? 0)), 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format((array_sum($dataAkhir['Kewajiban']) + ($dataAkhir['totalEkuitas'] ?? 0)), 0, ',', '.') }}</td>
-                </tr>
-
             </tbody>
         </table>
 
@@ -107,7 +93,7 @@
             <tr>
                 <td style="text-align: center; width: 50%;"></td>
                 <td style="text-align: center; width: 50%;">
-                    {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
+                    {{ optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes' }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
@@ -125,28 +111,9 @@
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
-
     </div>
 </div>
 @stop
-
-@section('css')
-<style>
-    @media print {
-        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
-            display: none !important;
-        }
-        .content-wrapper, .content, .card, .card-body {
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-    }
-</style>
-@stop
-
