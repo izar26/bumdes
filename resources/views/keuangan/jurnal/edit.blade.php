@@ -25,16 +25,16 @@
                 <div class="form-group col-md-4">
                     <label>Tanggal Transaksi</label>
                     <input type="date" class="form-control" name="tanggal_transaksi"
-                        value="{{ old('tanggal_transaksi', \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('Y-m-d')) }}" required>
+                           value="{{ old('tanggal_transaksi', \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('Y-m-d')) }}" required>
                 </div>
 
                 {{-- Unit Usaha --}}
                 <div class="form-group col-md-4">
                     <label>Untuk Unit Usaha</label>
                     @php $user = auth()->user(); @endphp
-                    @if($user->hasRole(['bendahara_bumdes','admin_bumdes']))
+                    @if($user->hasAnyRole(['bendahara_bumdes','admin_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']))
                         <select name="unit_usaha_id" class="form-control">
-                            <option value="">-- BUMDes Pusat --</option>
+                            <option value="pusat" {{ old('unit_usaha_id', $jurnal->unit_usaha_id) === null ? 'selected' : '' }}>-- BUMDes Pusat --</option>
                             @foreach($unitUsahas as $unit)
                                 <option value="{{ $unit->unit_usaha_id }}"
                                     {{ old('unit_usaha_id', $jurnal->unit_usaha_id) == $unit->unit_usaha_id ? 'selected' : '' }}>
@@ -52,8 +52,8 @@
                 <div class="form-group col-md-4">
                     <label>Deskripsi Utama</label>
                     <input type="text" class="form-control" name="deskripsi"
-                        placeholder="Deskripsi atau keterangan jurnal"
-                        value="{{ old('deskripsi', $jurnal->deskripsi) }}" required>
+                           placeholder="Deskripsi atau keterangan jurnal"
+                           value="{{ old('deskripsi', $jurnal->deskripsi) }}" required>
                 </div>
             </div>
             <hr>
@@ -86,6 +86,7 @@
             </table>
         </div>
         <div class="card-footer text-right">
+            <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary">Batal</a>
             <button type="submit" id="simpan-jurnal" class="btn btn-primary" disabled>Update Jurnal</button>
         </div>
     </div>
@@ -113,8 +114,13 @@ $(document).ready(function() {
 
     function addRow(detail = null) {
         let akunId = detail ? detail.akun_id : '';
-        let debit = detail ? detail.debit : 0;
-        let kredit = detail ? detail.kredit : 0;
+        
+        // --- PERBAIKAN DIMULAI DI SINI ---
+        // Kita gunakan parseInt() untuk mengubah angka desimal (misal: "100000.00") menjadi angka bulat (100000)
+        let debit = detail ? parseInt(detail.debit) : 0;
+        let kredit = detail ? parseInt(detail.kredit) : 0;
+        // --- AKHIR PERBAIKAN ---
+
         let keterangan = detail?.keterangan ?? '';
 
         let newRow = `
@@ -154,7 +160,8 @@ $(document).ready(function() {
     });
 
     function parseNumber(value) {
-        return parseInt(value.replace(/\./g, '')) || 0;
+        // Fungsi ini untuk membaca input yang sudah diformat (misal: "100.000")
+        return parseInt(String(value).replace(/\./g, '')) || 0;
     }
 
     function calculateTotals() {
@@ -163,8 +170,8 @@ $(document).ready(function() {
             totalDebit += parseNumber($(this).find('.debit').val());
             totalKredit += parseNumber($(this).find('.kredit').val());
         });
-        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
-        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
+        $('#total-debit').text('Rp ' + totalDebit.toLocaleString('id-ID'));
+        $('#total-kredit').text('Rp ' + totalKredit.toLocaleString('id-ID'));
 
         if (totalDebit === totalKredit && totalDebit > 0) {
             $('#status-jurnal').removeClass('badge-danger').addClass('badge-success').text('Seimbang');
@@ -176,7 +183,8 @@ $(document).ready(function() {
     }
 
     function formatInput(input) {
-        let value = input.value.replace(/\D/g, '');
+        // Fungsi ini untuk memberi format ribuan (misal: 100000 -> "100.000")
+        let value = String(input.value).replace(/\D/g, ''); // Hanya ambil digit
         input.value = value ? parseInt(value).toLocaleString('id-ID') : '';
     }
 
@@ -196,3 +204,4 @@ $(document).ready(function() {
 });
 </script>
 @stop
+
