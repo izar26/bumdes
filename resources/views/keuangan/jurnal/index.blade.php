@@ -8,9 +8,6 @@
 
 @section('content')
 @php
-    // Perhitungan total bisa tetap di sini atau dipindahkan ke controller
-    $totalDebitAll = $jurnals->sum('total_debit');
-    $totalKreditAll = $jurnals->sum('total_kredit');
     $isBalanced = abs($totalDebitAll - $totalKreditAll) < 0.01;
     $statusAll = $isBalanced && $totalDebitAll > 0 ? 'Seimbang' : 'Tidak Seimbang';
     $badgeClassAll = $isBalanced ? 'badge-success' : 'badge-danger';
@@ -20,21 +17,29 @@
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
-            <br>
-             <div class="small mt-2">
-                <strong>Total Debit:</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
-                <strong>Total Kredit:</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
+            <div class="small mt-2">
+                <strong>Total Debit (Hasil Filter):</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
+                <strong>Total Kredit (Hasil Filter):</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
             </div>
         </div>
         <span class="badge {{ $badgeClassAll }} p-2">Status Keseluruhan: {{ $statusAll }}</span>
     </div>
     <div class="card-body">
         {{-- Filter Section --}}
-        <form id="filterForm" method="GET" class="mb-3">
+        <form id="filterForm" method="GET" class="mb-4">
             <div class="row g-2 align-items-end">
+                
+                {{-- KOTAK PENCARIAN BARU --}}
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Cari Deskripsi Jurnal</label>
+                    <input type="text" name="search" id="search" class="form-control" placeholder="Contoh: Pembelian ATK" value="{{ request('search') }}">
+                </div>
+                {{-- AKHIR KOTAK PENCARIAN BARU --}}
+
                 <div class="col-md-2">
                     <label class="form-label">Tahun</label>
                     <select name="year" class="form-control">
+                        <option value="semua">Semua Tahun</option>
                         @foreach($years as $year)
                             <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
                                 {{ $year }}
@@ -46,27 +51,16 @@
                 <div class="col-md-2">
                     <label class="form-label">Status Jurnal</label>
                     <select name="approval_status" class="form-control">
-                        <option value="semua" {{ $statusJurnal == 'semua' ? 'selected' : '' }}>Semua</option>
+                        <option value="semua" {{ $statusJurnal == 'semua' ? 'selected' : '' }}>Semua Status</option>
                         <option value="menunggu" {{ $statusJurnal == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
                         <option value="disetujui" {{ $statusJurnal == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
                         <option value="ditolak" {{ $statusJurnal == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Tanggal Mulai</label>
-                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label">Tanggal Akhir</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-                </div>
-
                 @if(auth()->user()->hasAnyRole(['admin_bumdes','bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']))
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Unit Usaha</label>
-                    {{-- --- PERBAIKAN TAMPILAN FILTER DIMULAI DI SINI --- --}}
                     <select name="unit_usaha_id" class="form-control">
                         <option value="">Semua (Gabungan)</option>
                         <option value="pusat" {{ request('unit_usaha_id') == 'pusat' ? 'selected' : '' }}>-- Hanya BUMDes Pusat --</option>
@@ -76,17 +70,26 @@
                             </option>
                         @endforeach
                     </select>
-                    {{-- --- AKHIR PERBAIKAN TAMPILAN FILTER --- --}}
                 </div>
                 @endif
 
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-80 me-2 mx-2" title="Filter"><i class="fas fa-filter"></i></button>
-                    <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary w-80 me-2 mx-2" title="Refresh"><i class="fas fa-sync"></i></a>
-                    <button type="button" class="btn btn-success" title="Cetak Laporan" data-toggle="modal" data-target="#printModal">
+                    <button type="submit" class="btn btn-primary w-100 me-2" title="Cari"><i class="fas fa-search"></i> Cari</button>
+                    <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary w-100 mx-2" title="Refresh"><i class="fas fa-sync"></i></a>
+                    <button type="button" class="btn btn-success w-100" title="Cetak Laporan" data-toggle="modal" data-target="#printModal">
                         <i class="fas fa-print"></i>
                     </button>
                 </div>
+            </div>
+             <div class="row g-2 mt-2">
+                <div class="col-md-3">
+                     <label class="form-label">Tanggal Mulai</label>
+                     <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                 </div>
+                 <div class="col-md-3">
+                     <label class="form-label">Tanggal Akhir</label>
+                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                 </div>
             </div>
         </form>
 
@@ -169,13 +172,15 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center">Belum ada data jurnal.</td>
+                            <td colspan="5" class="text-center">Tidak ada data jurnal yang cocok dengan filter.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">{{ $jurnals->appends(request()->query())->links('pagination::bootstrap-4') }}</div>
+        <div class="card-footer clearfix">
+            {{ $jurnals->links() }}
+        </div>
     </div>
 </div>
 
@@ -223,8 +228,9 @@
             </div>
 
             {{-- Hidden inputs to carry over current filters --}}
-            <input type="hidden" name="year" value="{{ request('year', date('Y')) }}">
-            <input type="hidden" name="approval_status" value="{{ request('approval_status', 'disetujui') }}">
+            <input type="hidden" name="search" value="{{ request('search') }}">
+            <input type="hidden" name="year" value="{{ request('year') }}">
+            <input type="hidden" name="approval_status" value="{{ request('approval_status') }}">
             <input type="hidden" name="start_date" value="{{ request('start_date') }}">
             <input type="hidden" name="end_date" value="{{ request('end_date') }}">
             <input type="hidden" name="unit_usaha_id" value="{{ request('unit_usaha_id') }}">

@@ -18,17 +18,22 @@ use Illuminate\Auth\Access\AuthorizationException;
 class JurnalUmumController extends Controller
 {
     /**
-     * Menampilkan daftar semua jurnal umum dengan filter.
+     * Menampilkan daftar semua jurnal umum dengan filter dan pencarian.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
-        $tahun = $request->year ?? date('Y');
-        $statusJurnal = $request->approval_status ?? 'disetujui';
-        $unitUsahaId = $request->unit_usaha_id; // Ambil nilai filter
-
+        
         $jurnalQuery = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')
-            ->latest('tanggal_transaksi');
+                         ->latest('tanggal_transaksi') // Urutkan berdasarkan tanggal terbaru
+                         ->latest('created_at');      // Lalu berdasarkan waktu pembuatan
+
+        // --- 1. LOGIKA PENCARIAN BARU ---
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $jurnalQuery->where('deskripsi', 'like', "%{$searchTerm}%");
+        }
+        // --- AKHIR LOGIKA PENCARIAN ---
 
         // Filter berdasarkan hak akses
         if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
@@ -37,46 +42,55 @@ class JurnalUmumController extends Controller
         }
 
         // Filter berdasarkan form
-        $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
+        $tahun = $request->year ?? date('Y');
+        if ($tahun && $tahun !== 'semua') {
+            $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
+        }
 
+        $statusJurnal = $request->approval_status ?? 'semua';
         if ($statusJurnal !== 'semua') {
             $jurnalQuery->where('status', $statusJurnal);
         }
+
         if ($request->filled('start_date')) {
             $jurnalQuery->whereDate('tanggal_transaksi', '>=', $request->start_date);
         }
+        
         if ($request->filled('end_date')) {
             $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
         }
 
-        // --- PERBAIKAN LOGIKA FILTER UNIT USAHA DIMULAI DI SINI ---
+        // Filter Unit Usaha untuk admin BUMDes
+        $unitUsahaId = $request->unit_usaha_id;
         if ($user->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
             if ($unitUsahaId === 'pusat') {
                 $jurnalQuery->whereNull('unit_usaha_id');
             } elseif (!empty($unitUsahaId)) {
                 $jurnalQuery->where('unit_usaha_id', $unitUsahaId);
             }
-            // Jika $unitUsahaId kosong, tidak ada filter yang diterapkan (menampilkan gabungan)
         }
-        // --- AKHIR PERBAIKAN ---
 
+        // Hitung total Debit & Kredit dari hasil query yang sudah difilter
         $totalQuery = clone $jurnalQuery;
-        $totals = $totalQuery->select(
+        // Ambil semua ID jurnal yang cocok, lalu hitung total dari tabel jurnal_umums
+        $filteredIds = $totalQuery->pluck('jurnal_id');
+        $totals = JurnalUmum::whereIn('jurnal_id', $filteredIds)->select(
             DB::raw('SUM(total_debit) as total_debit_all'),
             DB::raw('SUM(total_kredit) as total_kredit_all')
         )->first();
-
-        $jurnals = $jurnalQuery->paginate(10);
-
+        
         $totalDebitAll = $totals->total_debit_all ?? 0;
         $totalKreditAll = $totals->total_kredit_all ?? 0;
 
+        // Ambil data untuk halaman saat ini (pagination)
+        $jurnals = $jurnalQuery->paginate(10)->appends($request->query());
+
+        // Data untuk dropdown filter
         $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year');
 
-        // Mengambil unit usaha untuk dropdown filter
         $unitUsahas = collect();
         if ($user->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
             $unitUsahas = UnitUsaha::orderBy('nama_unit')->get();
@@ -94,6 +108,7 @@ class JurnalUmumController extends Controller
      */
     public function edit(JurnalUmum $jurnalUmum)
     {
+        // ... (Tidak ada perubahan di method ini) ...
         $user = Auth::user();
 
         if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
@@ -119,7 +134,7 @@ class JurnalUmumController extends Controller
      */
     public function update(Request $request, JurnalUmum $jurnalUmum)
     {
-        // ... (Tidak ada perubahan di method update) ...
+        // ... (Tidak ada perubahan di method ini) ...
         $user = Auth::user();
 
         if (!$user->hasRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
@@ -157,8 +172,7 @@ class JurnalUmumController extends Controller
  
             $unitUsahaId = $jurnalUmum->unit_usaha_id;
             if ($user->hasRole(['bendahara_bumdes', 'admin_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
-                 // Jika 'pusat' dipilih, set unit_usaha_id menjadi null
-                 $unitUsahaId = $request->unit_usaha_id === 'pusat' ? null : $request->unit_usaha_id;
+                $unitUsahaId = $request->unit_usaha_id === 'pusat' ? null : $request->unit_usaha_id;
             }
  
             $status = ($jurnalUmum->status === 'disetujui' || $jurnalUmum->status === 'ditolak') ? 'menunggu' : $jurnalUmum->status;
@@ -198,7 +212,7 @@ class JurnalUmumController extends Controller
      */
     public function destroy($id)
     {
-        // ... (Tidak ada perubahan di method destroy) ...
+        // ... (Tidak ada perubahan di method ini) ...
         $user = Auth::user();
         $jurnal = JurnalUmum::findOrFail($id);
 
@@ -229,6 +243,7 @@ class JurnalUmumController extends Controller
      */
     public function show($id, Request $request)
     {
+        // ... (Tidak ada perubahan di method ini) ...
         if ($id === 'print') {
             $request->validate(['tanggal_cetak' => 'nullable|date']);
 
@@ -257,7 +272,6 @@ class JurnalUmumController extends Controller
                 $query->whereIn('unit_usaha_id', $managedUnitUsahaIds);
             }
             
-            // --- PERBAIKAN LOGIKA FILTER CETAK DIMULAI DI SINI ---
             if ($user->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
                 if ($unitUsahaId === 'pusat') {
                     $query->whereNull('unit_usaha_id');
@@ -265,7 +279,6 @@ class JurnalUmumController extends Controller
                     $query->where('unit_usaha_id', $unitUsahaId);
                 }
             }
-            // --- AKHIR PERBAIKAN ---
 
             $jurnals = $query->orderBy('tanggal_transaksi')->get();
 
@@ -280,8 +293,6 @@ class JurnalUmumController extends Controller
             return view('keuangan.jurnal.print', compact('jurnals', 'tahun', 'statusJurnal', 'bumdes', 'tanggalCetak', 'penandaTangan1', 'penandaTangan2', 'lokasi'));
         }
 
-        // Tampilkan detail satu jurnal (jika diperlukan)
         $jurnal = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')->findOrFail($id);
-        // return view('keuangan.jurnal.show', compact('jurnal'));
     }
 }
