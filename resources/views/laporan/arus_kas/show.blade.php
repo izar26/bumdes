@@ -8,7 +8,7 @@
 
 @section('content')
 @php
-    // Safeguards and Initial Calculations
+    // Safeguards untuk memastikan variabel default ada jika terjadi error
     $bumdes = $bumdes ?? \App\Models\Bungdes::first();
     $startDate = $startDate ?? now();
     $endDate = $endDate ?? now();
@@ -16,23 +16,6 @@
     $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
     $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
     $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
-    $kas = $kas ?? []; // Ensure $kas exists
-
-    // Calculate totals for each section
-    $total_operasi_masuk = array_sum($kas['operasi_masuk'] ?? []);
-    $total_operasi_keluar = array_sum($kas['operasi_keluar'] ?? []);
-    $arus_kas_bersih_operasi = $total_operasi_masuk + $total_operasi_keluar; // keluar is negative
-
-    $total_investasi_masuk = array_sum($kas['investasi_masuk'] ?? []);
-    $total_investasi_keluar = array_sum($kas['investasi_keluar'] ?? []);
-    $arus_kas_bersih_investasi = $total_investasi_masuk + $total_investasi_keluar;
-
-    $total_pendanaan_masuk = array_sum($kas['pendanaan_masuk'] ?? []);
-    $total_pendanaan_keluar = array_sum($kas['pendanaan_keluar'] ?? []);
-    $arus_kas_bersih_pendanaan = $total_pendanaan_masuk + $total_pendanaan_keluar;
-
-    $kenaikan_penurunan_kas = $arus_kas_bersih_operasi + $arus_kas_bersih_investasi + $arus_kas_bersih_pendanaan;
-    $saldo_kas_akhir = ($saldoKasAwal ?? 0) + $kenaikan_penurunan_kas;
 @endphp
 <div class="card">
     <div class="card-body">
@@ -65,7 +48,7 @@
                 <tr><td style="padding-left: 40px;">Penerimaan kas dari bunga bank</td><td class="text-right">{{ number_format($kas['operasi_masuk']['bunga_bank'] ?? 0, 0, ',', '.') }}</td></tr>
                 <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas masuk dari aktivitas operasi</strong></td>
-                    <td class="text-right"><strong>{{ number_format($total_operasi_masuk, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ number_format($totals['operasi_masuk'] ?? 0, 0, ',', '.') }}</strong></td>
                 </tr>
                 
                 <tr>
@@ -77,23 +60,23 @@
                 <tr><td style="padding-left: 40px;">Pengeluaran kas untuk pembayaran beban-beban lain</td><td class="text-right">{{ number_format(abs($kas['operasi_keluar']['pembayaran_beban_lain'] ?? 0), 0, ',', '.') }}</td></tr>
                 <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas keluar dari aktivitas operasi</strong></td>
-                    <td class="text-right"><strong>({{ number_format(abs($total_operasi_keluar), 0, ',', '.') }})</strong></td>
+                    <td class="text-right"><strong>({{ number_format(abs($totals['operasi_keluar'] ?? 0), 0, ',', '.') }})</strong></td>
                 </tr>
                  <tr class="font-weight-bold" style="border-top: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
                     <td>Arus kas bersih dari aktivitas operasi</td>
-                    <td class="text-right">{{ number_format($arus_kas_bersih_operasi, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($arus_kas_bersih['operasi'] ?? 0, 0, ',', '.') }}</td>
                 </tr>
                 <tr><td colspan="2">&nbsp;</td></tr>
 
                 {{-- ARUS KAS DARI AKTIVITAS INVESTASI --}}
                 <tr class="table-active"><td colspan="2"><strong>ARUS KAS DARI AKTIVITAS INVESTASI</strong></td></tr>
-                 <tr>
+                <tr>
                     <td style="padding-left: 20px;"><strong>Arus Kas Masuk</strong></td>
                     <td></td>
                 </tr>
                  <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas masuk dari aktivitas investasi</strong></td>
-                    <td class="text-right"><strong>{{ number_format($total_investasi_masuk, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ number_format($totals['investasi_masuk'] ?? 0, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr>
                     <td style="padding-left: 20px;"><strong>Arus Kas Keluar</strong></td>
@@ -103,11 +86,11 @@
                 <tr><td style="padding-left: 40px;">Pengeluaran kas untuk pembelian investasi</td><td class="text-right">{{ number_format(abs($kas['investasi_keluar']['pembelian_investasi'] ?? 0), 0, ',', '.') }}</td></tr>
                  <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas keluar dari aktivitas investasi</strong></td>
-                    <td class="text-right"><strong>({{ number_format(abs($total_investasi_keluar), 0, ',', '.') }})</strong></td>
+                    <td class="text-right"><strong>({{ number_format(abs($totals['investasi_keluar'] ?? 0), 0, ',', '.') }})</strong></td>
                 </tr>
                  <tr class="font-weight-bold" style="border-top: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
                     <td>Arus kas bersih dari aktivitas investasi</td>
-                    <td class="text-right">{{ number_format($arus_kas_bersih_investasi, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($arus_kas_bersih['investasi'] ?? 0, 0, ',', '.') }}</td>
                 </tr>
                 <tr><td colspan="2">&nbsp;</td></tr>
 
@@ -120,7 +103,7 @@
                  <tr><td style="padding-left: 40px;">Penerimaan kas dari penyertaan modal desa</td><td class="text-right">{{ number_format($kas['pendanaan_masuk']['penyertaan_modal_desa'] ?? 0, 0, ',', '.') }}</td></tr>
                  <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas masuk dari aktivitas pembiayaan</strong></td>
-                    <td class="text-right"><strong>{{ number_format($total_pendanaan_masuk, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ number_format($totals['pendanaan_masuk'] ?? 0, 0, ',', '.') }}</strong></td>
                 </tr>
                  <tr>
                     <td style="padding-left: 20px;"><strong>Arus Kas Keluar</strong></td>
@@ -128,19 +111,18 @@
                 </tr>
                 <tr class="bg-light">
                     <td style="padding-left: 20px;"><strong>Jumlah arus kas keluar dari aktivitas pembiayaan</strong></td>
-                    <td class="text-right"><strong>({{ number_format(abs($total_pendanaan_keluar), 0, ',', '.') }})</strong></td>
+                    <td class="text-right"><strong>({{ number_format(abs($totals['pendanaan_keluar'] ?? 0), 0, ',', '.') }})</strong></td>
                 </tr>
                  <tr class="font-weight-bold" style="border-top: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
                     <td>Arus kas bersih dari aktivitas pembiayaan</td>
-                    <td class="text-right">{{ number_format($arus_kas_bersih_pendanaan, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($arus_kas_bersih['pendanaan'] ?? 0, 0, ',', '.') }}</td>
                 </tr>
                 <tr><td colspan="2">&nbsp;</td></tr>
-
 
                 {{-- REKONSILIASI KAS --}}
                 <tr style="border-top: 2px solid #6c757d;">
                     <td><strong>Kenaikan (penurunan) Kas</strong></td>
-                    <td class="text-right"><strong>{{ number_format($kenaikan_penurunan_kas, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ number_format($kenaikan_penurunan_kas ?? 0, 0, ',', '.') }}</strong></td>
                 </tr>
                 <tr>
                     <td>Saldo kas awal periode</td>
@@ -148,12 +130,12 @@
                 </tr>
                 <tr class="table-success" style="border-top: 1px solid #6c757d;">
                     <td><strong>Saldo kas akhir periode</strong></td>
-                    <td class="text-right"><strong>{{ number_format($saldo_kas_akhir, 0, ',', '.') }}</strong></td>
+                    <td class="text-right"><strong>{{ number_format($saldo_kas_akhir ?? 0, 0, ',', '.') }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
-        {{-- TANDA TANGAN --}}
+        {{-- TANDA TANGAN (Tidak ada perubahan) --}}
         <table style="margin-top: 60px; width: 100%;" class="table-borderless">
             <tr>
                 <td style="text-align: center; width: 50%;"></td>

@@ -175,7 +175,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">{{ $jurnals->appends(request()->query())->links() }}</div>
+        <div class="mt-3">{{ $jurnals->appends(request()->query())->links('pagination::bootstrap-4') }}</div>
     </div>
 </div>
 
