@@ -12,7 +12,7 @@
             padding: 0;
             line-height: 1.1;
         }
-        .tombol-cetak {
+        /* .tombol-cetak {
             display: block;
             width: 200px;
             margin: 10px auto;
@@ -22,9 +22,9 @@
             text-align: center;
             border: none;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-family: Arial, sans-serif;
-        }
+        } */
         .struk-container {
             width: 800px;
             margin: 10px auto;
@@ -35,7 +35,7 @@
         .header {
             text-align: center;
             margin-bottom: 3px;
-            font-size: 10px;
+            font-size: 14px;
             line-height: 1.1;
         }
         .content {
@@ -57,7 +57,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            font-size: 14px;
         }
         td {
             padding: 0;
@@ -67,7 +67,7 @@
             font-weight: bold;
             text-align: center;
             margin-bottom: 3px;
-            font-size: 10px;
+            font-size: 14px;
         }
         .logo {
             text-align: center;
@@ -82,7 +82,7 @@
             font-weight: bold;
         }
         .rincian-table td {
-            font-size: 9px;
+            font-size: 12px;
             padding: 1px 0;
         }
         .rincian-table .description {
@@ -91,7 +91,7 @@
         .rincian-table .rate {
             width: 15%;
             text-align: right;
-             padding-right: 8px;
+             padding-left: 8px;
         }
         .rincian-table .qty {
             width: 10%;
@@ -105,7 +105,7 @@
             text-align: right;
         }
         .tunggakan-table {
-            font-size: 9px;
+            font-size: 12px;
         }
         .tunggakan-table td {
             padding: 1px 0;
@@ -136,32 +136,52 @@
             margin: 4px 0;
         }
 
-        @media print {
-            .tombol-cetak { display: none; }
-            .struk-container {
-                border: none;
-                width: 100%;
-                margin: 0;
-                padding: 5px;
-            }
-td.rate, td.qty, td.amount {
-    text-align: right;
-}
-td.description {
-    text-align: left;
+      @media print {
+    /* Sembunyikan tombol, header, dan elemen non-print */
+    .tombol-cetak,
+    .btn,
+    .content-header,
+    .d-print-none {
+        display: none !important;
+    }
+
+    /* Container struk */
+    .struk-container {
+        border: none;
+        width: 100%;
+        margin: 0;
+        padding: 5px;
+    }
+
+    /* Hapus page-break di struk terakhir */
+    .struk-container:last-child {
+        page-break-after: avoid;
+    }
+
+    /* Atur body */
+    body {
+        font-size: 12px; /* seragam, rapi */
+        background: white;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Optional: biar tabel lebih rapat */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    table td,
+    table th {
+        padding: 2px 4px;
+    }
 }
 
-            .struk-container:last-child {
-                page-break-after: avoid;
-            }
-            body {
-                font-size: 9px;
-            }
-        }
     </style>
 </head>
 <body>
-    <button class="tombol-cetak" onclick="window.print()">Cetak Tagihan</button>
+    {{-- <button class="tombol-cetak" onclick="window.print()">Cetak Tagihan</button> --}}
 
     @foreach ($semua_tagihan as $tagihan)
     <div class="struk-container">
