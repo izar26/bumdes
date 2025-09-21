@@ -36,19 +36,18 @@ class NeracaSaldoController extends Controller
     }
 
     /**
-     * Memproses filter dan menampilkan laporan dengan format worksheet (mutasi & saldo).
+     * Memproses filter dan menampilkan laporan Neraca Saldo standar.
      */
     public function generate(Request $request)
     {
+        // Validasi diubah, hanya perlu tanggal akhir
         $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date',
             'unit_usaha_id' => 'nullable|string',
             'tanggal_cetak' => 'nullable|date',
         ]);
 
         $user = Auth::user();
-        $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
@@ -59,14 +58,11 @@ class NeracaSaldoController extends Controller
             ->leftJoin('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
             ->where('akuns.is_header', 0)
             ->where('jurnal_umums.status', 'disetujui')
+            ->where('jurnal_umums.tanggal_transaksi', '<=', $endDate->toDateString())
             ->select(
                 'akuns.kode_akun', 'akuns.nama_akun', 'akuns.tipe_akun',
-                // Mutasi (Pergerakan selama periode)
-                DB::raw("SUM(CASE WHEN jurnal_umums.tanggal_transaksi BETWEEN '{$startDate->toDateString()}' AND '{$endDate->toDateString()}' THEN detail_jurnals.debit ELSE 0 END) as mutasi_debit"),
-                DB::raw("SUM(CASE WHEN jurnal_umums.tanggal_transaksi BETWEEN '{$startDate->toDateString()}' AND '{$endDate->toDateString()}' THEN detail_jurnals.kredit ELSE 0 END) as mutasi_kredit"),
-                // Saldo Akhir (Total hingga akhir periode)
-                DB::raw("SUM(CASE WHEN jurnal_umums.tanggal_transaksi <= '{$endDate->toDateString()}' THEN detail_jurnals.debit ELSE 0 END) as total_debit_akhir"),
-                DB::raw("SUM(CASE WHEN jurnal_umums.tanggal_transaksi <= '{$endDate->toDateString()}' THEN detail_jurnals.kredit ELSE 0 END) as total_kredit_akhir")
+                DB::raw("COALESCE(SUM(detail_jurnals.debit), 0) as total_debit"),
+                DB::raw("COALESCE(SUM(detail_jurnals.kredit), 0) as total_kredit")
             );
 
         // Filter unit usaha
@@ -90,28 +86,21 @@ class NeracaSaldoController extends Controller
         $akunNormalDebit = ['Aset', 'HPP', 'Beban'];
         
         foreach ($results as $akun) {
-            // Hitung Saldo Akhir
-            $saldoAkhir = 0;
-            if (in_array($akun->tipe_akun, $akunNormalDebit)) {
-                // Handle akun kontra-aset (saldo normal kredit)
-                if (str_contains($akun->nama_akun, 'Akumulasi Penyusutan') || str_contains($akun->nama_akun, 'Penyisihan Piutang')) {
-                    $saldoAkhir = $akun->total_kredit_akhir - $akun->total_debit_akhir;
-                } else {
-                    $saldoAkhir = $akun->total_debit_akhir - $akun->total_kredit_akhir;
-                }
-            } else { // Kewajiban, Ekuitas, Pendapatan
-                $saldoAkhir = $akun->total_kredit_akhir - $akun->total_debit_akhir;
+            $saldo = 0;
+            $isKontraAset = str_contains($akun->nama_akun, 'Akumulasi Penyusutan') || str_contains($akun->nama_akun, 'Penyisihan Piutang');
+
+            if (in_array($akun->tipe_akun, $akunNormalDebit) && !$isKontraAset) {
+                $saldo = $akun->total_debit - $akun->total_kredit;
+            } else { // Kewajiban, Ekuitas, Pendapatan, dan Kontra Aset
+                $saldo = $akun->total_kredit - $akun->total_debit;
             }
 
-            // Hanya tampilkan akun yang punya mutasi atau saldo
-            if ($akun->mutasi_debit != 0 || $akun->mutasi_kredit != 0 || $saldoAkhir != 0) {
+            if (round($saldo, 2) != 0) {
                 $laporanData[] = (object)[
                     'kode_akun' => $akun->kode_akun,
                     'nama_akun' => $akun->nama_akun,
-                    'mutasi_debit' => $akun->mutasi_debit,
-                    'mutasi_kredit' => $akun->mutasi_kredit,
-                    'saldo_debit' => $saldoAkhir > 0 && in_array($akun->tipe_akun, $akunNormalDebit) && !str_contains($akun->nama_akun, 'Akumulasi') ? $saldoAkhir : 0,
-                    'saldo_kredit' => $saldoAkhir > 0 && !in_array($akun->tipe_akun, $akunNormalDebit) || ($saldoAkhir > 0 && str_contains($akun->nama_akun, 'Akumulasi')) ? $saldoAkhir : 0,
+                    'saldo_debit' => $saldo > 0 && (in_array($akun->tipe_akun, $akunNormalDebit) && !$isKontraAset) ? $saldo : 0,
+                    'saldo_kredit' => $saldo > 0 && (!in_array($akun->tipe_akun, $akunNormalDebit) || $isKontraAset) ? $saldo : 0,
                 ];
             }
         }
@@ -123,8 +112,9 @@ class NeracaSaldoController extends Controller
         $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
 
         return view('laporan.neraca_saldo.show', compact(
-            'bumdes', 'startDate', 'endDate', 'tanggalCetak', 'laporanData',
+            'bumdes', 'endDate', 'tanggalCetak', 'laporanData',
             'penandaTangan1', 'penandaTangan2'
         ));
     }
 }
+
