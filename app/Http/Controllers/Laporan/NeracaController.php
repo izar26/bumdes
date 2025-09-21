@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Laporan;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Bungdes;
+use App\Models\Akun;
 use App\Models\UnitUsaha;
+use App\Models\Bungdes;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,7 @@ class NeracaController extends Controller
     }
 
     /**
-     * Memproses filter dan menampilkan laporan dengan format detail seperti Excel.
+     * Memproses filter dan menampilkan laporan dengan format detail.
      */
     public function generate(Request $request)
     {
@@ -50,22 +51,16 @@ class NeracaController extends Controller
         $unitUsahaId = $request->unit_usaha_id;
         $bumdes = Bungdes::first();
         $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
+        $startOfYear = $endDate->copy()->startOfYear();
 
-        // Helper function untuk mengambil saldo berdasarkan pola kode akun
-        $getSaldoByPattern = function(array $patterns, $saldoNormal = 'debit') use ($user, $endDate, $unitUsahaId) {
+        // Helper function untuk membangun query dasar yang sudah difilter
+        $baseQueryBuilder = function($date) use ($user, $unitUsahaId) {
             $query = DB::table('detail_jurnals')
                 ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
                 ->join('akuns', 'detail_jurnals.akun_id', '=', 'akuns.akun_id')
                 ->where('jurnal_umums.status', 'disetujui')
-                ->where('jurnal_umums.tanggal_transaksi', '<=', $endDate->toDateString());
+                ->where('jurnal_umums.tanggal_transaksi', '<=', $date->toDateString());
 
-            $query->where(function($q) use ($patterns) {
-                foreach ($patterns as $pattern) {
-                    $q->orWhere('akuns.kode_akun', 'like', $pattern);
-                }
-            });
-
-            // Filter hak akses & unit usaha
             if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
                 $managedUnitIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
                 $query->whereIn('jurnal_umums.unit_usaha_id', $managedUnitIds);
@@ -76,84 +71,85 @@ class NeracaController extends Controller
                     $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
                 }
             }
-            
-            $result = $query->select(
-                DB::raw('COALESCE(SUM(detail_jurnals.debit), 0) as total_debit'),
-                DB::raw('COALESCE(SUM(detail_jurnals.kredit), 0) as total_kredit')
-            )->first();
-            
-            if ($saldoNormal === 'kredit') {
-                return $result->total_kredit - $result->total_debit;
-            }
-            return $result->total_debit - $result->total_kredit;
+            return $query;
         };
         
-        // --- ASET ---
-        // Aset Lancar (1.1.%)
-        $kas = $getSaldoByPattern(['1.1.01.%']);
-        $setara_kas = $getSaldoByPattern(['1.1.02.%']); // Bank
-        $piutang = $getSaldoByPattern(['1.1.03.%']);
-        $penyisihan_piutang = $getSaldoByPattern(['1.1.04.%'], 'kredit'); // Saldo normal kredit
-        $persediaan = $getSaldoByPattern(['1.1.05.%']);
-        $perlengkapan = $getSaldoByPattern(['1.1.06.%']);
-        $pembayaran_dimuka = $getSaldoByPattern(['1.1.07.%']); // Sewa, asuransi dibayar dimuka
-        $aset_lancar_lainnya = $getSaldoByPattern(['1.1.99.%']);
-        $total_aset_lancar = $kas + $setara_kas + $piutang + $penyisihan_piutang + $persediaan + $perlengkapan + $pembayaran_dimuka + $aset_lancar_lainnya;
+        // Helper function untuk menghitung saldo berdasarkan pola kode akun
+        $getSaldoByPattern = function($pattern, $normalDebit = true) use ($baseQueryBuilder, $endDate) {
+            $query = $baseQueryBuilder($endDate)->where('akuns.kode_akun', 'like', $pattern);
+            $saldo = $normalDebit
+                ? $query->sum(DB::raw('detail_jurnals.debit - detail_jurnals.kredit'))
+                : $query->sum(DB::raw('detail_jurnals.kredit - detail_jurnals.debit'));
+            return $saldo;
+        };
+
+        // 1. Hitung Laba/Rugi Tahun Berjalan
+        $pendapatanQuery = $baseQueryBuilder($endDate)->whereBetween('jurnal_umums.tanggal_transaksi', [$startOfYear, $endDate]);
+        $bebanQuery = clone $pendapatanQuery;
+
+        $totalPendapatan = $pendapatanQuery->whereIn('akuns.tipe_akun', ['Pendapatan', 'Pendapatan & Beban Lainnya'])
+            ->sum(DB::raw('detail_jurnals.kredit - detail_jurnals.debit'));
+
+        $totalBeban = $bebanQuery->whereIn('akuns.tipe_akun', ['Beban', 'HPP'])
+            ->sum(DB::raw('detail_jurnals.debit - detail_jurnals.kredit'));
+
+        $labaRugiBerjalan = $totalPendapatan - $totalBeban;
+
+        // 2. Hitung Saldo Laba Ditahan (dari tahun-tahun sebelumnya)
+        $labaDitahanAwal = $baseQueryBuilder($startOfYear->copy()->subDay())
+            ->whereIn('akuns.tipe_akun', ['Pendapatan', 'Pendapatan & Beban Lainnya', 'Beban', 'HPP'])
+            ->sum(DB::raw('CASE WHEN akuns.tipe_akun IN ("Pendapatan", "Pendapatan & Beban Lainnya") THEN detail_jurnals.kredit - detail_jurnals.debit ELSE detail_jurnals.debit - detail_jurnals.kredit END'));
+
+        // 3. Kalkulasi setiap pos di Neraca
+        $aset = [
+            'kas' => $getSaldoByPattern('1.1.01.%'),
+            'setara_kas' => $getSaldoByPattern('1.1.02.%'),
+            'piutang' => $getSaldoByPattern('1.1.03.%'),
+            'penyisihan_piutang' => $getSaldoByPattern('1.1.04.%', false), // Kontra-aset
+            'persediaan' => $getSaldoByPattern('1.1.05.%'),
+            'perlengkapan' => $getSaldoByPattern('1.1.06.%'),
+            'pembayaran_dimuka' => $getSaldoByPattern('1.1.07.%'),
+            'aset_lancar_lainnya' => $getSaldoByPattern('1.1.98.%'),
+            'investasi' => $getSaldoByPattern('1.2.01.%'),
+            'tanah' => $getSaldoByPattern('1.3.01.%'),
+            'kendaraan' => $getSaldoByPattern('1.3.02.%'),
+            'peralatan' => $getSaldoByPattern('1.3.03.%'),
+            'meubelair' => $getSaldoByPattern('1.3.04.%'),
+            'gedung' => $getSaldoByPattern('1.3.05.%'),
+            'akumulasi_penyusutan' => $getSaldoByPattern('1.3.07.%', false), // Kontra-aset
+        ];
+
+        $kewajiban = [
+            'utang_usaha' => $getSaldoByPattern('2.1.01.%', false),
+            'utang_pajak' => $getSaldoByPattern('2.1.02.%', false),
+            'utang_gaji' => $getSaldoByPattern('2.1.03.%', false),
+            'utang_pendek_lainnya' => $getSaldoByPattern('2.1.99.%', false),
+            'utang_panjang' => $getSaldoByPattern('2.2.%', false),
+        ];
+
+        $ekuitas = [
+            'modal_disetor' => $getSaldoByPattern('3.1.%', false),
+            'saldo_laba' => $labaDitahanAwal + $labaRugiBerjalan,
+        ];
         
-        // Investasi (1.2.%)
-        $investasi = $getSaldoByPattern(['1.2.%']);
-        
-        // Aset Tetap (1.3.%)
-        $tanah = $getSaldoByPattern(['1.3.01.%']);
-        $kendaraan = $getSaldoByPattern(['1.3.02.%']);
-        $peralatan = $getSaldoByPattern(['1.3.03.%']);
-        $meubelair = $getSaldoByPattern(['1.3.04.%']);
-        $gedung = $getSaldoByPattern(['1.3.05.%']);
-        $akumulasi_penyusutan = $getSaldoByPattern(['1.3.99.%'], 'kredit'); // Saldo normal kredit
-        $total_aset_tetap = $tanah + $kendaraan + $peralatan + $meubelair + $gedung + $akumulasi_penyusutan;
+        $totals = [
+            'total_aset_lancar' => $aset['kas'] + $aset['setara_kas'] + $aset['piutang'] + $aset['penyisihan_piutang'] + $aset['persediaan'] + $aset['perlengkapan'] + $aset['pembayaran_dimuka'] + $aset['aset_lancar_lainnya'],
+            'total_aset_tetap' => $aset['tanah'] + $aset['kendaraan'] + $aset['peralatan'] + $aset['meubelair'] + $aset['gedung'] + $aset['akumulasi_penyusutan'],
+            'total_kewajiban_pendek' => $kewajiban['utang_usaha'] + $kewajiban['utang_pajak'] + $kewajiban['utang_gaji'] + $kewajiban['utang_pendek_lainnya'],
+        ];
+        $totals['total_aset'] = $totals['total_aset_lancar'] + $aset['investasi'] + $totals['total_aset_tetap'];
+        $totals['total_kewajiban'] = $totals['total_kewajiban_pendek'] + $kewajiban['utang_panjang'];
+        $totals['ekuitas_akhir'] = $ekuitas['modal_disetor'] + $ekuitas['saldo_laba'];
+        $totals['total_kewajiban_ekuitas'] = $totals['total_kewajiban'] + $totals['ekuitas_akhir'];
 
-        $total_aset = $total_aset_lancar + $investasi + $total_aset_tetap;
+        $data = array_merge($aset, $kewajiban, $ekuitas, $totals);
 
-        // --- KEWAJIBAN ---
-        // Kewajiban Jangka Pendek (2.1.%)
-        $utang_usaha = $getSaldoByPattern(['2.1.01.%'], 'kredit');
-        $utang_pajak = $getSaldoByPattern(['2.1.02.%'], 'kredit');
-        $utang_gaji = $getSaldoByPattern(['2.1.03.%'], 'kredit');
-        $utang_pendek_lainnya = $getSaldoByPattern(['2.1.99.%'], 'kredit');
-        $total_kewajiban_pendek = $utang_usaha + $utang_pajak + $utang_gaji + $utang_pendek_lainnya;
-        
-        // Kewajiban Jangka Panjang (2.2.%)
-        $utang_panjang = $getSaldoByPattern(['2.2.%'], 'kredit');
-        $total_kewajiban = $total_kewajiban_pendek + $utang_panjang;
-
-        // --- EKUITAS ---
-        // Modal Awal (3.%)
-        $modal = $getSaldoByPattern(['3.%'], 'kredit');
-
-        // Laba (Rugi) Tahun Berjalan
-        $startOfYear = $endDate->copy()->startOfYear();
-        $total_pendapatan = $getSaldoByPattern(['4.%', '7.%'], 'kredit');
-        $total_beban_hpp = $getSaldoByPattern(['5.%', '6.%', '8.%', '9.%'], 'debit');
-        $laba_tahun_berjalan = $total_pendapatan - $total_beban_hpp;
-        
-        $ekuitas_akhir = $modal + $laba_tahun_berjalan;
-        $total_kewajiban_ekuitas = $total_kewajiban + $ekuitas_akhir;
-
-        // Data Penanda Tangan
         $direktur = User::role('direktur_bumdes')->with('anggota')->first();
         $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'];
         $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
         $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
         
-        return view('laporan.neraca.show', compact(
-            'bumdes', 'endDate', 'tanggalCetak', 'penandaTangan1', 'penandaTangan2',
-            'kas', 'setara_kas', 'piutang', 'penyisihan_piutang', 'persediaan', 'perlengkapan', 'pembayaran_dimuka', 'aset_lancar_lainnya', 'total_aset_lancar',
-            'investasi',
-            'tanah', 'kendaraan', 'peralatan', 'meubelair', 'gedung', 'akumulasi_penyusutan', 'total_aset_tetap',
-            'total_aset',
-            'utang_usaha', 'utang_pajak', 'utang_gaji', 'utang_pendek_lainnya', 'total_kewajiban_pendek',
-            'utang_panjang', 'total_kewajiban',
-            'ekuitas_akhir', 'total_kewajiban_ekuitas'
-        ));
+        return view('laporan.neraca.show', compact('bumdes', 'endDate', 'tanggalCetak', 'data', 'penandaTangan1', 'penandaTangan2'));
     }
 }
+
