@@ -18,6 +18,7 @@
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
             <div class="small mt-2">
+                <br>
                 <strong>Total Debit (Hasil Filter):</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
                 <strong>Total Kredit (Hasil Filter):</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
             </div>
@@ -74,7 +75,7 @@
                 @endif
 
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100 me-2" title="Cari"><i class="fas fa-search"></i> Cari</button>
+                    <button type="submit" class="btn btn-primary w-100 me-2" title="Cari"><i class="fas fa-search"></i></button>
                     <a href="{{ route('jurnal-umum.index') }}" class="btn btn-secondary w-100 mx-2" title="Refresh"><i class="fas fa-sync"></i></a>
                     <button type="button" class="btn btn-success w-100" title="Cetak Laporan" data-toggle="modal" data-target="#printModal">
                         <i class="fas fa-print"></i>
