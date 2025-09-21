@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Laporan Neraca Saldo Komparatif')
+@section('title', 'Laporan Neraca Saldo')
 
 @section('content_header')
     {{-- Dibiarkan kosong agar header default tidak mengganggu saat cetak --}}
@@ -8,7 +8,7 @@
 
 @section('content')
 @php
-    // Safeguards
+    // Safeguards dan Helper
     $bumdes = $bumdes ?? \App\Models\Bungdes::first();
     $startDate = $startDate ?? now();
     $endDate = $endDate ?? now();
@@ -17,6 +17,11 @@
     $laporanData = $laporanData ?? [];
     $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
     $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
+    
+    function format_rp($value) {
+        if ($value == 0) return 'Rp 0';
+        return 'Rp ' . number_format($value, 0, ',', '.');
+    }
 @endphp
 <div class="card">
     <div class="card-body">
@@ -28,8 +33,8 @@
             @endif
             <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
             <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
-            <h5 class="font-weight-bold mt-3 mb-1">Laporan Neraca Saldo Komparatif</h5>
-            <p>Membandingkan Saldo per <strong>{{ $startDate->copy()->subDay()->isoFormat('D MMMM Y') }}</strong> dan <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
+            <h5 class="font-weight-bold mt-3 mb-1">Laporan Neraca Saldo</h5>
+            <p>Untuk Periode <strong>{{ $startDate->isoFormat('D MMMM Y') }}</strong> s/d <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
         {{-- TABEL DATA --}}
@@ -38,7 +43,7 @@
                 <tr class="text-center table-active">
                     <th rowspan="2" class="align-middle">Kode Akun</th>
                     <th rowspan="2" class="align-middle" style="width: 30%;">Nama Akun</th>
-                    <th colspan="2">Saldo Awal</th>
+                    <th colspan="2">Mutasi</th>
                     <th colspan="2">Saldo Akhir</th>
                 </tr>
                 <tr class="text-center table-active">
@@ -50,21 +55,21 @@
             </thead>
             <tbody>
                 @php
-                    $totalDebitAwal = 0; $totalKreditAwal = 0;
-                    $totalDebitAkhir = 0; $totalKreditAkhir = 0;
+                    $totalMutasiDebit = 0; $totalMutasiKredit = 0;
+                    $totalSaldoDebit = 0; $totalSaldoKredit = 0;
                 @endphp
                 @forelse ($laporanData as $data)
                     <tr>
                         <td class="text-center">{{ $data->kode_akun }}</td>
                         <td>{{ $data->nama_akun }}</td>
-                        <td class="text-right">{{ $data->debit_awal > 0 ? 'Rp ' . number_format($data->debit_awal, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $data->kredit_awal > 0 ? 'Rp ' . number_format($data->kredit_awal, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $data->debit_akhir > 0 ? 'Rp ' . number_format($data->debit_akhir, 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ $data->kredit_akhir > 0 ? 'Rp ' . number_format($data->kredit_akhir, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right">{{ format_rp($data->mutasi_debit) }}</td>
+                        <td class="text-right">{{ format_rp($data->mutasi_kredit) }}</td>
+                        <td class="text-right">{{ format_rp($data->saldo_debit) }}</td>
+                        <td class="text-right">{{ format_rp($data->saldo_kredit) }}</td>
                     </tr>
                     @php
-                        $totalDebitAwal += $data->debit_awal; $totalKreditAwal += $data->kredit_awal;
-                        $totalDebitAkhir += $data->debit_akhir; $totalKreditAkhir += $data->kredit_akhir;
+                        $totalMutasiDebit += $data->mutasi_debit; $totalMutasiKredit += $data->mutasi_kredit;
+                        $totalSaldoDebit += $data->saldo_debit; $totalSaldoKredit += $data->saldo_kredit;
                     @endphp
                 @empty
                     <tr>
@@ -75,22 +80,22 @@
             <tfoot>
                 <tr class="bg-light font-weight-bold">
                     <th colspan="2" class="text-right">TOTAL</th>
-                    <th class="text-right">{{ 'Rp ' . number_format($totalDebitAwal, 0, ',', '.') }}</th>
-                    <th class="text-right">{{ 'Rp ' . number_format($totalKreditAwal, 0, ',', '.') }}</th>
-                    <th class="text-right">{{ 'Rp ' . number_format($totalDebitAkhir, 0, ',', '.') }}</th>
-                    <th class="text-right">{{ 'Rp ' . number_format($totalKreditAkhir, 0, ',', '.') }}</th>
+                    <th class="text-right">{{ format_rp($totalMutasiDebit) }}</th>
+                    <th class="text-right">{{ format_rp($totalMutasiKredit) }}</th>
+                    <th class="text-right">{{ format_rp($totalSaldoDebit) }}</th>
+                    <th class="text-right">{{ format_rp($totalSaldoKredit) }}</th>
                 </tr>
                  <tr>
                     <th colspan="2" class="text-right">Status</th>
                     <th colspan="2" class="text-center">
-                        @if (round($totalDebitAwal, 2) == round($totalKreditAwal, 2))
+                        @if (round($totalMutasiDebit, 2) == round($totalMutasiKredit, 2))
                             <span class="badge badge-success">Seimbang</span>
                         @else
                             <span class="badge badge-danger">Tidak Seimbang</span>
                         @endif
                     </th>
                     <th colspan="2" class="text-center">
-                         @if (round($totalDebitAkhir, 2) == round($totalKreditAkhir, 2))
+                         @if (round($totalSaldoDebit, 2) == round($totalSaldoKredit, 2))
                             <span class="badge badge-success">Seimbang</span>
                         @else
                             <span class="badge badge-danger">Tidak Seimbang</span>
@@ -123,28 +128,9 @@
             </tr>
         </table>
 
-        {{-- TOMBOL CETAK --}}
         <div class="mt-4 text-right no-print">
             <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Laporan</button>
         </div>
-
     </div>
 </div>
 @stop
-
-@section('css')
-<style>
-    @media print {
-        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
-            display: none !important;
-        }
-        .content-wrapper, .content, .card, .card-body {
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-    }
-</style>
-@stop
-
