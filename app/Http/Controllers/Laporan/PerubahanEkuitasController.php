@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Laporan;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Akun;
-use App\Models\DetailJurnal;
 use App\Models\UnitUsaha;
 use App\Models\Bungdes;
 use App\Models\User;
@@ -55,14 +53,12 @@ class PerubahanEkuitasController extends Controller
         $bumdes = Bungdes::first();
         $tanggalCetak = $request->tanggal_cetak ? Carbon::parse($request->tanggal_cetak) : now();
 
-        // Helper function untuk mengambil saldo
-        $getSaldo = function($pattern, $date, $operator = '<=') use ($user, $unitUsahaId) {
+        // Base query builder yang akan kita gunakan berulang kali
+        $baseQuery = function() use ($user, $unitUsahaId) {
             $query = DB::table('detail_jurnals')
                 ->join('jurnal_umums', 'detail_jurnals.jurnal_id', '=', 'jurnal_umums.jurnal_id')
                 ->join('akuns', 'detail_jurnals.akun_id', '=', 'akuns.akun_id')
-                ->where('jurnal_umums.status', 'disetujui')
-                ->where('akuns.kode_akun', 'like', $pattern)
-                ->whereDate('jurnal_umums.tanggal_transaksi', $operator, $date);
+                ->where('jurnal_umums.status', 'disetujui');
             
             // Filter unit usaha
             if ($user->hasAnyRole(['manajer_unit_usaha', 'admin_unit_usaha'])) {
@@ -72,44 +68,44 @@ class PerubahanEkuitasController extends Controller
                 if ($unitUsahaId === 'pusat') $query->whereNull('jurnal_umums.unit_usaha_id');
                 elseif (!empty($unitUsahaId)) $query->where('jurnal_umums.unit_usaha_id', $unitUsahaId);
             }
-            
-            // Ekuitas normal kredit
-            return $query->sum(DB::raw('detail_jurnals.kredit - detail_jurnals.debit'));
+            return $query;
         };
         
-        // Helper untuk Laba Rugi
-        $getLabaRugi = function($start, $end) use ($getSaldo) {
-             $pendapatan = $getSaldo('4.%', $end, '<=') - $getSaldo('4.%', $start, '<');
-             $hpp = ($getSaldo('5.%', $end, '<=') - $getSaldo('5.%', $start, '<')) * -1; // HPP adalah pengurang
-             $beban = ($getSaldo('6.%', $end, '<=') - $getSaldo('6.%', $start, '<')) * -1; // Beban adalah pengurang
-             $lainnya = $getSaldo('7.%', $end, '<=') - $getSaldo('7.%', $start, '<');
-             return $pendapatan - $hpp - $beban + $lainnya;
-        };
+        // --- PERHITUNGAN DIMULAI ---
         
-        // 1. HITUNG SALDO AWAL (per H-1 dari start_date)
         $tanggalAwal = $startDate->copy()->subDay();
-        $modal_desa_awal = $getSaldo('3.1.01.%', $tanggalAwal);
-        $modal_masyarakat_awal = $getSaldo('3.1.02.%', $tanggalAwal);
-        $modal_donasi_awal = $getSaldo('3.4.%', $tanggalAwal);
-        // Saldo Laba Awal adalah akumulasi laba dari awal waktu s.d. tanggal awal
-        $saldo_laba_awal = $getLabaRugi(Carbon::minValue(), $tanggalAwal);
 
-        // 2. HITUNG PERGERAKAN SELAMA PERIODE
-        $penambahan_modal_desa = $getSaldo('3.1.01.%', $endDate) - $modal_desa_awal;
-        $penambahan_modal_masyarakat = $getSaldo('3.1.02.%', $endDate) - $modal_masyarakat_awal;
-        $laba_rugi_periode_berjalan = $getLabaRugi($tanggalAwal, $endDate);
-        // Bagi hasil adalah pergerakan debit, jadi dikali -1
-        $bagi_hasil_desa = ($getSaldo('3.2.01.%', $endDate) - $getSaldo('3.2.01.%', $tanggalAwal)) * -1;
-        $bagi_hasil_masyarakat = ($getSaldo('3.2.02.%', $endDate) - $getSaldo('3.2.02.%', $tanggalAwal)) * -1;
-        $penambahan_donasi = $getSaldo('3.4.%', $endDate) - $modal_donasi_awal;
-        
+        // 1. HITUNG SALDO AWAL (akumulasi s.d. H-1 dari start_date)
+        $modal_desa_awal = (clone $baseQuery())->where('akuns.kode_akun', 'like', '3.1.01.%')->whereDate('jurnal_umums.tanggal_transaksi', '<=', $tanggalAwal)->sum(DB::raw('kredit - debit'));
+        $modal_masyarakat_awal = (clone $baseQuery())->where('akuns.kode_akun', 'like', '3.1.02.%')->whereDate('jurnal_umums.tanggal_transaksi', '<=', $tanggalAwal)->sum(DB::raw('kredit - debit'));
+        $modal_donasi_awal = (clone $baseQuery())->where('akuns.kode_akun', 'like', '3.4.%')->whereDate('jurnal_umums.tanggal_transaksi', '<=', $tanggalAwal)->sum(DB::raw('kredit - debit'));
+
+        // Saldo Laba Awal
+        $pendapatanAwal = (clone $baseQuery())->whereIn('akuns.tipe_akun', ['Pendapatan', 'Pendapatan & Beban Lainnya'])->whereDate('jurnal_umums.tanggal_transaksi', '<=', $tanggalAwal)->sum(DB::raw('kredit - debit'));
+        $bebanAwal = (clone $baseQuery())->whereIn('akuns.tipe_akun', ['Beban', 'HPP'])->whereDate('jurnal_umums.tanggal_transaksi', '<=', $tanggalAwal)->sum(DB::raw('debit - kredit'));
+        $saldo_laba_awal = $pendapatanAwal - $bebanAwal;
+
+        // 2. HITUNG PERGERAKAN SELAMA PERIODE (start_date s.d. end_date)
+        $queryPeriode = (clone $baseQuery())->whereBetween('jurnal_umums.tanggal_transaksi', [$startDate, $endDate]);
+
+        $penambahan_modal_desa = (clone $queryPeriode)->where('akuns.kode_akun', 'like', '3.1.01.%')->sum(DB::raw('kredit - debit'));
+        $penambahan_modal_masyarakat = (clone $queryPeriode)->where('akuns.kode_akun', 'like', '3.1.02.%')->sum(DB::raw('kredit - debit'));
+        $penambahan_donasi = (clone $queryPeriode)->where('akuns.kode_akun', 'like', '3.4.%')->sum(DB::raw('kredit - debit'));
+        $bagi_hasil_desa = (clone $queryPeriode)->where('akuns.kode_akun', 'like', '3.2.01.%')->sum(DB::raw('debit - kredit'));
+        $bagi_hasil_masyarakat = (clone $queryPeriode)->where('akuns.kode_akun', 'like', '3.2.02.%')->sum(DB::raw('debit - kredit'));
+
+        // Laba Rugi Periode Berjalan
+        $pendapatanPeriode = (clone $queryPeriode)->whereIn('akuns.tipe_akun', ['Pendapatan', 'Pendapatan & Beban Lainnya'])->sum(DB::raw('kredit - debit'));
+        $bebanPeriode = (clone $queryPeriode)->whereIn('akuns.tipe_akun', ['Beban', 'HPP'])->sum(DB::raw('debit - kredit'));
+        $laba_rugi_periode_berjalan = $pendapatanPeriode - $bebanPeriode;
+
         // 3. HITUNG SALDO AKHIR
         $penyertaan_modal_akhir = $modal_desa_awal + $modal_masyarakat_awal + $penambahan_modal_desa + $penambahan_modal_masyarakat;
         $saldo_laba_akhir = $saldo_laba_awal + $laba_rugi_periode_berjalan - $bagi_hasil_desa - $bagi_hasil_masyarakat;
         $modal_donasi_akhir = $modal_donasi_awal + $penambahan_donasi;
         $ekuitas_akhir = $penyertaan_modal_akhir + $saldo_laba_akhir + $modal_donasi_akhir;
 
-        // Penanda Tangan
+        // Data Penanda Tangan
         $direktur = User::role('direktur_bumdes')->with('anggota')->first();
         $penandaTangan1 = ['jabatan' => 'Direktur', 'nama' => $direktur && $direktur->anggota ? $direktur->anggota->nama_lengkap : '....................'];
         $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
@@ -117,7 +113,7 @@ class PerubahanEkuitasController extends Controller
         
         return view('laporan.perubahan_ekuitas.show', compact(
             'startDate', 'endDate', 'bumdes', 'tanggalCetak',
-            'modal_desa_awal', 'modal_masyarakat_awal', 'saldo_laba_awal', 'modal_donasi_awal',
+            'modal_desa_awal', 'modal_masyarakat_awal', 'saldo_laba_awal',
             'penambahan_modal_desa', 'penambahan_modal_masyarakat', 'laba_rugi_periode_berjalan',
             'bagi_hasil_desa', 'bagi_hasil_masyarakat',
             'penyertaan_modal_akhir', 'saldo_laba_akhir', 'modal_donasi_akhir', 'ekuitas_akhir',
@@ -125,3 +121,4 @@ class PerubahanEkuitasController extends Controller
         ));
     }
 }
+
