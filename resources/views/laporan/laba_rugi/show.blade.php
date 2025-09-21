@@ -8,14 +8,13 @@
 
 @section('content')
 @php
-    // Safeguards untuk memastikan variabel ada dan memiliki struktur default
-    $bumdes = $bumdes ?? \App\Models\Bungdes::first();
-    $startDate = $startDate ?? now();
-    $endDate = $endDate ?? now();
-    $tanggalCetak = $tanggalCetak ?? now();
-    $lokasi = optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes';
-    $penandaTangan1 = $penandaTangan1 ?? ['jabatan' => 'Direktur', 'nama' => ''];
-    $penandaTangan2 = $penandaTangan2 ?? ['jabatan' => 'Bendahara', 'nama' => ''];
+    // Helper function untuk format Rupiah
+    function format_rp($value) {
+        if ($value < 0) {
+            return '(Rp ' . number_format(abs($value), 0, ',', '.') . ')';
+        }
+        return 'Rp ' . number_format($value, 0, ',', '.');
+    }
 @endphp
 <div class="card">
     <div class="card-body">
@@ -32,116 +31,73 @@
         </div>
 
         {{-- TABEL DATA --}}
-        <table class="table table-borderless table-sm">
-             <tbody>
+        <table class="table table-borderless table-sm" style="width: 100%;">
+            <tbody>
                 {{-- PENDAPATAN --}}
-                <tr class="table-active">
-                    <td colspan="2"><strong>Pendapatan</strong></td>
-                </tr>
-                @forelse ($pendapatans as $item)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
-                        <td class="text-right" style="width: 25%">{{ 'Rp ' . number_format($item['total'], 0, ',', '.') }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada pendapatan</em></td>
-                        <td class="text-right"></td>
-                    </tr>
-                @endforelse
-                <tr class="bg-light">
-                    <td><strong>Total Pendapatan</strong></td>
-                    <td class="text-right"><strong>{{ 'Rp ' . number_format($totalPendapatan, 0, ',', '.') }}</strong></td>
-                </tr>
+                <tr class="table-active"><td colspan="2"><strong>PENDAPATAN USAHA</strong></td></tr>
+                <tr><td><strong>Pendapatan Jasa</strong></td><td class="text-right" style="width: 25%">{{ format_rp($pendapatan_jasa) }}</td></tr>
+                <tr><td><strong>Penjualan barang dagangan bersih</strong></td><td class="text-right">{{ format_rp($penjualan_dagang_bersih) }}</td></tr>
+                <tr><td><strong>Penjualan barang jadi bersih</strong></td><td class="text-right">{{ format_rp($penjualan_jadi_bersih) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Pendapatan</td><td class="text-right">{{ format_rp($total_pendapatan) }}</td></tr>
                 <tr><td colspan="2">&nbsp;</td></tr>
 
                 {{-- HPP --}}
-                <tr class="table-active">
-                    <td colspan="2"><strong>Harga Pokok Penjualan (HPP)</strong></td>
-                </tr>
-                 @forelse ($hpps as $item)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
-                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada HPP</em></td>
-                        <td class="text-right"></td>
-                    </tr>
-                @endforelse
-                <tr class="bg-light">
-                    <td><strong>Total HPP</strong></td>
-                    <td class="text-right"><strong>({{ 'Rp ' . number_format($totalHpp, 0, ',', '.') }})</strong></td>
-                </tr>
+                <tr class="table-active"><td colspan="2"><strong>HARGA POKOK PENJUALAN</strong></td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Harga Pokok Penjualan</td><td class="text-right">({{ format_rp(abs($total_hpp)) }})</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
 
                 {{-- LABA KOTOR --}}
-                <tr class="table-secondary font-weight-bold">
-                    <td>LABA KOTOR</td>
-                    <td class="text-right">{{ 'Rp ' . number_format($labaKotor, 0, ',', '.') }}</td>
-                </tr>
-                 <tr><td colspan="2">&nbsp;</td></tr>
+                <tr class="table-secondary font-weight-bold"><td>LABA (RUGI) KOTOR</td><td class="text-right">{{ format_rp($laba_kotor) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
 
-                {{-- BEBAN --}}
-                <tr class="table-active">
-                    <td colspan="2"><strong>Beban Operasional</strong></td>
-                </tr>
-                @forelse ($bebans as $item)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
-                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada beban</em></td>
-                        <td class="text-right"></td>
-                    </tr>
-                @endforelse
-                <tr class="bg-light">
-                    <td><strong>Total Beban Operasional</strong></td>
-                    <td class="text-right"><strong>({{ 'Rp ' . number_format($totalBeban, 0, ',', '.') }})</strong></td>
-                </tr>
-
-                 {{-- LABA OPERASIONAL --}}
-                <tr class="table-secondary font-weight-bold">
-                    <td>LABA OPERASIONAL</td>
-                    <td class="text-right">{{ 'Rp ' . number_format($labaOperasional, 0, ',', '.') }}</td>
-                </tr>
-                 <tr><td colspan="2">&nbsp;</td></tr>
-
-                {{-- PENDAPATAN & BEBAN LAIN --}}
-                 <tr class="table-active">
-                    <td colspan="2"><strong>Pendapatan & Beban Lain-lain</strong></td>
-                </tr>
-                {{-- --- PERBAIKAN SINTAKS DIMULAI DI SINI --- --}}
-                @forelse ($pendapatanLains as $item)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
-                        <td class="text-right">{{ 'Rp ' . number_format($item['total'], 0, ',', '.') }}</td>
-                    </tr>
-                @empty
-                    {{-- Dikosongkan agar tidak ada pesan duplikat --}}
-                @endforelse
-                @forelse ($bebanLains as $item)
-                    <tr>
-                        <td style="padding-left: 30px;">{{ $item['nama_akun'] }}</td>
-                        <td class="text-right">({{ 'Rp ' . number_format($item['total'], 0, ',', '.') }})</td>
-                    </tr>
-                @empty
-                    {{-- Dikosongkan agar tidak ada pesan duplikat --}}
-                @endforelse
-                @if(empty($pendapatanLains) && empty($bebanLains))
-                     <tr>
-                        <td style="padding-left: 30px;" class="text-muted"><em>Tidak ada pendapatan atau beban lain-lain</em></td>
-                        <td class="text-right"></td>
-                    </tr>
-                @endif
-                {{-- --- AKHIR PERBAIKAN SINTAKS --- --}}
+                {{-- BEBAN-BEBAN USAHA --}}
+                <tr class="table-active"><td colspan="2"><strong>BEBAN-BEBAN USAHA</strong></td></tr>
+                <tr><td class="pl-4"><strong>Beban Administrasi dan Umum</strong></td><td></td></tr>
+                <tr><td class="pl-5">Beban Pegawai Bagian Administrasi Umum</td><td class="text-right">{{ format_rp($beban_adm_pegawai) }}</td></tr>
+                <tr><td class="pl-5">Beban Perlengkapan</td><td class="text-right">{{ format_rp($beban_adm_perlengkapan) }}</td></tr>
+                <tr><td class="pl-5">Beban Pemeliharaan dan Perbaikan</td><td class="text-right">{{ format_rp($beban_adm_pemeliharaan) }}</td></tr>
+                <tr><td class="pl-5">Beban Utilitas</td><td class="text-right">{{ format_rp($beban_adm_utilitas) }}</td></tr>
+                <tr><td class="pl-5">Beban Sewa dan Asuransi</td><td class="text-right">{{ format_rp($beban_adm_sewa) }}</td></tr>
+                <tr><td class="pl-5">Beban Kebersihan dan Keamanan</td><td class="text-right">{{ format_rp($beban_adm_kebersihan) }}</td></tr>
+                <tr><td class="pl-5">Beban Penyisihan dan Penyusutan/Amortisasi</td><td class="text-right">{{ format_rp($beban_adm_penyusutan) }}</td></tr>
+                <tr><td class="pl-5">Beban Administrasi dan Umum Lainnya</td><td class="text-right">{{ format_rp($beban_adm_lain) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Beban Administrasi Umum</td><td class="text-right">({{ format_rp(abs($total_beban_adm)) }})</td></tr>
                 
-                {{-- LABA BERSIH --}}
+                <tr><td class="pl-4"><strong>Beban Operasional</strong></td><td></td></tr>
+                <tr><td class="pl-5">Beban Pegawai Bagian Operasional</td><td class="text-right">{{ format_rp($beban_ops_pegawai) }}</td></tr>
+                <tr><td class="pl-5">Beban Pemeliharaan dan Perbaikan</td><td class="text-right">{{ format_rp($beban_ops_pemeliharaan) }}</td></tr>
+                <tr><td class="pl-5">Beban Operasional Lainnya</td><td class="text-right">{{ format_rp($beban_ops_lain) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Beban Operasional</td><td class="text-right">({{ format_rp(abs($total_beban_ops)) }})</td></tr>
+
+                <tr><td class="pl-4"><strong>Beban Pemasaran</strong></td><td></td></tr>
+                <tr><td class="pl-5">Beban Pegawai Bagian Pemasaran</td><td class="text-right">{{ format_rp($beban_pemasaran_pegawai) }}</td></tr>
+                <tr><td class="pl-5">Beban Iklan dan Promosi</td><td class="text-right">{{ format_rp($beban_pemasaran_iklan) }}</td></tr>
+                <tr><td class="pl-5">Beban Pemasaran Lainnya</td><td class="text-right">{{ format_rp($beban_pemasaran_lain) }}</td></tr>
+                <tr class="bg-light font-weight-bold"><td class="pl-4">Total Beban Pemasaran</td><td class="text-right">({{ format_rp(abs($total_beban_pemasaran)) }})</td></tr>
+                
+                <tr class="bg-light font-weight-bold" style="border-top: 1px solid #dee2e6;"><td>Total Beban-Beban Usaha</td><td class="text-right">({{ format_rp(abs($total_beban_usaha)) }})</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+
+                {{-- LABA OPERASI --}}
+                <tr class="table-secondary font-weight-bold"><td>LABA (RUGI) OPERASI</td><td class="text-right">{{ format_rp($laba_operasi) }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+
+                {{-- PENDAPATAN & BEBAN LAIN-LAIN --}}
+                <tr class="table-active"><td colspan="2"><strong>PENDAPATAN DAN BEBAN LAIN-LAIN</strong></td></tr>
+                <tr><td class="pl-4">Total Pendapatan Lain-lain</td><td class="text-right">{{ format_rp($pendapatan_lain) }}</td></tr>
+                <tr><td class="pl-4">Total Beban Lain-lain</td><td class="text-right">({{ format_rp(abs($beban_lain)) }})</td></tr>
+                <tr><td class="pl-4">Beban Pajak</td><td class="text-right">({{ format_rp(abs($beban_pajak)) }})</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+
+                {{-- LABA BERSIH SEBELUM BAGI HASIL --}}
+                <tr class="table-secondary font-weight-bold"><td>LABA (RUGI) BERSIH SEBELUM BAGI HASIL</td><td class="text-right">{{ format_rp($laba_sebelum_bagi_hasil) }}</td></tr>
+                <tr><td class="pl-4">BAGI HASIL PENYERTAAN MODAL DESA</td><td class="text-right">({{ format_rp(abs($bagi_hasil_desa)) }})</td></tr>
+                <tr><td class="pl-4">BAGI HASIL PENYERTAAN MODAL MASYARAKAT</td><td class="text-right">({{ format_rp(abs($bagi_hasil_masyarakat)) }})</td></tr>
+                
+                {{-- LABA BERSIH FINAL --}}
                 <tr class="table-success font-weight-bold" style="border-top: 3px double #000;">
-                    <td>LABA BERSIH</td>
-                    <td class="text-right">{{ 'Rp ' . number_format($labaRugiBersih, 0, ',', '.') }}</td>
+                    <td>LABA (RUGI) BERSIH SETELAH BAGI HASIL</td>
+                    <td class="text-right">{{ format_rp($laba_bersih_final) }}</td>
                 </tr>
 
             </tbody>
@@ -152,7 +108,7 @@
             <tr>
                 <td style="text-align: center; width: 50%;"></td>
                 <td style="text-align: center; width: 50%;">
-                    {{ $lokasi }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
+                    {{ optional($bumdes)->alamat ? explode(',', $bumdes->alamat)[0] : 'Lokasi BUMDes' }}, {{ $tanggalCetak->translatedFormat('d F Y') }}
                 </td>
             </tr>
             <tr>
@@ -176,20 +132,3 @@
     </div>
 </div>
 @stop
-
-@section('css')
-<style>
-    @media print {
-        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
-            display: none !important;
-        }
-        .content-wrapper, .content, .card, .card-body {
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-    }
-</style>
-@stop
-
