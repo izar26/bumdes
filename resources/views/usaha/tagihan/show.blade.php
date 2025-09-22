@@ -7,44 +7,44 @@
     <style>
         body {
             font-family: 'Courier New', monospace;
-            font-size: 12px; /* Increased from 12px */
+            font-size: 12px;
             color: #000;
             margin: 0;
             padding: 0;
-            line-height: 1.1;
+            line-height: 1;
         }
         .tombol-cetak {
             display: block;
             width: 200px;
-            margin: 20px auto; /* Adjusted margin */
-            padding: 10px; /* Adjusted padding */
+            margin: 10px auto;
+            padding: 8px;
             background-color: #4CAF50;
             color: white;
             text-align: center;
             border: none;
             cursor: pointer;
-            font-size: 16px; /* Increased from 14px */
+            font-size: 14px;
             font-family: Arial, sans-serif;
         }
         .struk-container {
-            width: 800px;
-            margin: 20px auto; /* Adjusted margin */
-            padding: 15px; /* Adjusted padding */
+            width: 700px;
+            margin: 10px auto;
+            padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
         }
         .header {
             text-align: center;
-            margin-bottom: 5px; /* Adjusted margin */
-            font-size: 14px; /* Increased from 10px */
-            line-height: 1.2;
+            margin-bottom: 3px;
+            font-size: 13px;
+            line-height: 1.1;
         }
         .content {
             display: flex;
             justify-content: space-between;
         }
         .arsip, .bukti {
-            padding: 8px; /* Adjusted padding */
+            padding: 5px;
             box-sizing: border-box;
         }
         .arsip {
@@ -53,27 +53,27 @@
         }
         .bukti {
             width: 62%;
-            padding-left: 15px; /* Adjusted padding */
+            padding-left: 10px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px; /* Increased from 10px */
+            font-size: 11px;
         }
         td {
-            padding: 2px 0; /* Adjusted padding */
+            padding: 1px 0;
             vertical-align: top;
         }
         .judul-bagian {
             font-weight: bold;
             text-align: center;
-            margin-bottom: 5px; /* Adjusted margin */
-            font-size: 14px; /* Increased from 10px */
+            margin-bottom: 3px;
+            font-size: 12px;
         }
         .logo {
             text-align: center;
-            height: 40px; /* Increased from 30px */
-            margin: -5px 0 5px 0; /* Adjusted margin */
+            height: 25px;
+            margin: -3px 0 3px 0;
         }
         .logo img {
             height: 100%;
@@ -83,8 +83,8 @@
             font-weight: bold;
         }
         .rincian-table td {
-            font-size: 12px; /* Increased from 9px */
-            padding: 2px 0; /* Adjusted padding */
+            font-size: 8px;
+            padding: 1px 0;
         }
         .rincian-table .description {
             width: 30%;
@@ -92,11 +92,11 @@
         .rincian-table .rate {
             width: 15%;
             text-align: right;
-            padding-right: 10px; /* Adjusted padding */
+            padding-right: 5px;
         }
         .rincian-table .qty {
             width: 10%;
-            padding-left: 10px; /* Adjusted padding */
+            padding-left: 5px;
         }
         .rincian-table .currency {
             width: 5%;
@@ -106,10 +106,10 @@
             text-align: right;
         }
         .tunggakan-table {
-            font-size: 12px; /* Increased from 9px */
+            font-size: 10px;
         }
         .tunggakan-table td {
-            padding: 2px 0; /* Adjusted padding */
+            padding: 1px 0;
         }
         .tunggakan-table .description {
             width: 80%;
@@ -122,11 +122,11 @@
             text-align: right;
         }
         .signature {
-            line-height: 1.2;
-            margin-top: 10px; /* Adjusted margin */
+            line-height: 1;
+            margin-top: 5px;
         }
         .compact-section {
-            margin-bottom: 10px; /* Adjusted margin */
+            margin-bottom: 5px;
         }
         .flex-container {
             display: flex;
@@ -134,7 +134,7 @@
         }
         .divider {
             border-top: 1px dashed #ccc;
-            margin: 8px 0; /* Adjusted margin */
+            margin: 5px 0;
         }
         @media print {
             .tombol-cetak, .btn, .content-header, .d-print-none {
@@ -144,14 +144,14 @@
                 border: none;
                 width: 100%;
                 margin: 0;
-                padding: 10px; /* Adjusted padding */
+                padding: 5px;
                 page-break-after: always;
             }
             .struk-container:last-child {
                 page-break-after: avoid;
             }
             body {
-                font-size: 12px; /* Adjusted font size for print */
+                font-size: 9px;
                 background: white;
                 margin: 0;
                 padding: 0;
@@ -168,7 +168,6 @@
                 top: 0;
             }
         }
-
     </style>
 </head>
 <body class="hold-transition sidebar-mini">
@@ -177,6 +176,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-12">
+                        <button class="tombol-cetak" onclick="window.print()">Cetak Struk</button>
                         <div class="struk-container">
                             <div class="content">
                                 <div class="arsip">
@@ -191,7 +191,7 @@
                                         <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                                         <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
                                         <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                    <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                                        <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
                                         <tr><td>Jumlah Bayar</td><td>: Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td></tr>
                                         <tr><td>Tunggakan</td><td>: Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
                                         <tr><td class="total-merah">Total Harus Dibayar</td><td class="total-merah">: Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td></tr>
@@ -215,7 +215,7 @@
                                         </div>
                                         <div style="width: 40%; text-align: center;">
                                             <div class="judul-bagian">RINCIAN PEMBAYARAN</div>
-                                            <div style="font-size: 12px;">Pembayaran bulan ini</div>
+                                            <div style="font-size: 11px;">Pembayaran bulan ini</div>
                                         </div>
                                     </div>
                                     <div class="flex-container compact-section">
@@ -225,7 +225,7 @@
                                                 <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                                                 <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
                                                 <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                    <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                                                <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
                                                 <tr><td>Meter Akhir</td><td>: {{ $tagihan->meter_akhir }} m³</td></tr>
                                                 <tr><td>Meter Awal</td><td>: {{ $tagihan->meter_awal }} m³</td></tr>
                                                 <tr><td>Pemakaian</td><td>: {{ $tagihan->total_pemakaian_m3 }} m³</td></tr>
@@ -256,15 +256,15 @@
                                     </div>
                                     <div class="flex-container compact-section">
                                         <div style="width: 48%;">
-                                            <div class="judul-bagian" style="text-align: left; margin-top: 5px;">{{ \Carbon\Carbon::parse($tagihan->tanggal_cetak)->locale('id')->isoFormat('MMMM Y') }}</div>
-                                            <div style="font-size: 12px; line-height: 1.1; margin-top: 5px;">
+                                            <div class="judul-bagian" style="text-align: left; margin-top: 3px;">{{ \Carbon\Carbon::parse($tagihan->tanggal_cetak)->locale('id')->isoFormat('MMMM Y') }}</div>
+                                            <div style="font-size: 11px; line-height: 1; margin-top: 3px;">
                                                 Sindangraja {{ \Carbon\Carbon::parse($tagihan->tanggal_cetak)->locale('id')->isoFormat('DD MMM YY') }}<br>
                                                 Petugas Penagihan<br>
                                                 Bpk {{ $tagihan->petugas->nama_petugas ?? 'N/A' }}
                                             </div>
                                         </div>
                                         <div style="width: 52%;">
-                                            <div style="text-align: center; font-size: 12px; margin-bottom: 5px;">Tunggakan dan Denda</div>
+                                            <div style="text-align: center; font-size: 11px; margin-bottom: 3px;">Tunggakan dan Denda</div>
                                             <table class="tunggakan-table">
                                                 <tr><td class="description">Sisa Tunggakan Bulan Lalu</td><td class="amount">Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
                                                 <tr><td class="description">Denda</td><td class="amount">Rp. {{ number_format($tagihan->denda, 0, ',', '.') }}</td></tr>

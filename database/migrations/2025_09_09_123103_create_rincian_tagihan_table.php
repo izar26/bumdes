@@ -20,7 +20,6 @@ $table->foreignId('tagihan_id')->constrained('tagihan')->onDelete('cascade'); //
             $table->decimal('kuantitas', 10, 2)->default(1);
             $table->decimal('harga_satuan', 12, 2);
             $table->decimal('subtotal', 12, 2);
-            // Timestamps tidak wajib di sini, tapi baik untuk audit
             $table->timestamps();
         });
     }

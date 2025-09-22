@@ -33,6 +33,7 @@
             border: 1px solid #ccc;
         }
         .header {
+            font-weight: bold
             text-align: center;
             margin-bottom: 3px;
             font-size: 14px;
