@@ -154,9 +154,16 @@
         padding: 5px;
     }
 
-    /* Hapus page-break di struk terakhir */
+      .struk-container {
+        page-break-inside: avoid; /* biar tidak kepotong di tengah */
+    }
+
+    .struk-container:nth-of-type(3n) {
+        page-break-after: always;
+    }
+
     .struk-container:last-child {
-        page-break-after: avoid;
+        page-break-after: auto;
     }
 
     /* Atur body */
