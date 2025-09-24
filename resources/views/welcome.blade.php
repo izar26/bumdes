@@ -152,7 +152,7 @@
     <div class="p-6">
         <span class="text-sm text-gray-500 flex items-center mb-2">
             <i class="fa-regular fa-calendar-alt mr-2"></i>
-            {{ $berita->created_at->format('d F Y') }}
+            {{ $berita->created_at->isoFormat('D MMMM YYYY') }}
         </span>
         <h4 class="font-semibold text-lg my-2"><a href="#" class="hover:text-green-600 transition-colors">{{ $berita->judul }}</a></h4>
         <p class="text-gray-600 text-sm line-clamp-3">{{ $berita->konten }}</p>

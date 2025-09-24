@@ -17,7 +17,7 @@
             <p><strong>Jenis Usaha:</strong> {{ $unitUsaha->jenis_usaha }}</p>
             <p><strong>BUMDes Induk:</strong> {{ $unitUsaha->bungdes->nama_bumdes ?? 'N/A' }}</p>
             <p><strong>Penanggung Jawab:</strong> {{ $unitUsaha->user->username ?? 'N/A' }}</p>
-            <p><strong>Tanggal Mulai Operasi:</strong> {{ optional($unitUsaha->tanggal_mulai_operasi)->format('d F Y') }}</p>
+            <p><strong>Tanggal Mulai Operasi:</strong> {{ optional($unitUsaha->tanggal_mulai_operasi)->isoFormat('D MMMM YYYY') }}</p>
             <p><strong>Status Operasi:</strong> {{ $unitUsaha->status_operasi }}</p>
             <p><strong>Dibuat Pada:</strong> {{ $unitUsaha->created_at->format('d F Y H:i') }}</p>
             <p><strong>Diperbarui Pada:</strong> {{ $unitUsaha->updated_at->format('d F Y H:i') }}</p>

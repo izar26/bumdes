@@ -287,10 +287,25 @@ class JurnalUmumController extends Controller
             $bendahara = User::role('bendahara_bumdes')->with('anggota')->first();
             $penandaTangan2 = ['jabatan' => 'Bendahara', 'nama' => $bendahara && $bendahara->anggota ? $bendahara->anggota->nama_lengkap : '....................'];
             
-            $tahun = $request->year ?? 'Semua';
+            $startDate = $request->start_date;
+            $endDate = $request->end_date;
+            $tahun = $request->year;
+            $periode = 'Semua Periode'; // Nilai default
+
+            if ($startDate && $endDate) {
+                $periode = Carbon::parse($startDate)->isoFormat('D MMMM Y') . ' s/d ' . Carbon::parse($endDate)->isoFormat('D MMMM Y');
+            } elseif ($startDate) {
+                $periode = 'Mulai Tanggal ' . Carbon::parse($startDate)->isoFormat('D MMMM Y');
+            } elseif ($endDate) {
+                $periode = 'Sampai Tanggal ' . Carbon::parse($endDate)->isoFormat('D MMMM Y');
+            } elseif ($tahun && $tahun != 'semua') {
+                $periode = 'Tahun ' . $tahun;
+            }
+            // --- AKHIR LOGIKA PERIODE BARU ---
+            
             $statusJurnal = $request->approval_status ?? 'semua';
 
-            return view('keuangan.jurnal.print', compact('jurnals', 'tahun', 'statusJurnal', 'bumdes', 'tanggalCetak', 'penandaTangan1', 'penandaTangan2', 'lokasi'));
+            return view('keuangan.jurnal.print', compact('jurnals', 'periode', 'statusJurnal', 'bumdes', 'tanggalCetak', 'penandaTangan1', 'penandaTangan2', 'lokasi'));
         }
 
         $jurnal = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')->findOrFail($id);
