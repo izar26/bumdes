@@ -20,21 +20,31 @@
 <div class="card">
     <div class="card-body">
 
-        {{-- KOP SURAT --}}
-        <div class="text-center" style="border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 20px;">
+        {{-- KOP SURAT BARU --}}
+        <div class="kop">
             @if(optional($bumdes)->logo)
-                <img src="{{ asset('storage/' . $bumdes->logo) }}" alt="Logo" style="width: 80px; position: absolute; left: 40px; top: 30px;">
+                <img src="{{ asset('storage/'. $bumdes->logo) }}" alt="Logo">
             @endif
-            <h4 class="font-weight-bold mb-1">{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h4>
-            <p class="mb-1">{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</p>
-            <h5 class="font-weight-bold mt-3 mb-1">Laporan Posisi Keuangan</h5>
+            <div class="kop-text">
+                <h1>{{ optional($bumdes)->nama_bumdes ?? 'BUMDes Anda' }}</h1>
+                <h2>{{ optional($bumdes)->alamat ?? 'Alamat BUMDes Anda' }}</h2>
+                <p>Email: {{ optional($bumdes)->email ?? '-' }} | Telp: {{ optional($bumdes)->telepon ?? '-' }}</p>
+            </div>
+        </div>
+        <div class="garis-pembatas"></div>
+
+        {{-- JUDUL LAPORAN --}}
+        <div class="judul">
+            <h3>Laporan Posisi Keuangan(Neraca)</h3>
             <p>Untuk Posisi per <strong>{{ $endDate->isoFormat('D MMMM Y') }}</strong></p>
         </div>
 
+
         {{-- TABEL DATA --}}
-        <table class="table table-bordered table-sm" style="width: 100%;">
+        <table class="table table-bordered table-sm" style="width: 100%; margin-top: 20px;">
             <thead>
-                <tr class="text-center table-active">
+                {{-- HEADER TABLE DIPERBARUI --}}
+                <tr class="text-center">
                     <th>Keterangan</th>
                     <th style="width: 25%">Saldo</th>
                 </tr>
@@ -121,3 +131,93 @@
 </div>
 @stop
 
+@section('css')
+<style>
+    /* CSS KOP SURAT & TABEL */
+    .kop {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+    }
+    .kop img {
+        height: 75px;
+        width: auto;
+        margin-right: 20px;
+    }
+    .kop-text {
+        flex: 1;
+        text-align: center;
+    }
+    .kop-text h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #006666;
+    }
+    .kop-text h2 {
+        margin: 2px 0 0;
+        font-size: 14px;
+        font-weight: normal;
+        color: #333;
+    }
+    .kop-text p {
+        margin: 2px 0;
+        font-size: 12px;
+    }
+
+    .garis-pembatas {
+        border-top: 3px solid #000;
+        border-bottom: 1px solid #000;
+        height: 8px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+    }
+
+    .judul {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .judul h3 {
+        margin: 5px 0;
+        font-size: 16px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .judul p {
+        margin: 2px 0;
+        font-size: 14px;
+    }
+    
+    th {
+        background: #008080 !important;
+        color: white !important;
+        text-align: center;
+    }
+
+    /* CSS UNTUK PRINT */
+    @media print {
+        body {
+            margin: 0;
+        }
+        .main-sidebar, .main-header, .content-header, .no-print, .main-footer, .card-header, form {
+            display: none !important;
+        }
+        .content-wrapper, .content, .card, .card-body {
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .kop, .garis-pembatas, th {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        /* Memastikan warna latar belakang baris di laporan ikut tercetak */
+        .bg-light, .table-secondary, .table-primary, .table-info {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+</style>
+@stop
