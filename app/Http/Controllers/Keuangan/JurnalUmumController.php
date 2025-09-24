@@ -25,23 +25,19 @@ class JurnalUmumController extends Controller
         $user = Auth::user();
         
         $jurnalQuery = JurnalUmum::with('detailJurnals.akun', 'unitUsaha')
-                         ->latest('tanggal_transaksi') // Urutkan berdasarkan tanggal terbaru
-                         ->latest('created_at');      // Lalu berdasarkan waktu pembuatan
+                                    ->latest('tanggal_transaksi') // Urutkan berdasarkan tanggal terbaru
+                                    ->latest('created_at');      // Lalu berdasarkan waktu pembuatan
 
-        // --- 1. LOGIKA PENCARIAN BARU ---
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $jurnalQuery->where('deskripsi', 'like', "%{$searchTerm}%");
         }
-        // --- AKHIR LOGIKA PENCARIAN ---
 
-        // Filter berdasarkan hak akses
         if ($user->hasRole(['admin_unit_usaha', 'manajer_unit_usaha'])) {
             $managedUnitUsahaIds = $user->unitUsahas()->pluck('unit_usahas.unit_usaha_id');
             $jurnalQuery->whereIn('unit_usaha_id', $managedUnitUsahaIds);
         }
 
-        // Filter berdasarkan form
         $tahun = $request->year ?? date('Y');
         if ($tahun && $tahun !== 'semua') {
             $jurnalQuery->whereYear('tanggal_transaksi', $tahun);
@@ -60,7 +56,6 @@ class JurnalUmumController extends Controller
             $jurnalQuery->whereDate('tanggal_transaksi', '<=', $request->end_date);
         }
 
-        // Filter Unit Usaha untuk admin BUMDes
         $unitUsahaId = $request->unit_usaha_id;
         if ($user->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes'])) {
             if ($unitUsahaId === 'pusat') {
@@ -70,9 +65,7 @@ class JurnalUmumController extends Controller
             }
         }
 
-        // Hitung total Debit & Kredit dari hasil query yang sudah difilter
         $totalQuery = clone $jurnalQuery;
-        // Ambil semua ID jurnal yang cocok, lalu hitung total dari tabel jurnal_umums
         $filteredIds = $totalQuery->pluck('jurnal_id');
         $totals = JurnalUmum::whereIn('jurnal_id', $filteredIds)->select(
             DB::raw('SUM(total_debit) as total_debit_all'),
@@ -82,10 +75,8 @@ class JurnalUmumController extends Controller
         $totalDebitAll = $totals->total_debit_all ?? 0;
         $totalKreditAll = $totals->total_kredit_all ?? 0;
 
-        // Ambil data untuk halaman saat ini (pagination)
         $jurnals = $jurnalQuery->paginate(10)->appends($request->query());
 
-        // Data untuk dropdown filter
         $years = JurnalUmum::selectRaw('YEAR(tanggal_transaksi) as year')
             ->distinct()
             ->orderBy('year', 'desc')
@@ -98,6 +89,15 @@ class JurnalUmumController extends Controller
             $unitUsahas = $user->unitUsahas()->orderBy('nama_unit')->get();
         }
         
+        // --- INI LOGIKA BARU UNTUK MEMBEDAKAN AJAX DAN REQUEST BIASA ---
+        if ($request->ajax()) {
+            // Jika request dari AJAX, kirim hanya bagian tabelnya
+            return view('keuangan.jurnal._jurnal_table', compact(
+                'jurnals', 'totalDebitAll', 'totalKreditAll'
+            ))->render();
+        }
+
+        // Jika request biasa, kirim halaman lengkap seperti biasa
         return view('keuangan.jurnal.index', compact(
             'jurnals', 'unitUsahas', 'years', 'tahun', 'statusJurnal', 'totalDebitAll', 'totalKreditAll'
         ));
