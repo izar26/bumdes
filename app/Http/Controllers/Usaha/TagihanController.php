@@ -240,11 +240,15 @@ class TagihanController extends Controller
                     $sisa -= $kuantitas;
                 }
                 $firstBlock = false;
-            } else {
-                if ($sisa <= 0) break;
-                $kuantitas = min($sisa, ($atas - ($bawah > 0 ? ($bawah - 1) : 0)));
-                $sisa -= $kuantitas;
-            }
+            } if ($sisa <= 0) break;
+
+    if (is_null($atas)) {
+        $kuantitas = $sisa;
+        $sisa = 0;
+    } else {
+        $kuantitas = min($sisa, $atas - $bawah + 1);
+        $sisa -= $kuantitas;
+    }
 
             if ($kuantitas > 0) {
                 $subtotal = $kuantitas * $tarif->harga;

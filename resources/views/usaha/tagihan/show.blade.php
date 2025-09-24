@@ -55,7 +55,7 @@
             font-weight: bold;
             text-align: center;
             margin-bottom: 2px;
-            font-size: 11px;
+            font-size: 10px;
         }
         .logo {
             text-align: center;
@@ -114,7 +114,6 @@
         }
         .compact-section {
             margin-bottom: 3px;
-            font-size: 9px
         }
         .flex-container {
             display: flex;
@@ -208,6 +207,7 @@
                         <div class="judul-bagian no-margin">RINCIAN PEMBAYARAN</div>
                         <br>
                         <div class="small-text">Pembayaran untuk Pemakaian</div>
+                        <br>
                     </div>
                 </div>
 

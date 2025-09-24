@@ -18,6 +18,7 @@
             padding: 4px;
             box-sizing: border-box;
             border: 1px solid #ccc;
+            margin-bottom: 3px
         }
         .header {
             font-weight: bold;
@@ -55,7 +56,7 @@
             font-weight: bold;
             text-align: center;
             margin-bottom: 2px;
-            font-size: 11px;
+            font-size: 10px;
         }
         .logo {
             text-align: center;
@@ -114,7 +115,6 @@
         }
         .compact-section {
             margin-bottom: 3px;
-            font-size: 9px
         }
         .flex-container {
             display: flex;
@@ -143,11 +143,12 @@
                 width: 100%;
                 margin: 0;
                 padding: 2px;
+                margin-bottom: 12px;
             }
             .struk-container:last-child {
                 page-break-after: avoid;
             }
-            .struk-container:nth-of-type(5n) {
+            .struk-container:nth-of-type(4n) {
         page-break-after: always;
     }
             body {
@@ -215,6 +216,7 @@
                         <div class="judul-bagian no-margin">RINCIAN PEMBAYARAN</div>
                         <br>
                         <div class="small-text">Pembayaran untuk Pemakaian</div>
+                        <br>
                     </div>
                 </div>
 
@@ -265,11 +267,13 @@
                         </div>
                     </div>
                     <div style="width: 52%;">
+                        <br>
                         <div class="small-text" style="text-align: center; margin-bottom: 1px;">Tunggakan dan Denda</div>
+                        <br>
                         <table class="tunggakan-table">
                             <tr><td class="description">Sisa Tunggakan Bulan Lalu</td><td class="amount">Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
                             <tr><td class="description">Denda</td><td class="amount">Rp. {{ number_format($tagihan->denda, 0, ',', '.') }}</td></tr>
-                            <tr><td class="description"><b>Jumlah Tunggakan + Denda</b></td><td class="amount"><b>Rp. {{ number_format($tagihan->tunggakan + $tagihan->denda, 0, ',', '.') }}</b></td></tr>
+                           <tr><td class="description"><b>Jumlah Tunggakan + Denda</b></td><td class="amount"><b>Rp. {{ number_format($tagihan->tunggakan + $tagihan->denda, 0, ',', '.') }}</b></td></tr>
                         </table>
 
                         <div class="divider"></div>
