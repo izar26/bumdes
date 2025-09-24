@@ -69,29 +69,29 @@
             color: red;
             font-weight: bold;
         }
+
         .rincian-table td {
-            font-size: 9px;
-            padding: 0;
-        }
-        .rincian-table .description {
-            width: 30%;
-        }
-        .rincian-table .rate {
-            width: 15%;
-            text-align: right;
-            padding-left: 4px;
-        }
-        .rincian-table .qty {
-            width: 10%;
-            padding-left: 4px;
-        }
-        .rincian-table .currency {
-            width: 5%;
-        }
-        .rincian-table .amount {
-            width: 10%;
-            text-align: right;
-        }
+    font-size: 9px;
+    padding: 0;
+}
+.rincian-table .description {
+    width: 40%; /* Tambah lebar kolom deskripsi */
+    text-align: left; /* Ratakan teks ke kiri */
+}
+.rincian-table .rate {
+    width: 20%; /* Lebar harga satuan */
+    text-align: right;
+    padding-left: 4px;
+}
+.rincian-table .qty {
+    width: 15%; /* Lebar kuantitas */
+    text-align: center; /* Ratakan ke tengah */
+    padding-left: 4px;
+}
+.rincian-table .amount {
+    width: 25%; /* Tambah sedikit lebar untuk jumlah */
+    text-align: right;
+}
         .tunggakan-table {
             font-size: 9px;
         }
@@ -206,6 +206,7 @@
                     </div>
                     <div style="width: 40%; text-align: center;">
                         <div class="judul-bagian no-margin">RINCIAN PEMBAYARAN</div>
+                        <br>
                         <div class="small-text">Pembayaran untuk Pemakaian</div>
                     </div>
                 </div>
@@ -257,7 +258,9 @@
                         </div>
                     </div>
                     <div style="width: 52%;">
+                        <br>
                         <div class="small-text" style="text-align: center; margin-bottom: 1px;">Tunggakan dan Denda</div>
+                        <br>
                         <table class="tunggakan-table">
                             <tr><td class="description">Sisa Tunggakan Bulan Lalu</td><td class="amount">Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
                             <tr><td class="description">Denda</td><td class="amount">Rp. {{ number_format($tagihan->denda, 0, ',', '.') }}</td></tr>

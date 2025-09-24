@@ -69,29 +69,29 @@
             color: red;
             font-weight: bold;
         }
+
         .rincian-table td {
-            font-size: 9px;
-            padding: 0;
-        }
-        .rincian-table .description {
-            width: 30%;
-        }
-        .rincian-table .rate {
-            width: 15%;
-            text-align: right;
-            padding-left: 4px;
-        }
-        .rincian-table .qty {
-            width: 10%;
-            padding-left: 4px;
-        }
-        .rincian-table .currency {
-            width: 5%;
-        }
-        .rincian-table .amount {
-            width: 10%;
-            text-align: right;
-        }
+    font-size: 9px;
+    padding: 0;
+}
+.rincian-table .description {
+    width: 40%;
+    text-align: left;
+}
+.rincian-table .rate {
+    width: 20%; /* Lebar harga satuan */
+    text-align: right;
+    padding-left: 4px;
+}
+.rincian-table .qty {
+    width: 15%; /* Lebar kuantitas */
+    text-align: center; /* Ratakan ke tengah */
+    padding-left: 4px;
+}
+.rincian-table .amount {
+    width: 25%; /* Tambah sedikit lebar untuk jumlah */
+    text-align: right;
+}
         .tunggakan-table {
             font-size: 9px;
         }
@@ -99,10 +99,10 @@
             padding: 0;
         }
         .tunggakan-table .description {
-            width: 80%;
+            width: 70%;
         }
         .tunggakan-table .amount {
-            width: 20%;
+            width: 30%;
             text-align: right;
         }
         .text-right {
@@ -147,7 +147,7 @@
             .struk-container:last-child {
                 page-break-after: avoid;
             }
-            .struk-container:nth-of-type(4n) {
+            .struk-container:nth-of-type(5n) {
         page-break-after: always;
     }
             body {
@@ -213,6 +213,7 @@
                     </div>
                     <div style="width: 40%; text-align: center;">
                         <div class="judul-bagian no-margin">RINCIAN PEMBAYARAN</div>
+                        <br>
                         <div class="small-text">Pembayaran untuk Pemakaian</div>
                     </div>
                 </div>
