@@ -12,30 +12,28 @@
     $statusAll = $isBalanced && $totalDebitAll > 0 ? 'Seimbang' : 'Tidak Seimbang';
     $badgeClassAll = $isBalanced ? 'badge-success' : 'badge-danger';
 @endphp
-
 <div class="card shadow-sm">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center" id="jurnalHeader">
         <div>
             <h3 class="card-title mb-0"><i class="fas fa-book"></i> Riwayat Jurnal Umum</h3>
-            <div class="small mt-2">
-                <br>
-                <strong>Total Debit (Hasil Filter):</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
-                <strong>Total Kredit (Hasil Filter):</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
-            </div>
         </div>
-        <span class="badge {{ $badgeClassAll }} p-2">Status Keseluruhan: {{ $statusAll }}</span>
+        <div class="small mt-2">
+    <br>
+    <strong>Total Debit (Hasil Filter):</strong> Rp {{ number_format($totalDebitAll, 0, ',', '.') }} |
+    <strong>Total Kredit (Hasil Filter):</strong> Rp {{ number_format($totalKreditAll, 0, ',', '.') }}
+</div>
+<span class="badge {{ $badgeClassAll }} p-2" id="statusBadge">Status Keseluruhan: {{ $statusAll }}</span>
     </div>
+
     <div class="card-body">
         {{-- Filter Section --}}
         <form id="filterForm" method="GET" class="mb-4">
             <div class="row g-2 align-items-end">
                 
-                {{-- KOTAK PENCARIAN BARU --}}
                 <div class="col-md-3">
                     <label for="search" class="form-label">Cari Deskripsi Jurnal</label>
                     <input type="text" name="search" id="search" class="form-control" placeholder="Contoh: Pembelian ATK" value="{{ request('search') }}">
                 </div>
-                {{-- AKHIR KOTAK PENCARIAN BARU --}}
 
                 <div class="col-md-2">
                     <label class="form-label">Tahun</label>
@@ -94,93 +92,10 @@
             </div>
         </form>
 
-        {{-- Table Section --}}
-        <div class="table-responsive">
-            <table class="table table-hover table-bordered mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th style="width: 15%;">Tanggal</th>
-                        <th>Keterangan / Akun</th>
-                        <th class="text-right">Debit</th>
-                        <th class="text-right">Kredit</th>
-                        <th class="text-center" style="width: 10%;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($jurnals as $jurnal)
-                        <tr class="table-primary">
-                            <td><strong>{{ \Carbon\Carbon::parse($jurnal->tanggal_transaksi)->format('d M Y') }}</strong></td>
-                            <td>
-                                <strong>{{ $jurnal->deskripsi }}</strong>
-                                <br>
-                                @if($jurnal->unitUsaha)
-                                    <span class="badge badge-info">{{ $jurnal->unitUsaha->nama_unit }}</span>
-                                @else
-                                    <span class="badge badge-secondary">BUMDes Pusat</span>
-                                @endif
-                                @switch($jurnal->status)
-                                    @case('menunggu')
-                                        <span class="badge badge-warning">Menunggu</span>
-                                        @break
-                                    @case('disetujui')
-                                        <span class="badge badge-success">Disetujui</span>
-                                        @break
-                                    @case('ditolak')
-                                        <span class="badge badge-danger">Ditolak</span>
-                                        @if($jurnal->rejected_reason)
-                                            <div class="mt-1 text-danger small">
-                                                <strong>Alasan:</strong> {{ $jurnal->rejected_reason }}
-                                            </div>
-                                        @endif
-                                        @break
-                                @endswitch
-                            </td>
-                            <td class="text-right"><strong>Rp {{ number_format($jurnal->total_debit, 0, ',', '.') }}</strong></td>
-                            <td class="text-right"><strong>Rp {{ number_format($jurnal->total_kredit, 0, ',', '.') }}</strong></td>
-                            <td class="text-center">
-                                @php
-                                    $canEditOrDelete = auth()->user()->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']) ||
-                                                       (auth()->user()->hasAnyRole(['admin_unit_usaha', 'manajer_unit_usaha']) &&
-                                                        auth()->user()->unitUsahas->pluck('unit_usaha_id')->contains($jurnal->unit_usaha_id));
-                                @endphp
-                                @if($canEditOrDelete && $jurnal->status != 'disetujui')
-                                    <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-xs" title="Hapus Jurnal" data-toggle="modal" data-target="#deleteModal" data-id="{{ $jurnal->jurnal_id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @elseif ($jurnal->status == 'disetujui' && auth()->user()->hasAnyRole(['admin_bumdes', 'bendahara_bumdes', 'direktur_bumdes', 'sekretaris_bumdes']))
-                                     <a href="{{ route('jurnal-umum.edit', $jurnal->jurnal_id) }}" class="btn btn-info btn-xs" title="Edit Jurnal (akan mereset status)">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                @endif
-                            </td>
-                        </tr>
-                        @foreach ($jurnal->detailJurnals as $detail)
-                            <tr>
-                                <td></td>
-                                <td style="{{ $detail->kredit > 0 ? 'padding-left: 30px;' : '' }}">
-                                    [{{ $detail->akun->kode_akun }}] {{ $detail->akun->nama_akun }}
-                                    @if($detail->keterangan)
-                                        <br><small class="text-muted"><em>{{ $detail->keterangan }}</em></small>
-                                    @endif
-                                </td>
-                                <td class="text-right">{{ $detail->debit > 0 ? 'Rp ' . number_format($detail->debit, 0, ',', '.') : '' }}</td>
-                                <td class="text-right">{{ $detail->kredit > 0 ? 'Rp ' . number_format($detail->kredit, 0, ',', '.') : '' }}</td>
-                                <td></td>
-                            </tr>
-                        @endforeach
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center">Tidak ada data jurnal yang cocok dengan filter.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer clearfix">
-            {{ $jurnals->links() }}
+        {{-- Kontainer untuk memuat hasil AJAX --}}
+        <div id="jurnalTableContainer">
+            {{-- Muat data tabel awal saat halaman pertama kali dibuka --}}
+            @include('keuangan.jurnal._jurnal_table', ['jurnals' => $jurnals, 'totalDebitAll' => $totalDebitAll, 'totalKreditAll' => $totalKreditAll])
         </div>
     </div>
 </div>
@@ -249,16 +164,78 @@
 @section('js')
 <script>
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip();
+    // Kode untuk modal delete
+    $('[data-toggle="tooltip"]').tooltip();
+    $('#deleteModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var jurnalId = button.data('id');
+        var form = $(this).find('#deleteForm');
+        var actionUrl = '{{ route("jurnal-umum.destroy", ":jurnal_id") }}';
+        actionUrl = actionUrl.replace(':jurnal_id', jurnalId);
+        form.attr('action', actionUrl);
+    });
 
-  $('#deleteModal').on('show.bs.modal', function (event) {
-    var button = $(event.relatedTarget);
-    var jurnalId = button.data('id');
-    var form = $(this).find('#deleteForm');
-    var actionUrl = '{{ route("jurnal-umum.destroy", ":jurnal_id") }}';
-    actionUrl = actionUrl.replace(':jurnal_id', jurnalId);
-    form.attr('action', actionUrl);
-  });
-})
+    // --- KODE AJAX UNTUK FILTER REAL-TIME ---
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    function fetchJurnal(page = 1) {
+        let formData = $('#filterForm').serialize();
+        formData = formData.replace(/&?page=\d+/, '');
+        
+        let url = '{{ route("jurnal-umum.index") }}';
+        let fullUrl = url + '?page=' + page + '&' + formData;
+
+        $('#jurnalTableContainer').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Memuat data...</p></div>');
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            data: 'page=' + page + '&' + formData,
+            dataType: 'html',
+            success: function(response) {
+                $('#jurnalTableContainer').html(response);
+                
+                let headerInfo = $(response).filter('.small').clone();
+                let headerBadge = $(response).filter('#statusBadge').clone();
+                
+                $('#jurnalHeader .small, #jurnalHeader .badge').remove();
+                $('#jurnalHeader').append(headerInfo).append(headerBadge);
+
+                history.pushState(null, '', fullUrl);
+            },
+            error: function(xhr) {
+                $('#jurnalTableContainer').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
+                console.log(xhr.responseText);
+            }
+        });
+    }
+
+    $('#filterForm select, #filterForm input[type=date]').on('change', function() {
+        fetchJurnal();
+    });
+
+    $('#filterForm input[name=search]').on('keyup', debounce(function() {
+        fetchJurnal();
+    }, 500));
+
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        fetchJurnal();
+    });
+
+    $(document).on('click', '#jurnalTableContainer .pagination a', function(e) {
+        e.preventDefault();
+        let pageUrl = $(this).attr('href');
+        let page = new URL(pageUrl).searchParams.get("page");
+        fetchJurnal(page);
+    });
+});
 </script>
 @stop

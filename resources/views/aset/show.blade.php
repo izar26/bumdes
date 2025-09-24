@@ -50,7 +50,7 @@
                         <dd class="col-sm-9">Rp {{ number_format($aset->nilai_perolehan, 2, ',', '.') }}</dd>
 
                         <dt class="col-sm-3">Tanggal Perolehan:</dt>
-                        <dd class="col-sm-9">{{ \Carbon\Carbon::parse($aset->tanggal_perolehan)->format('d F Y') }}</dd>
+                        <dd class="col-sm-9">{{ \Carbon\Carbon::parse($aset->tanggal_perolehan)->isoFormat('D MMMM YYYY') }}</dd>
 
                         <dt class="col-sm-3">Metode Penyusutan:</dt>
                         <dd class="col-sm-9">{{ $aset->metode_penyusutan ?? '-' }}</dd>

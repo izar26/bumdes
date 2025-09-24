@@ -16,7 +16,6 @@
             display: flex;
             align-items: center;
             padding: 10px;
-            background: linear-gradient(to right, #e0f7f7, #ffffff);
         }
         .kop img {
             height: 75px;
@@ -148,7 +147,7 @@
     {{-- Judul --}}
     <div class="judul">
         <h3>Laporan Jurnal Umum</h3>
-        <p>Periode Tahun: <strong>{{ $tahun }}</strong> | Status: <strong>{{ ucfirst($statusJurnal) }}</strong></p>
+        <p>Periode: <strong>{{ $periode }}</strong> | Status: <strong>{{ ucfirst($statusJurnal) }}</strong></p>
     </div>
 
     {{-- Tabel --}}
