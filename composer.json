@@ -16,6 +16,7 @@
         "laravel/sanctum": "*",
         "laravel/tinker": "^2.10.1",
         "laravel/ui": "^4.6",
+        "league/csv": "^9.25",
         "livewire/livewire": "^3.6",
         "spatie/laravel-permission": "^6.21"
     },

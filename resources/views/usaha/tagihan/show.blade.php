@@ -36,7 +36,7 @@
         .header {
             text-align: center;
             margin-bottom: 3px;
-            font-size: 13px;
+            font-size: 10px;
             line-height: 1.1;
         }
         .content {
@@ -127,6 +127,7 @@
         }
         .compact-section {
             margin-bottom: 5px;
+            font-size: 9px;
         }
         .flex-container {
             display: flex;

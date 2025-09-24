@@ -55,61 +55,71 @@ class TagihanController extends Controller
     }
 
     public function simpanSemuaMassal(Request $request)
-{
-    $request->validate([
-        'periode_tagihan' => 'required|date',
-        'tagihan' => 'required|array',
-        'tagihan.*.meter_awal' => 'required|numeric|min:0',
-        'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',
-        'petugas_massal_id' => 'required|numeric|exists:petugas,id',
-    ]);
+    {
+        $request->validate([
+            'periode_tagihan' => 'required|date',
+            'tagihan' => 'required|array',
+            'tagihan.*.meter_awal' => 'required|numeric|min:0',
+            'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',
+            'petugas_massal_id' => 'required|numeric|exists:petugas,id',
+        ]);
 
-    $periode = $request->periode_tagihan;
-    $petugas_id_massal = $request->petugas_massal_id;
+        $periode = $request->periode_tagihan;
+        $petugas_id_massal = $request->petugas_massal_id;
 
-    DB::beginTransaction();
-    try {
-        foreach ($request->tagihan as $pelanggan_id => $data) {
-            if (isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '') {
-                if ($data['meter_akhir'] < $data['meter_awal']) {
-                    $pelanggan = Pelanggan::find($pelanggan_id);
-                    throw new \Exception('Meter akhir untuk pelanggan ' . ($pelanggan->nama ?? '#' . $pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
+        DB::beginTransaction();
+        try {
+            foreach ($request->tagihan as $pelanggan_id => $data) {
+                if (isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '') {
+                    if ($data['meter_akhir'] < $data['meter_awal']) {
+                        $pelanggan = Pelanggan::find($pelanggan_id);
+                        throw new \Exception('Meter akhir untuk pelanggan ' . ($pelanggan->nama ?? '#' . $pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
+                    }
+
+                    // Ambil tagihan bulan lalu untuk menghitung tunggakan
+                    $periode_sekarang = Carbon::parse($periode)->startOfMonth();
+                    $periode_lalu = $periode_sekarang->copy()->subMonth();
+                    $tagihan_lalu = Tagihan::where('pelanggan_id', $pelanggan_id)
+                                          ->where('periode_tagihan', $periode_lalu)
+                                          ->where('status_pembayaran', 'Belum Lunas')
+                                          ->first();
+
+                    $tunggakan = $tagihan_lalu->total_harus_dibayar ?? 0;
+                    $total_pemakaian_real = max(0, $data['meter_akhir'] - $data['meter_awal']);
+
+                    $hasil_kalkulasi = $this->kalkulasiTagihanData(
+                        $total_pemakaian_real,
+                        $tunggakan,
+                        Carbon::parse($periode_sekarang)
+                    );
+
+                    $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
+                        'pelanggan_id' => $pelanggan_id,
+                        'periode_tagihan' => $periode,
+                        'petugas_id' => $petugas_id_massal,
+                        'meter_awal' => $data['meter_awal'],
+                        'meter_akhir' => $data['meter_akhir'],
+                        'tanggal_cetak' => now(),
+                        'status_pembayaran' => ($hasil_kalkulasi['total_harus_dibayar'] == 0) ? 'Lunas' : 'Belum Lunas',
+                    ]);
+                    unset($data_untuk_disimpan['rincian_dihitung']);
+
+                    $tagihan = Tagihan::updateOrCreate(
+                        ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
+                        $data_untuk_disimpan
+                    );
+
+                    $tagihan->rincian()->delete();
+                    $tagihan->rincian()->createMany($hasil_kalkulasi['rincian_dihitung']);
                 }
-
-                // Kalkulasi tagihan bulan ini
-                $tagihan_sementara = new Tagihan([
-                    'pelanggan_id' => $pelanggan_id,
-                    'periode_tagihan' => $periode,
-                    'meter_awal' => $data['meter_awal'],
-                    'meter_akhir' => $data['meter_akhir']
-                ]);
-$hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
-
-                $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
-                    'petugas_id' => $petugas_id_massal,
-                    'meter_awal' => $data['meter_awal'],
-                    'meter_akhir' => $data['meter_akhir'],
-                    'tanggal_cetak' => now(),
-                    'status_pembayaran' => 'Belum Lunas',
-                ]);
-                unset($data_untuk_disimpan['rincian_dihitung']);
-
-                $tagihan = Tagihan::updateOrCreate(
-                    ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
-                    $data_untuk_disimpan
-                );
-
-                $tagihan->rincian()->delete();
-                $tagihan->rincian()->createMany($hasil_kalkulasi['rincian_dihitung']);
             }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
-        DB::commit();
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+        return redirect()->back()->with('success', 'Semua perubahan tagihan berhasil disimpan!');
     }
-    return redirect()->back()->with('success', 'Semua perubahan tagihan berhasil disimpan!');
-}
 
     public function updateMeterAkhirLalu(Request $request)
     {
@@ -155,9 +165,8 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
 
     public function show($id)
     {
-        $tagihan = Tagihan::with('pelanggan', 'petugas')->findOrFail($id);
-        $rincian = $tagihan->rincian;
-        return view('usaha.tagihan.show', compact('tagihan', 'rincian'));
+        $tagihan = Tagihan::with('pelanggan', 'petugas', 'rincian')->findOrFail($id);
+        return view('usaha.tagihan.show', compact('tagihan'));
     }
 
     public function cetakMassal(Request $request)
@@ -184,83 +193,74 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
         return back()->with('success', 'Tagihan berhasil dihapus.');
     }
 
- private function kalkulasiTagihanData(Tagihan $tagihan, $tunggakan_manual = 0)
-{
-    $semua_tarif = Tarif::all();
-    $total_pemakaian_real = max(0, $tagihan->meter_akhir - $tagihan->meter_awal);
-    $rincian_dihitung = [];
-    $subtotal_pemakaian = 0;
+    private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, $periode_tagihan)
+    {
+        $semua_tarif = Tarif::all();
+        $rincian_dihitung = [];
+        $subtotal_pemakaian = 0;
 
-    // ===== Hitung tarif pemakaian =====
-    $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')
-        ->sortBy('batas_bawah')
-        ->values();
+        // ===== Hitung tarif pemakaian =====
+        $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')
+            ->sortBy('batas_bawah')
+            ->values();
 
-    $sisa = $total_pemakaian_real;
-    $firstBlock = true;
+        $sisa = $total_pemakaian_real;
+        $firstBlock = true;
 
-    foreach ($tarif_pemakaian as $tarif) {
-        $bawah = isset($tarif->batas_bawah) ? (int)$tarif->batas_bawah : 0;
-        $atas = isset($tarif->batas_atas) ? (int)$tarif->batas_atas : null;
+        foreach ($tarif_pemakaian as $tarif) {
+            $bawah = isset($tarif->batas_bawah) ? (int)$tarif->batas_bawah : 0;
+            $atas = isset($tarif->batas_atas) ? (int)$tarif->batas_atas : null;
 
-        $kapasitas = $atas !== null ? ($atas - ($bawah > 0 ? ($bawah - 1) : 0)) : INF;
-
-        if ($firstBlock) {
-            // Blok pertama: minimal charge penuh
-            if ($total_pemakaian_real > 0) {
-                if ($total_pemakaian_real <= $kapasitas) {
-                    $kuantitas = $kapasitas; 
+            if ($firstBlock) {
+                if ($total_pemakaian_real > 0 && $total_pemakaian_real <= $tarif->batas_atas) {
+                    $kuantitas = $tarif->batas_atas;
                     $sisa = 0;
                 } else {
-                    $kuantitas = min($sisa, $kapasitas);
+                    $kuantitas = min($sisa, $tarif->batas_atas);
                     $sisa -= $kuantitas;
                 }
+                $firstBlock = false;
             } else {
-                $kuantitas = 0;
+                if ($sisa <= 0) break;
+                $kuantitas = min($sisa, ($atas - ($bawah > 0 ? ($bawah - 1) : 0)));
+                $sisa -= $kuantitas;
             }
-            $firstBlock = false;
-        } else {
-            if ($sisa <= 0) break;
-            $kuantitas = min($sisa, $kapasitas);
-            $sisa -= $kuantitas;
+
+            if ($kuantitas > 0) {
+                $subtotal = $kuantitas * $tarif->harga;
+                $rincian_dihitung[] = [
+                    'deskripsi' => $tarif->deskripsi,
+                    'kuantitas' => (int)$kuantitas,
+                    'harga_satuan' => $tarif->harga,
+                    'subtotal' => $subtotal,
+                ];
+                $subtotal_pemakaian += $subtotal;
+            }
         }
 
-        if ($kuantitas > 0) {
-            $subtotal = $kuantitas * $tarif->harga;
+        // ===== Biaya tetap =====
+        $biaya_lainnya = 0;
+        $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
+        foreach ($tarif_biaya_tetap as $biaya) {
+            $biaya_lainnya += $biaya->harga;
             $rincian_dihitung[] = [
-                'deskripsi' => $tarif->deskripsi,
-                'kuantitas' => (int)$kuantitas,
-                'harga_satuan' => $tarif->harga,
-                'subtotal' => $subtotal,
+                'deskripsi' => $biaya->deskripsi,
+                'kuantitas' => 1,
+                'harga_satuan' => $biaya->harga,
+                'subtotal' => $biaya->harga,
             ];
-            $subtotal_pemakaian += $subtotal;
         }
-    }
 
-    // ===== Biaya tetap =====
-    $biaya_lainnya = 0;
-    $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
-    foreach ($tarif_biaya_tetap as $biaya) {
-        $biaya_lainnya += $biaya->harga;
-        $rincian_dihitung[] = [
-            'deskripsi' => $biaya->deskripsi,
-            'kuantitas' => 1,
-            'harga_satuan' => $biaya->harga,
-            'subtotal' => $biaya->harga,
-        ];
-    }
+        // ===== Hitung denda dinamis =====
+        $denda_per_bulan = 5000;
+        $denda = 0;
 
-    // ===== Hitung denda dinamis =====
-    $denda_per_bulan = 5000;
-    $denda = 0;
+        $bulanTagihan = $periode_tagihan->startOfMonth();
+        $bulanSekarang = Carbon::now()->startOfMonth();
+        $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang);
 
-    if ($tagihan->bulan_tagihan) {
-        $bulanTagihan = \Carbon\Carbon::parse($tagihan->bulan_tagihan)->startOfMonth();
-        $bulanSekarang = \Carbon\Carbon::now()->startOfMonth();
-
-        $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang, false);
-
-        if ($selisihBulan > 0 && !$tagihan->sudah_dibayar) {
+        // Hanya terapkan denda jika sudah terlambat 1 bulan atau lebih
+        if ($selisihBulan > 0) {
             $denda = $selisihBulan * $denda_per_bulan;
             $rincian_dihitung[] = [
                 'deskripsi' => 'Denda Keterlambatan',
@@ -269,58 +269,56 @@ $hasil_kalkulasi = $this->kalkulasiTagihanData($tagihan_sementara, 0, 0);
                 'subtotal' => $denda,
             ];
         }
-    }
 
-    // ===== Tambahkan tunggakan manual (kalau ada) =====
-    if ($tunggakan_manual > 0) {
-        $rincian_dihitung[] = [
-            'deskripsi' => 'Tunggakan Bulan Sebelumnya',
-            'kuantitas' => 1,
-            'harga_satuan' => $tunggakan_manual,
-            'subtotal' => $tunggakan_manual,
+        // ===== Tambahkan tunggakan manual (kalau ada) =====
+        if ($tunggakan_manual > 0) {
+            $rincian_dihitung[] = [
+                'deskripsi' => 'Tunggakan Bulan Sebelumnya',
+                'kuantitas' => 1,
+                'harga_satuan' => $tunggakan_manual,
+                'subtotal' => $tunggakan_manual,
+            ];
+        }
+
+        // ===== Total =====
+        $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda;
+
+        return [
+            'total_pemakaian_m3' => $total_pemakaian_real,
+            'subtotal_pemakaian' => $subtotal_pemakaian,
+            'biaya_lainnya' => $biaya_lainnya,
+            'denda' => $denda,
+            'tunggakan' => $tunggakan_manual,
+            'total_harus_dibayar' => $total_harus_dibayar,
+            'rincian_dihitung' => $rincian_dihitung,
         ];
     }
 
-    // ===== Total =====
-    $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda;
+    public function batalkanTagihan(Tagihan $tagihan)
+    {
+        $tagihan->update(['status_pembayaran' => 'Batal']);
+        return back()->with('success', 'Tagihan berhasil dibatalkan dan tidak akan masuk dalam perhitungan rekap.');
+    }
 
-    return [
-        'total_pemakaian_m3' => $total_pemakaian_real,
-        'subtotal_pemakaian' => $subtotal_pemakaian,
-        'biaya_lainnya' => $biaya_lainnya,
-        'denda' => $denda,
-        'tunggakan' => $tunggakan_manual,
-        'total_harus_dibayar' => $total_harus_dibayar,
-        'rincian_dihitung' => $rincian_dihitung,
-    ];
-}
+    public function rekap(Request $request)
+    {
+        $bulan_terpilih = $request->input('periode_bulan', date('n'));
+        $tahun_terpilih = $request->input('periode_tahun', date('Y'));
 
+        $periode = \Carbon\Carbon::create($tahun_terpilih, $bulan_terpilih, 1)->toDateString();
 
-public function batalkanTagihan(Tagihan $tagihan)
-{
-    $tagihan->update(['status_pembayaran' => 'Batal']);
-    return back()->with('success', 'Tagihan berhasil dibatalkan dan tidak akan masuk dalam perhitungan rekap.');
-}
+        $tagihan_bulan_ini = Tagihan::where('periode_tagihan', $periode)
+                                    ->where('status_pembayaran', '!=', 'Batal')
+                                    ->get();
 
-public function rekap(Request $request)
-{
-    $bulan_terpilih = $request->input('periode_bulan', date('n'));
-    $tahun_terpilih = $request->input('periode_tahun', date('Y'));
+        $total_pemasukan = $tagihan_bulan_ini->where('status_pembayaran', 'Lunas')->sum('total_harus_dibayar');
+        $total_belum_lunas = $tagihan_bulan_ini->where('status_pembayaran', 'Belum Lunas')->sum('total_harus_dibayar');
 
-    $periode = \Carbon\Carbon::create($tahun_terpilih, $bulan_terpilih, 1)->toDateString();
-
-    $tagihan_bulan_ini = Tagihan::where('periode_tagihan', $periode)
-                                ->where('status_pembayaran', '!=', 'Batal')
-                                ->get();
-
-    $total_pemasukan = $tagihan_bulan_ini->where('status_pembayaran', 'Lunas')->sum('total_harus_dibayar');
-    $total_belum_lunas = $tagihan_bulan_ini->where('status_pembayaran', 'Belum Lunas')->sum('total_harus_dibayar');
-
-    return view('usaha.tagihan.rekap', [
-        'bulan_terpilih' => $bulan_terpilih,
-        'tahun_terpilih' => $tahun_terpilih,
-        'total_pemasukan' => $total_pemasukan,
-        'total_belum_lunas' => $total_belum_lunas,
-    ]);
-}
+        return view('usaha.tagihan.rekap', [
+            'bulan_terpilih' => $bulan_terpilih,
+            'tahun_terpilih' => $tahun_terpilih,
+            'total_pemasukan' => $total_pemasukan,
+            'total_belum_lunas' => $total_belum_lunas,
+        ]);
+    }
 }
