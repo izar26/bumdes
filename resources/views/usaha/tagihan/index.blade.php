@@ -119,7 +119,8 @@
                                 </td>
                                 <td class="text-center meter-awal-cell" data-original-value="{{ $baris->meter_awal }}"><span class="cell-text">{{ $baris->meter_awal }}</span></td>
                                 <td class="text-center meter-akhir-cell" data-original-value="{{ $baris->tagihan->meter_akhir ?? '' }}"><span class="cell-text">{{ $baris->tagihan->meter_akhir ?? '-' }}</span></td>
-                                <td class="text-center pemakaian-cell">{{ $baris->tagihan->total_pemakaian_m3 ?? '-' }}</td>
+                                <td class="text-center pemakaian-cell">{{ $baris->pemakaian }}</td>
+
                                 <td class="text-right">{{ $baris->tagihan ? 'Rp ' . number_format($baris->tagihan->total_harus_dibayar, 0, ',', '.') : '-' }}</td>
                                 <td class="text-center status-cell">
                                     @if($baris->tagihan)

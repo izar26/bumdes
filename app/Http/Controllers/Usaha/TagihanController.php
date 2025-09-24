@@ -46,15 +46,22 @@ class TagihanController extends Controller
                                     ->where('periode_tagihan', $periode_lalu->toDateString())
                                     ->get()->keyBy('pelanggan_id');
 
-    $data_tabel = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
-        $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
-        $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
-        return (object) [
-            'pelanggan' => $pelanggan,
-            'tagihan' => $tagihan_sekarang,
-            'meter_awal' => $tagihan_lalu->meter_akhir ?? 0,
-        ];
-    });
+   $data_tabel = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
+    $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
+    $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
+
+    $meter_awal = $tagihan_lalu->meter_akhir ?? 0;
+    $meter_akhir = $tagihan_sekarang->meter_akhir ?? $meter_awal;
+    $pemakaian = max(0, $meter_akhir - $meter_awal);
+
+    return (object) [
+        'pelanggan'   => $pelanggan,
+        'tagihan'     => $tagihan_sekarang,
+        'meter_awal'  => $meter_awal,
+        'meter_akhir' => $meter_akhir,
+        'pemakaian'   => $pemakaian,
+    ];
+});
 
     return view('usaha.tagihan.index', [
         'data_tabel' => $data_tabel,
