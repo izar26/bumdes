@@ -8,22 +8,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pelanggan extends Model
 {
-    use HasFactory;
+use HasFactory;
 
-    protected $table = 'pelanggan';
+protected $table = 'pelanggan';
 
 
-    protected $fillable = [
-        'nama',
-        'alamat',
-        'status_pelanggan',
-        'kontak'
-    ];
+protected $fillable = [
+    'nama',
+    'alamat',
+    'status_pelanggan',
+    'kontak'
+];
 
-    // Relasi menjadi lebih bersih tanpa parameter tambahan
-    public function tagihan(): HasMany
+// Relasi menjadi lebih bersih tanpa parameter tambahan
+public function tagihan(): HasMany
 {
-    return $this->hasMany(Tagihan::class, 'pelanggan_id');
+return $this->hasMany(Tagihan::class, 'pelanggan_id');
 }
 
 }

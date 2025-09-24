@@ -57,6 +57,7 @@
                     <div class="btn-group">
                         <button type="button" class="btn btn-sm btn-info" id="cetak-pilihan-btn"><i class="fas fa-check-square"></i> Cetak Pilihan</button>
                         <button type="button" class="btn btn-sm btn-success" id="lunas-pilihan-btn"><i class="fas fa-money-check-alt"></i> Lunas Pilihan</button>
+                        <button type="button" class="btn btn-sm btn-danger" id="batal-pilihan-btn"><i class="fas fa-times"></i> Batalkan Tagihan</button>
                     </div>
                     <button type="button" class="btn btn-sm btn-warning ml-2" id="edit-semua-btn"><i class="fas fa-edit"></i> Edit Semua</button>
                     <button type="submit" class="btn btn-sm btn-success" id="simpan-semua-btn" style="display: none;"><i class="fas fa-save"></i> Simpan</button>
@@ -118,7 +119,8 @@
                                 </td>
                                 <td class="text-center meter-awal-cell" data-original-value="{{ $baris->meter_awal }}"><span class="cell-text">{{ $baris->meter_awal }}</span></td>
                                 <td class="text-center meter-akhir-cell" data-original-value="{{ $baris->tagihan->meter_akhir ?? '' }}"><span class="cell-text">{{ $baris->tagihan->meter_akhir ?? '-' }}</span></td>
-                                <td class="text-center pemakaian-cell">{{ $baris->tagihan->total_pemakaian_m3 ?? '-' }}</td>
+                                <td class="text-center pemakaian-cell">{{ $baris->pemakaian }}</td>
+
                                 <td class="text-right">{{ $baris->tagihan ? 'Rp ' . number_format($baris->tagihan->total_harus_dibayar, 0, ',', '.') : '-' }}</td>
                                 <td class="text-center status-cell">
                                     @if($baris->tagihan)
@@ -227,7 +229,6 @@
         </div>
     </div>
 @stop
-
 @section('js')
 <script>
     $(document).ready(function() {
@@ -270,34 +271,55 @@
 
         // ## Logika untuk Mode Edit Massal ##
         $('#edit-semua-btn').on('click', function() {
+            // Sembunyikan dan Tampilkan Tombol
             $(this).hide();
             $('.btn-group').hide();
-            $('#lunas-pilihan-btn').hide();
             $('#simpan-semua-btn, #batal-btn, #mass-edit-petugas-container').show();
 
-            // Destroy DataTables instance to allow editing
-            if ($.fn.DataTable.isDataTable('#tagihan-table')) {
-                dataTable.destroy();
-            }
+            // Ubah sel menjadi input field
+            dataTable.rows().every(function() {
+                const row = this;
+                const $rowNode = $(row.node());
+                const pelangganId = $rowNode.data('pelanggan-id');
 
-            $('#tagihan-table tbody tr').each(function() {
-                const $row = $(this);
-                const pelangganId = $row.data('pelanggan-id');
-                const originalValueAwal = $row.find('.meter-awal-cell').data('original-value');
-                const originalValueAkhir = $row.find('.meter-akhir-cell').data('original-value');
+                // Dapatkan nilai asli dari data-* attributes
+                const originalValueAwal = $rowNode.find('.meter-awal-cell').data('original-value');
+                const originalValueAkhir = $rowNode.find('.meter-akhir-cell').data('original-value');
 
-                // Hide petugas cell text
-                $row.find('.petugas-cell .cell-text').hide();
-
-                // Edit Meter Awal
-                $row.find('.meter-awal-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][meter_awal]" class="form-control form-control-sm text-center" value="${originalValueAwal}" required>`);
-
-                // Edit Meter Akhir
-                $row.find('.meter-akhir-cell').html(`<input type="number" step="1" min="${originalValueAwal}" name="tagihan[${pelangganId}][meter_akhir]" class="form-control form-control-sm text-center" value="${originalValueAkhir}">`);
+                // Ganti konten sel dengan input field
+                $rowNode.find('.meter-awal-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][meter_awal]" class="form-control form-control-sm text-center" value="${originalValueAwal}" required>`);
+                $rowNode.find('.meter-akhir-cell').html(`<input type="number" step="1" min="${originalValueAwal}" name="tagihan[${pelangganId}][meter_akhir]" class="form-control form-control-sm text-center" value="${originalValueAkhir}">`);
+                $rowNode.find('.petugas-cell').hide(); // Sembunyikan sel petugas
             });
+
+            // Sembunyikan header "Petugas"
+            $('th.petugas-header').hide();
         });
 
-        $('#batal-btn').on('click', function() { location.reload(); });
+        $('#batal-btn').on('click', function() {
+            // Sembunyikan dan Tampilkan Tombol
+            $(this).hide();
+            $('#simpan-semua-btn, #mass-edit-petugas-container').hide();
+            $('#edit-semua-btn, .btn-group').show();
+
+            // Kembalikan input field menjadi teks
+            dataTable.rows().every(function() {
+                const row = this;
+                const $rowNode = $(row.node());
+
+                // Dapatkan nilai asli dari data-* attributes
+                const originalValueAwal = $rowNode.find('.meter-awal-cell input').val();
+                const originalValueAkhir = $rowNode.find('.meter-akhir-cell input').val();
+
+                // Kembalikan konten sel menjadi teks
+                $rowNode.find('.meter-awal-cell').html(`<span class="cell-text">${originalValueAwal}</span>`);
+                $rowNode.find('.meter-akhir-cell').html(`<span class="cell-text">${originalValueAkhir}</span>`);
+                $rowNode.find('.petugas-cell').show(); // Tampilkan kembali sel petugas
+            });
+
+            // Tampilkan kembali header "Petugas"
+            $('th.petugas-header').show();
+        });
 
         // ## Logika untuk Cetak Selektif ##
         function submitPrintForm(ids) {
@@ -321,6 +343,7 @@
             submitPrintForm(selectedIds);
         });
 
+        // Event listener untuk checkbox "select all"
         $('#select-all-checkbox').on('click', function() {
             const isChecked = this.checked;
             dataTable.rows({ page: 'current' }).nodes().to$().find('.tagihan-checkbox').prop('checked', isChecked);
@@ -344,6 +367,26 @@
                 document.body.removeChild(form);
             }
         });
+        // ## Logika untuk Batalkan Tagihan Selektif ##
+$('#batal-pilihan-btn').on('click', function() {
+    const selectedIds = [];
+    $('.tagihan-checkbox:checked').each(function() { selectedIds.push($(this).val()); });
+
+    if (selectedIds.length === 0) {
+        toastr.error('Tidak ada tagihan yang dipilih.');
+        return;
+    }
+
+    if (confirm(`Apakah Anda yakin ingin membatalkan ${selectedIds.length} tagihan yang dipilih?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route("usaha.tagihan.batalkan-massal") }}'; // Pastikan rute ini sudah ada
+        form.innerHTML = `@csrf ${selectedIds.map(id => `<input type="hidden" name="tagihan_ids[]" value="${id}">`).join('')}`;
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+});
     });
 </script>
 @stop

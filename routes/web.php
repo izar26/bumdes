@@ -120,6 +120,10 @@ Route::middleware(['auth'])->group(function () {
     Route::put('tagihan/{tagihan}/tandai-lunas', [TagihanController::class, 'tandaiLunas'])->name('tagihan.tandaiLunas');
     Route::post('tagihan/tandai-lunas-selektif', [TagihanController::class, 'tandaiLunasSelektif'])->name('tagihan.tandaiLunasSelektif');
     Route::get('tagihan/rekap', [TagihanController::class, 'rekap'])->name('tagihan.rekap');
+Route::post('tagihan/quick-save', [TagihanController::class, 'quickSave'])
+    ->name('tagihan.quickSave');
+    // routes/web.php
+Route::post('/tagihan/batalkan-massal', [TagihanController::class, 'batalkanMassal'])->name('tagihan.batalkan-massal');
 
     // Tambahkan route lainnya yang relevan seperti show, destroy, dll. jika ada
     Route::get('tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
