@@ -3,19 +3,29 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Petugas;
 
 class PetugasSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $petugas = [
-            ['nama_petugas' => 'KOLEKTOR OBI'],
-            ['nama_petugas' => 'KOLEKTOR DADANG'],
-            ['nama_petugas' => 'KOLEKTOR DINDAN 1'],
-            ['nama_petugas' => 'KOLEKTOR DINDAN'],
+        // Clear existing data
+        Petugas::query()->delete();
+
+        // Collectors from CSV filenames
+        $collectors = [
+            ['nama_petugas' => 'KOLEKTOR DINDAN', 'status' => 'Aktif'],
+            ['nama_petugas' => 'KOLEKTOR OBI', 'status' => 'Aktif'],
+            ['nama_petugas' => 'KOLEKTOR DADANG', 'status' => 'Aktif'],
         ];
 
-        DB::table('petugas')->insert($petugas);
+        foreach ($collectors as $collector) {
+            Petugas::create($collector);
+        }
+
+        $this->command->info('Petugas seeded successfully.');
     }
 }

@@ -177,8 +177,9 @@
                     UNIT SPAM DESA KSM TIRTA SARANA SEJAHTERA<br>
                     DESA SINDANGRAJA KEC. SUKALUYU KAB. CIANJUR
                 </div>
+                <br>
                 <div class="judul-bagian compact-section no-margin">ARSIP BUKTI TAGIHAN AIR UNTUK PELANGGAN</div>
-
+<br>
                 <table class="compact-section no-margin">
                     <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
                     <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
@@ -202,7 +203,7 @@
                     BADAN USAHA MILIK DESA UNIT SPAM KSM TIRTA SARANA SEJAHTERA<br>
                     DESA SINDANGRAJA KEC. SUKALUYU KAB. CIANJUR
                 </div>
-
+<br>
                 <div class="flex-container compact-section no-margin">
                     <div class="logo">
                         <img src="{{ asset('pam.jpeg')}}" alt="Logo Tirta Sarana Sejahtera">

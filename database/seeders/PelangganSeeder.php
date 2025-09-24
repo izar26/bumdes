@@ -4,46 +4,76 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use League\Csv\Reader;
+use App\Models\Pelanggan;
 
 class PelangganSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
+        // Clear existing data
+        Pelanggan::query()->delete();
+
+        // Array to store unique customers
+        $customers = [];
+
+        // Process each CSV file
         $files = [
-            database_path('seeders/csv/dadang.csv'),
-            database_path('seeders/csv/dindan1.csv'),
-            database_path('seeders/csv/dindan2.csv'),
-            database_path('seeders/csv/obi.csv'),
+            '5_KOLEKTOR DINDAN_1_SEPTEMBER_25.csv',
+            '3_KOLEKTOR DINDAN 1_SEPTEMBER_25.csv',
+            '1_KOLEKTOR OBI_SEPTEMBER_25.csv',
+            '2_KOLEKTOR DADANG_SEPTEMBER_25.csv'
         ];
 
         foreach ($files as $file) {
-            if (!file_exists($file)) {
+            $path = database_path("seeders/csv/{$file}");
+
+            if (!file_exists($path)) {
+                $this->command->error("File not found: {$path}");
                 continue;
             }
 
-            $csv = Reader::createFromPath($file, 'r');
-            $csv->setHeaderOffset(null); // <== Abaikan header, treat semua baris sebagai data
+            $csvData = array_map('str_getcsv', file($path));
 
-            foreach ($csv as $index => $row) {
-                // skip baris pertama (header manual)
-                if ($index === 0) {
+            // Skip header row
+            array_shift($csvData);
+
+            foreach ($csvData as $row) {
+                // Skip empty rows or summary rows
+                if (empty($row[3]) || empty($row[4]) || $row[0] === ' ') {
                     continue;
                 }
 
-                $nama   = $row[2] ?? null;
-                $alamat = $row[3] ?? null;
+                $nama = trim($row[3]);
+                $alamat = trim($row[4]);
 
-                if ($nama && $alamat) {
-                    DB::table('pelanggan')->insert([
+                // Create unique key to avoid duplicates
+                $uniqueKey = $nama . '|' . $alamat;
+
+                if (!isset($customers[$uniqueKey])) {
+                    $customers[$uniqueKey] = [
                         'nama' => $nama,
                         'alamat' => $alamat,
                         'status_pelanggan' => 'Aktif',
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]);
+                    ];
                 }
             }
+        }
+
+        // Insert customers in batches
+        if (!empty($customers)) {
+            $chunks = array_chunk($customers, 500);
+            foreach ($chunks as $chunk) {
+                Pelanggan::insert($chunk);
+            }
+
+            $this->command->info(count($customers) . ' customers seeded successfully.');
+        } else {
+            $this->command->warn('No customers found to seed.');
         }
     }
 }
