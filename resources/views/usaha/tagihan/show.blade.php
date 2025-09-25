@@ -18,6 +18,7 @@
             padding: 4px;
             box-sizing: border-box;
             border: 1px solid #ccc;
+            page-break-inside: avoid;
         }
         .header {
             font-weight: bold;
@@ -69,41 +70,28 @@
             color: red;
             font-weight: bold;
         }
-
-        .rincian-table td {
-    font-size: 9px;
-    padding: 0;
-}
-.rincian-table .description {
-    width: 40%; /* Tambah lebar kolom deskripsi */
-    text-align: left; /* Ratakan teks ke kiri */
-}
-.rincian-table .rate {
-    width: 20%; /* Lebar harga satuan */
-    text-align: right;
-    padding-left: 4px;
-}
-.rincian-table .qty {
-    width: 15%; /* Lebar kuantitas */
-    text-align: center; /* Ratakan ke tengah */
-    padding-left: 4px;
-}
-.rincian-table .amount {
-    width: 25%; /* Tambah sedikit lebar untuk jumlah */
-    text-align: right;
-}
-        .tunggakan-table {
-            font-size: 9px;
+        .rincian-table .description {
+            width: 40%;
+            text-align: left;
         }
-        .tunggakan-table td {
-            padding: 0;
-        }
-        .tunggakan-table .description {
-            width: 80%;
-        }
-        .tunggakan-table .amount {
+        .rincian-table .rate {
             width: 20%;
             text-align: right;
+            padding-left: 4px;
+        }
+        .rincian-table .qty {
+            width: 15%;
+            text-align: center;
+            padding-left: 4px;
+        }
+        .rincian-table .amount {
+            width: 25%;
+            text-align: right;
+        }
+        .currency-cell {
+            display: flex;
+            justify-content: space-between;
+            white-space: nowrap;
         }
         .text-right {
             text-align: right;
@@ -130,6 +118,7 @@
             font-size: 8px;
         }
 
+        /* --- KESALAHAN ADA DI SINI SEBELUMNYA --- */
         @media print {
             .tombol-cetak,
             .btn,
@@ -140,8 +129,9 @@
             .struk-container {
                 border: none;
                 width: 100%;
-                margin: 0;
+                margin: 0; /* Baris ini direset, jadi kita perlu tambahkan margin-bottom di sini */
                 padding: 2px;
+                margin-bottom: 30px; /* <-- PERBAIKAN DITERAPKAN DI SINI */
             }
             body {
                 font-size: 9px;
@@ -173,23 +163,21 @@
                 <div class="judul-bagian compact-section no-margin">ARSIP BUKTI TAGIHAN AIR UNTUK PELANGGAN</div>
                 <br>
                 <table class="compact-section no-margin">
-                    <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
-                    <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
-                    <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
-                    <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                    <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                    <tr><td>Pemakaian</td><td>: {{ $tagihan->total_pemakaian_m3 }} m³</td></tr>
-                    <tr><td>Jumlah Bayar</td><td>: Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td></tr>
-                    <tr><td>Tunggakan</td><td>: Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
-                    <tr><td class="total-merah">Total Harus Dibayar</td><td class="total-merah">: Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td></tr>
+                    <tr><td>Pelanggan ID</td><td>: 00015</td></tr>
+                    <tr><td>Nama</td><td>: ASEP TASRIPIN</td></tr>
+                    <tr><td>Alamat</td><td>: PABRIK 2</td></tr>
+                    <tr><td>Periode</td><td>: Agt 2025</td></tr>
+                    <tr><td>Dibayar di</td><td>: Sep 2025</td></tr>
+                    <tr><td>Pemakaian</td><td>: 22.00 m³</td></tr>
+                    <tr><td>Jumlah Bayar</td><td>: Rp. 82.820</td></tr>
+                    <tr><td>Tunggakan</td><td>: Rp. 0</td></tr>
+                    <tr><td class="total-merah">Total Harus Dibayar</td><td class="total-merah">: Rp. 82.820</td></tr>
                 </table>
-
                 <div class="signature compact-section no-margin">
                     Petugas Penagihan<br>
-                    Bpk {{ $tagihan->petugas->nama_petugas ?? 'N/A' }}
+                    Bpk OBI
                 </div>
             </div>
-
             <div class="bukti">
                 <div class="header compact-section no-margin">
                     BADAN USAHA MILIK DESA UNIT SPAM KSM TIRTA SARANA SEJAHTERA<br>
@@ -198,8 +186,7 @@
                 <br>
                 <div class="flex-container compact-section no-margin">
                     <div class="logo">
-                        <img src="{{ asset('pam.jpeg')}}" alt="Logo Tirta Sarana Sejahtera">
-                    </div>
+                        </div>
                     <div style="flex-grow: 1; text-align: center;">
                         <div class="judul-bagian no-margin">BUKTI PEMBAYARAN TAGIHAN AIR BERSIH</div>
                     </div>
@@ -210,18 +197,17 @@
                         <br>
                     </div>
                 </div>
-
                 <div class="flex-container compact-section no-margin">
                     <div style="width: 48%;">
                         <table>
-                            <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan->id ?? 'N/A' }}</td></tr>
-                            <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
-                            <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
-                            <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                            <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                            <tr><td>Meter Akhir</td><td>: {{ $tagihan->meter_akhir }} m³</td></tr>
-                            <tr><td>Meter Awal</td><td>: {{ $tagihan->meter_awal }} m³</td></tr>
-                            <tr><td>Pemakaian</td><td>: {{ $tagihan->total_pemakaian_m3 }} m³</td></tr>
+                           <tr><td>Pelanggan ID</td><td>: 00015</td></tr>
+                           <tr><td>Nama</td><td>: ASEP TASRIPIN</td></tr>
+                           <tr><td>Alamat</td><td>: PABRIK 2</td></tr>
+                           <tr><td>Periode</td><td>: Agt 2025</td></tr>
+                           <tr><td>Dibayar di</td><td>: Sep 2025</td></tr>
+                           <tr><td>Meter Akhir</td><td>: 780.00 m³</td></tr>
+                           <tr><td>Meter Awal</td><td>: 758.00 m³</td></tr>
+                           <tr><td>Pemakaian</td><td>: 22.00 m³</td></tr>
                         </table>
                     </div>
                     <div style="width: 52%;">
@@ -235,46 +221,90 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($tagihan->rincian as $rincian)
-                                <tr>
-                                    <td class="description">{{ $rincian->deskripsi }}</td>
-                                    <td class="rate">{{ number_format($rincian->harga_satuan, 0, ',', '.') }}</td>
-                                    <td class="qty">{{ number_format($rincian->kuantitas, 0, ',', '.') }}</td>
-                                    <td class="amount">Rp. {{ number_format($rincian->subtotal, 0, ',', '.') }}</td>
-                                </tr>
-                                @endforeach
+                               <tr>
+                                   <td class="description">Pemakaian Blok 1 (0-5 m³)</td>
+                                   <td class="rate">3.000</td>
+                                   <td class="qty">5</td>
+                                   <td class="amount currency-cell"><span>Rp.</span><span>15.000</span></td>
+                               </tr>
+                               <tr>
+                                   <td class="description">Pemakaian Blok 2 (6-15 m³)</td>
+                                   <td class="rate">3.350</td>
+                                   <td class="qty">10</td>
+                                   <td class="amount currency-cell"><span>Rp.</span><span>33.500</span></td>
+                               </tr>
+                               <tr>
+                                   <td class="description">Pemakaian Blok 3 (16-25 m³)</td>
+                                   <td class="rate">3.760</td>
+                                   <td class="qty">7</td>
+                                   <td class="amount currency-cell"><span>Rp.</span><span>26.320</span></td>
+                               </tr>
+                               <tr>
+                                   <td class="description">Biaya Pemeliharaan</td>
+                                   <td class="rate">4.500</td>
+                                   <td class="qty">1</td>
+                                   <td class="amount currency-cell"><span>Rp.</span><span>4.500</span></td>
+                               </tr>
+                               <tr>
+                                   <td class="description">Biaya Administrasi</td>
+                                   <td class="rate">3.500</td>
+                                   <td class="qty">1</td>
+                                   <td class="amount currency-cell"><span>Rp.</span><span>3.500</span></td>
+                               </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
                 <div class="flex-container compact-section no-margin">
                     <div style="width: 48%;">
-                        <div class="judul-bagian no-margin" style="text-align: left; margin-top: 3px;">{{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMMM Y') }}</div>
+                        <div class="judul-bagian no-margin" style="text-align: left; margin-top: 3px;">September 2025</div>
                         <div class="small-text" style="line-height: 1; margin-top: 2px;">
-                            Sindangraja {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('DD MMM YY') }}<br>
+                            Sindangraja 25 Sep 25<br>
                             Petugas Penagihan<br>
-                            Bpk {{ $tagihan->petugas->nama_petugas ?? 'N/A' }}
+                            Bpk OBI
                         </div>
                     </div>
                     <div style="width: 52%;">
-                        <br>
-                        <div class="small-text" style="text-align: center; margin-bottom: 1px;">Tunggakan dan Denda</div>
-                        <br>
-                        <table class="tunggakan-table">
-                            <tr><td class="description">Sisa Tunggakan Bulan Lalu</td><td class="amount">Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
-                            <tr><td class="description">Denda</td><td class="amount">Rp. {{ number_format($tagihan->denda, 0, ',', '.') }}</td></tr>
-                            <tr><td class="description"><b>Jumlah Tunggakan + Denda</b></td><td class="amount"><b>Rp. {{ number_format($tagihan->tunggakan + $tagihan->denda, 0, ',', '.') }}</b></td></tr>
+                        <div class="small-text" style="text-align: center; margin-top: 5px; font-weight: bold;">Tunggakan dan Denda</div>
+                        <table class="rincian-table">
+                            <tr>
+                                <td class="description">Sisa Tunggakan Bulan Lalu</td>
+                                <td class="rate"></td>
+                                <td class="qty"></td>
+                                <td class="amount currency-cell"><span>Rp.</span><span>0</span></td>
+                            </tr>
+                            <tr>
+                                <td class="description">Denda</td>
+                                <td class="rate"></td>
+                                <td class="qty"></td>
+                                <td class="amount currency-cell"><span>Rp.</span><span>0</span></td>
+                            </tr>
+                            <tr>
+                                <td class="description" style="border-top: 1px dashed #333;"><b>Jumlah Tunggakan + Denda</b></td>
+                                <td class="rate" style="border-top: 1px dashed #333;"></td>
+                                <td class="qty" style="border-top: 1px dashed #333;"></td>
+                                <td class="amount currency-cell" style="border-top: 1px dashed #333;"><b><span>Rp.</span><span>0</span></b></td>
+                            </tr>
                         </table>
-
                         <div class="divider"></div>
-
-                        <table class="tunggakan-table">
-                            <tr><td class="description">Pembayaran Pemakaian Bln Lalu</td><td class="amount">Rp. {{ number_format($tagihan->subtotal_pemakaian + $tagihan->biaya_lainnya, 0, ',', '.') }}</td></tr>
-                            <tr><td class="description">Tunggakan sd Bulan Ini</td><td class="amount">Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
+                        <table class="rincian-table">
+                            <tr>
+                                <td class="description">Pembayaran Pemakaian Bln Ini</td>
+                                <td class="rate"></td>
+                                <td class="qty"></td>
+                                <td class="amount currency-cell"><span>Rp.</span><span>82.820</span></td>
+                            </tr>
+                            <tr>
+                                <td class="description">Tunggakan s/d Bulan Ini</td>
+                                <td class="rate"></td>
+                                <td class="qty"></td>
+                                <td class="amount currency-cell"><span>Rp.</span><span>0</span></td>
+                            </tr>
                             <tr class="total-merah">
                                 <td class="description">Total yg Harus di Bayar</td>
-                                <td class="amount">Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td>
+                                <td class="rate"></td>
+                                <td class="qty"></td>
+                                <td class="amount currency-cell"><span>Rp.</span><span>82.820</span></td>
                             </tr>
                         </table>
                     </div>
@@ -282,5 +312,5 @@
             </div>
         </div>
     </div>
-</body>
+    </body>
 </html>

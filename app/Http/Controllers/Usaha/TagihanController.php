@@ -14,8 +14,9 @@ use Carbon\Carbon;
 
 class TagihanController extends Controller
 {
- public function index(Request $request)
+public function index(Request $request)
 {
+    // --- Bagian ini tetap sama ---
     $bulan_terpilih = $request->input('periode_bulan', date('n'));
     $tahun_terpilih = $request->input('periode_tahun', date('Y'));
     $petugas_terpilih = $request->input('petugas_id');
@@ -25,43 +26,61 @@ class TagihanController extends Controller
 
     $semua_petugas = Petugas::orderBy('nama_petugas')->get();
 
-    // Query untuk mengambil tagihan pada periode saat ini, dengan filter petugas
-    $query_tagihan_sekarang = Tagihan::where('periode_tagihan', $periode_sekarang->toDateString())->with('petugas');
-    if ($petugas_terpilih) {
-        $query_tagihan_sekarang->where('petugas_id', $petugas_terpilih);
-    }
-    $tagihan_periode_sekarang = $query_tagihan_sekarang->get()->keyBy('pelanggan_id');
+    // ====================================================================
+    // PERUBAHAN DIMULAI DARI SINI
+    // ====================================================================
 
-    // Ambil semua pelanggan yang memiliki tagihan yang sudah difilter
-    $pelanggan_dengan_tagihan = Pelanggan::whereIn('id', $tagihan_periode_sekarang->keys())->orderBy('nama')->get();
+    // 1. Ambil SEMUA pelanggan aktif terlebih dahulu, jangan difilter dulu.
+    $semua_pelanggan = Pelanggan::where('status_pelanggan', 'Aktif')->orderBy('nama')->get();
+    $semua_pelanggan_ids = $semua_pelanggan->pluck('id');
 
-    // Jika tidak ada filter petugas, ambil semua pelanggan aktif
-    if (!$petugas_terpilih) {
-        $semua_pelanggan = Pelanggan::where('status_pelanggan', 'Aktif')->orderBy('nama')->get();
-    } else {
-        $semua_pelanggan = $pelanggan_dengan_tagihan;
-    }
-
-    $tagihan_periode_lalu = Tagihan::whereIn('pelanggan_id', $semua_pelanggan->pluck('id'))
+    // 2. Ambil tagihan periode lalu berdasarkan SEMUA pelanggan aktif.
+    $tagihan_periode_lalu = Tagihan::whereIn('pelanggan_id', $semua_pelanggan_ids)
                                     ->where('periode_tagihan', $periode_lalu->toDateString())
                                     ->get()->keyBy('pelanggan_id');
 
-   $data_tabel = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
-    $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
-    $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
+    // 3. Ambil tagihan periode sekarang berdasarkan SEMUA pelanggan aktif.
+    $tagihan_periode_sekarang = Tagihan::whereIn('pelanggan_id', $semua_pelanggan_ids)
+                                       ->where('periode_tagihan', $periode_sekarang->toDateString())
+                                       ->with('petugas') // Eager load relasi petugas
+                                       ->get()->keyBy('pelanggan_id');
 
-    $meter_awal = $tagihan_lalu->meter_akhir ?? 0;
-    $meter_akhir = $tagihan_sekarang->meter_akhir ?? $meter_awal;
-    $pemakaian = max(0, $meter_akhir - $meter_awal);
+    // 4. Buat data tabel mentah dari semua pelanggan.
+    $data_tabel_mentah = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
+        $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
+        $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
 
-    return (object) [
-        'pelanggan'   => $pelanggan,
-        'tagihan'     => $tagihan_sekarang,
-        'meter_awal'  => $meter_awal,
-        'meter_akhir' => $meter_akhir,
-        'pemakaian'   => $pemakaian,
-    ];
-});
+        // Logika ini sekarang akan berjalan dengan benar karena $tagihan_lalu akan ditemukan
+        $meter_awal = $tagihan_lalu->meter_akhir ?? 0;
+        $meter_akhir = $tagihan_sekarang->meter_akhir ?? null; // Ganti ke null agar lebih jelas jika belum ada
+        
+        // Jika meter akhir belum diisi, pemakaian adalah 0
+        $pemakaian = ($meter_akhir !== null) ? max(0, $meter_akhir - $meter_awal) : 0;
+
+        return (object) [
+            'pelanggan'   => $pelanggan,
+            'tagihan'     => $tagihan_sekarang,
+            'meter_awal'  => $meter_awal,
+            'meter_akhir' => $meter_akhir ?? '-', // Tampilkan strip jika null
+            'pemakaian'   => $pemakaian,
+        ];
+    });
+
+    // 5. BARU LAKUKAN FILTER jika petugas dipilih.
+    // Filter ini dilakukan pada data yang sudah jadi, bukan pada query awal.
+    if ($petugas_terpilih) {
+        // Jika petugas dipilih, tampilkan pelanggan yang SUDAH punya tagihan dengan petugas tsb,
+        // ATAU yang BELUM punya tagihan sama sekali (agar bisa diinput baru).
+        $data_tabel = $data_tabel_mentah->filter(function ($baris) use ($petugas_terpilih) {
+            return !$baris->tagihan || ($baris->tagihan && $baris->tagihan->petugas_id == $petugas_terpilih);
+        });
+    } else {
+        $data_tabel = $data_tabel_mentah;
+    }
+    
+    // ====================================================================
+    // AKHIR DARI PERUBAHAN
+    // ====================================================================
 
     return view('usaha.tagihan.index', [
         'data_tabel' => $data_tabel,
@@ -213,110 +232,124 @@ class TagihanController extends Controller
         return back()->with('success', 'Tagihan berhasil dihapus.');
     }
 
-    private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, $periode_tagihan)
-    {
-        $semua_tarif = Tarif::all();
-        $rincian_dihitung = [];
-        $subtotal_pemakaian = 0;
+private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, $periode_tagihan)
+{
+    $semua_tarif = Tarif::all();
+    $rincian_dihitung = [];
+    $subtotal_pemakaian = 0;
 
-        // ===== Hitung tarif pemakaian =====
-        $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')
-            ->sortBy('batas_bawah')
-            ->values();
+    // Ambil data tarif pemakaian
+    $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')->sortBy('batas_bawah');
 
-        $sisa = $total_pemakaian_real;
-        $firstBlock = true;
+    // ====================================================================
+    // --- PENAMBAHAN LOGIKA BIAYA MINIMUM ---
+    // ====================================================================
+    $pemakaian_untuk_dihitung = $total_pemakaian_real;
+    $tarif_blok_pertama = $tarif_pemakaian->first();
 
-        foreach ($tarif_pemakaian as $tarif) {
-            $bawah = isset($tarif->batas_bawah) ? (int)$tarif->batas_bawah : 0;
-            $atas = isset($tarif->batas_atas) ? (int)$tarif->batas_atas : null;
+    // Pastikan ada data tarif blok pertama
+    if ($tarif_blok_pertama) {
+        $batas_minimum = $tarif_blok_pertama->batas_atas; // Mengambil batas atas dari blok pertama, yaitu 5
 
-            if ($firstBlock) {
-                if ($total_pemakaian_real > 0 && $total_pemakaian_real <= $tarif->batas_atas) {
-                    $kuantitas = $tarif->batas_atas;
-                    $sisa = 0;
-                } else {
-                    $kuantitas = min($sisa, $tarif->batas_atas);
-                    $sisa -= $kuantitas;
-                }
-                $firstBlock = false;
-            } if ($sisa <= 0) break;
-
-    if (is_null($atas)) {
-        $kuantitas = $sisa;
-        $sisa = 0;
-    } else {
-        $kuantitas = min($sisa, $atas - $bawah + 1);
-        $sisa -= $kuantitas;
+        // Jika pemakaian lebih dari 0 dan kurang dari batas minimum, maka bulatkan ke atas
+        if ($pemakaian_untuk_dihitung > 0 && $pemakaian_untuk_dihitung < $batas_minimum) {
+            $pemakaian_untuk_dihitung = $batas_minimum;
+        }
     }
+    // ====================================================================
+    // --- AKHIR DARI LOGIKA BIAYA MINIMUM ---
+    // ====================================================================
 
-            if ($kuantitas > 0) {
-                $subtotal = $kuantitas * $tarif->harga;
-                $rincian_dihitung[] = [
-                    'deskripsi' => $tarif->deskripsi,
-                    'kuantitas' => (int)$kuantitas,
-                    'harga_satuan' => $tarif->harga,
-                    'subtotal' => $subtotal,
-                ];
-                $subtotal_pemakaian += $subtotal;
+    // Gunakan $pemakaian_untuk_dihitung untuk sisa proses kalkulasi
+    $sisa_pemakaian = $pemakaian_untuk_dihitung;
+
+    foreach ($tarif_pemakaian as $tarif) {
+        if ($sisa_pemakaian <= 0) {
+            break;
+        }
+
+        $batas_bawah = (int)$tarif->batas_bawah;
+        $batas_atas = $tarif->batas_atas;
+
+        if (is_null($batas_atas)) {
+            $kapasitas_blok = $sisa_pemakaian;
+        } else {
+            if ($batas_bawah == 0) {
+                $kapasitas_blok = $batas_atas;
+            } else {
+                $kapasitas_blok = $batas_atas - $batas_bawah + 1;
             }
         }
-
-        // ===== Biaya tetap =====
-        $biaya_lainnya = 0;
-        $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
-        foreach ($tarif_biaya_tetap as $biaya) {
-            $biaya_lainnya += $biaya->harga;
+        
+        $kuantitas_blok_ini = min($sisa_pemakaian, $kapasitas_blok);
+        
+        if ($kuantitas_blok_ini > 0) {
+            $subtotal = $kuantitas_blok_ini * $tarif->harga;
             $rincian_dihitung[] = [
-                'deskripsi' => $biaya->deskripsi,
-                'kuantitas' => 1,
-                'harga_satuan' => $biaya->harga,
-                'subtotal' => $biaya->harga,
+                'deskripsi'    => $tarif->deskripsi,
+                'kuantitas'    => $kuantitas_blok_ini,
+                'harga_satuan' => $tarif->harga,
+                'subtotal'     => $subtotal,
             ];
+            $subtotal_pemakaian += $subtotal;
         }
 
-        // ===== Hitung denda dinamis =====
-        $denda_per_bulan = 5000;
-        $denda = 0;
+        $sisa_pemakaian -= $kuantitas_blok_ini;
+    }
 
-        $bulanTagihan = $periode_tagihan->startOfMonth();
-        $bulanSekarang = Carbon::now()->startOfMonth();
-        $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang);
-
-        // Hanya terapkan denda jika sudah terlambat 1 bulan atau lebih
-        if ($selisihBulan > 0) {
-            $denda = $selisihBulan * $denda_per_bulan;
-            $rincian_dihitung[] = [
-                'deskripsi' => 'Denda Keterlambatan',
-                'kuantitas' => $selisihBulan,
-                'harga_satuan' => $denda_per_bulan,
-                'subtotal' => $denda,
-            ];
-        }
-
-        // ===== Tambahkan tunggakan manual (kalau ada) =====
-        if ($tunggakan_manual > 0) {
-            $rincian_dihitung[] = [
-                'deskripsi' => 'Tunggakan Bulan Sebelumnya',
-                'kuantitas' => 1,
-                'harga_satuan' => $tunggakan_manual,
-                'subtotal' => $tunggakan_manual,
-            ];
-        }
-
-        // ===== Total =====
-        $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda;
-
-        return [
-            'total_pemakaian_m3' => $total_pemakaian_real,
-            'subtotal_pemakaian' => $subtotal_pemakaian,
-            'biaya_lainnya' => $biaya_lainnya,
-            'denda' => $denda,
-            'tunggakan' => $tunggakan_manual,
-            'total_harus_dibayar' => $total_harus_dibayar,
-            'rincian_dihitung' => $rincian_dihitung,
+    // ===== Biaya tetap =====
+    $biaya_lainnya = 0;
+    $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
+    foreach ($tarif_biaya_tetap as $biaya) {
+        $biaya_lainnya += $biaya->harga;
+        $rincian_dihitung[] = [
+            'deskripsi'    => $biaya->deskripsi,
+            'kuantitas'    => 1,
+            'harga_satuan' => $biaya->harga,
+            'subtotal'     => $biaya->harga,
         ];
     }
+
+    // ===== Hitung denda dinamis =====
+    $tarif_denda = $semua_tarif->where('jenis_tarif', 'denda')->first();
+    $denda_per_bulan = $tarif_denda->harga ?? 5000;
+    $denda = 0;
+    $bulanTagihan = $periode_tagihan->startOfMonth();
+    $bulanSekarang = Carbon::now()->startOfMonth();
+    $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang);
+    if ($selisihBulan > 0) {
+        $denda = $selisihBulan * $denda_per_bulan;
+        $rincian_dihitung[] = [
+            'deskripsi'    => $tarif_denda->deskripsi ?? 'Denda Keterlambatan',
+            'kuantitas'    => $selisihBulan,
+            'harga_satuan' => $denda_per_bulan,
+            'subtotal'     => $denda,
+        ];
+    }
+
+    // ===== Tambahkan tunggakan manual =====
+    if ($tunggakan_manual > 0) {
+        $rincian_dihitung[] = [
+            'deskripsi'    => 'Tunggakan Bulan Sebelumnya',
+            'kuantitas'    => 1,
+            'harga_satuan' => $tunggakan_manual,
+            'subtotal'     => $tunggakan_manual,
+        ];
+    }
+
+    // ===== Total =====
+    $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda;
+
+    return [
+        'total_pemakaian_m3' => $total_pemakaian_real, // Tetap laporkan pemakaian asli
+        'subtotal_pemakaian' => $subtotal_pemakaian,
+        'biaya_lainnya'      => $biaya_lainnya,
+        'denda'              => $denda,
+        'tunggakan'          => $tunggakan_manual,
+        'total_harus_dibayar'=> $total_harus_dibayar,
+        'rincian_dihitung'   => $rincian_dihitung,
+    ];
+}
 
     public function batalkanTagihan(Tagihan $tagihan)
     {
