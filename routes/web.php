@@ -106,46 +106,49 @@ Route::middleware(['auth'])->group(function () {
     | GRUP 2: OPERASIONAL UNIT USAHA - Admin & Manajer Unit Usaha
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:admin_unit_usaha|manajer_unit_usaha'])->prefix('usaha')->name('usaha.')->group(function () {
-        Route::resource('produk', ProdukController::class)->names('produk');
-        Route::resource('stok', StokController::class)->names('stok');
-        Route::resource('penjualan', PenjualanController::class)->names('penjualan');
-        Route::resource('pembelian', PembelianController::class)->names('pembelian');
-        Route::resource('pemasok', PemasokController::class)->names('pemasok');
-        Route::resource('kategori', KategoriController::class)->except(['show'])->names('kategori');
- Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index'); // Ini halaman utama
-    Route::get('tagihan/cetak-massal', [TagihanController::class, 'cetakMassal'])->name('tagihan.cetak-massal');
-    Route::post('tagihan/cetak-selektif', [TagihanController::class, 'cetakSelektif'])->name('tagihan.cetak-selektif');
-    Route::post('tagihan/simpan-semua-massal', [TagihanController::class, 'simpanSemuaMassal'])->name('tagihan.simpanSemuaMassal');
-    Route::put('tagihan/{tagihan}/tandai-lunas', [TagihanController::class, 'tandaiLunas'])->name('tagihan.tandaiLunas');
-    Route::post('tagihan/tandai-lunas-selektif', [TagihanController::class, 'tandaiLunasSelektif'])->name('tagihan.tandaiLunasSelektif');
-    Route::get('tagihan/rekap', [TagihanController::class, 'rekap'])->name('tagihan.rekap');
-Route::post('tagihan/quick-save', [TagihanController::class, 'quickSave'])
-    ->name('tagihan.quickSave');
-    // routes/web.php
-Route::post('/tagihan/batalkan-massal', [TagihanController::class, 'batalkanMassal'])->name('tagihan.batalkan-massal');
+  Route::middleware(['role:admin_unit_usaha|manajer_unit_usaha'])->prefix('usaha')->name('usaha.')->group(function () {
 
-    // Tambahkan route lainnya yang relevan seperti show, destroy, dll. jika ada
-    Route::get('tagihan/{tagihan}', [TagihanController::class, 'show'])->name('tagihan.show');
-    Route::delete('tagihan/{tagihan}', [TagihanController::class, 'destroy'])->name('tagihan.destroy');
+    // --- GRUP UNTUK USAHA PERDAGANGAN ---
+    Route::resource('produk', ProdukController::class);
+    Route::resource('stok', StokController::class);
+    Route::resource('penjualan', PenjualanController::class);
+    Route::resource('pembelian', PembelianController::class);
+    Route::resource('pemasok', PemasokController::class);
+    Route::resource('kategori', KategoriController::class)->except(['show']);
 
-Route::put('tagihan/{tagihan}/batalkan', [TagihanController::class, 'batalkanTagihan'])->name('tagihan.batalkanTagihan');
-    Route::put('tagihan/update-meter-akhir-lalu', [TagihanController::class, 'updateMeterAkhirLalu'])->name('tagihan.updateMeterAkhirLalu');
+    // --- GRUP UNTUK USAHA AIR (PAM) ---
+    Route::resource('pelanggan', PelangganController::class);
+    Route::resource('tarif', TarifController::class);
+    Route::resource('petugas', PetugasController::class);
 
+    // --- RUTE KHUSUS UNTUK TAGIHAN (TIDAK PAKAI RESOURCE) ---
+    Route::prefix('tagihan')->name('tagihan.')->controller(TagihanController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/simpan-semua-massal', 'simpanSemuaMassal')->name('simpanSemuaMassal'); // INI RUTE ANDA YANG ERROR
 
+        Route::get('/rekap', 'rekap')->name('rekap');
 
-Route::resource('tagihan', TagihanController::class);
- Route::resource('pelanggan', PelangganController::class);
-  Route::resource('tarif', TarifController::class);
-   Route::resource('petugas', PetugasController::class);
-        // Khusus Admin Unit Usaha
-        Route::middleware(['role:admin_unit_usaha'])->group(function () {
-            Route::get('unit-setting', [AdminUnitUsahaController::class, 'edit'])->name('unit_setting.edit');
-            Route::put('unit-setting', [AdminUnitUsahaController::class, 'update'])->name('unit_setting.update');
-        });
+        Route::post('/cetak-selektif', 'cetakSelektif')->name('cetak-selektif');
+        Route::post('/tandai-lunas-selektif', 'tandaiLunasSelektif')->name('tandaiLunasSelektif');
+        Route::post('/batalkan-massal', 'batalkanMassal')->name('batalkan-massal');
 
+        Route::get('/{tagihan}', 'show')->name('show');
+        Route::delete('/{tagihan}', 'destroy')->name('destroy');
+
+        Route::put('/{tagihan}/tandai-lunas', 'tandaiLunas')->name('tandaiLunas');
+        Route::put('/{tagihan}/batalkan', 'batalkanTagihan')->name('batalkanTagihan');
+
+       Route::put('/tagihan/{tagihan}/batalkan-lunas', [TagihanController::class, 'batalkanLunas'])->name('batalkan-lunas');
+        Route::post('/{tagihan}/bayar', 'prosesPembayaran')->name('prosesPembayaran');
     });
 
+    // Khusus Admin Unit Usaha
+    Route::middleware(['role:admin_unit_usaha'])->group(function () {
+        Route::get('unit-setting', [AdminUnitUsahaController::class, 'edit'])->name('unit_setting.edit');
+        Route::put('unit-setting', [AdminUnitUsahaController::class, 'update'])->name('unit_setting.update');
+    });
+
+});
 
     /*
     |--------------------------------------------------------------------------

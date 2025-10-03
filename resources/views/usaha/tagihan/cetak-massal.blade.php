@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: 'Courier New', monospace;
-            font-size: 9px;
+            font-size: 10px;
             color: #000;
             margin: 0;
             padding: 0;
@@ -24,7 +24,7 @@
             font-weight: bold;
             text-align: center;
             margin-bottom: 2px;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1;
         }
         .content {
@@ -46,7 +46,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 10px;
         }
         td {
             padding: 0;
@@ -72,7 +72,7 @@
         }
 
         .rincian-table td {
-    font-size: 9px;
+    font-size: 10px;
     padding: 0;
 }
 .rincian-table .description {
@@ -94,7 +94,7 @@
     text-align: right;
 }
         .tunggakan-table {
-            font-size: 9px;
+            font-size: 10px;
         }
         .tunggakan-table td {
             padding: 0;
@@ -128,7 +128,7 @@
             margin: 0;
         }
         .small-text {
-            font-size: 8px;
+            font-size: 9px;
         }
 
         @media print {
@@ -148,11 +148,11 @@
             .struk-container:last-child {
                 page-break-after: avoid;
             }
-            .struk-container:nth-of-type(4n) {
+            .struk-container:nth-of-type(3n) {
         page-break-after: always;
     }
             body {
-                font-size: 9px;
+                font-size: 10px;
                 background: white;
                 margin: 0;
                 padding: 0;
@@ -168,6 +168,7 @@
         }
     </style>
 </head>
+
 <body>
     @foreach ($semua_tagihan as $tagihan)
     <div class="struk-container">
@@ -185,8 +186,8 @@
                     <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td></tr>
                     <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                     <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
-                    <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                    <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                    <tr><td>Periode</td><td>: {{ Carbon\Carbon::now()->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                    <tr><td>Dibayar di</td><td>: {{ Carbon\Carbon::now()->locale('id')->isoFormat('MMM Y') }}</td></tr>
                     <tr><td>Pemakaian</td><td>: {{ $tagihan->total_pemakaian_m3 }} m³</td></tr>
                     <tr><td>Jumlah Bayar</td><td>: Rp. {{ number_format($tagihan->total_harus_dibayar, 0, ',', '.') }}</td></tr>
                     <tr><td>Tunggakan</td><td>: Rp. {{ number_format($tagihan->tunggakan, 0, ',', '.') }}</td></tr>
@@ -226,8 +227,8 @@
                             <tr><td>Pelanggan ID</td><td>: 000{{ $tagihan->pelanggan->id ?? 'N/A' }}</td></tr>
                             <tr><td>Nama</td><td>: {{ $tagihan->pelanggan->nama }}</td></tr>
                             <tr><td>Alamat</td><td>: {{ $tagihan->pelanggan->alamat }}</td></tr>
-                            <tr><td>Periode</td><td>: {{ Carbon\Carbon::parse($tagihan->periode_tagihan)->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
-                            <tr><td>Dibayar di</td><td>: {{ $tagihan->tanggal_cetak->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                          <tr><td>Periode</td><td>: {{ Carbon\Carbon::now()->subMonth()->locale('id')->isoFormat('MMM Y') }}</td></tr>
+                            <tr><td>Dibayar di</td><td>: {{ Carbon\Carbon::now()->locale('id')->isoFormat('MMM Y') }}</td></tr>
                             <tr><td>Meter Akhir</td><td>: {{ $tagihan->meter_akhir }} m³</td></tr>
                             <tr><td>Meter Awal</td><td>: {{ $tagihan->meter_awal }} m³</td></tr>
                             <tr><td>Pemakaian</td><td>: {{ $tagihan->total_pemakaian_m3 }} m³</td></tr>

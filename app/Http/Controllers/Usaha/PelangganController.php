@@ -14,7 +14,7 @@ class PelangganController extends Controller
      */
     public function index()
     {
-        $semua_pelanggan = Pelanggan::latest()->paginate(15);
+        $semua_pelanggan = Pelanggan::all();
         return view('usaha.pelanggan.index', compact('semua_pelanggan'));
     }
 

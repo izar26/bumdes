@@ -10,13 +10,14 @@ use App\Models\Tarif;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class TagihanController extends Controller
 {
 public function index(Request $request)
 {
-    // --- Bagian ini tetap sama ---
     $bulan_terpilih = $request->input('periode_bulan', date('n'));
     $tahun_terpilih = $request->input('periode_tahun', date('Y'));
     $petugas_terpilih = $request->input('petugas_id');
@@ -26,11 +27,6 @@ public function index(Request $request)
 
     $semua_petugas = Petugas::orderBy('nama_petugas')->get();
 
-    // ====================================================================
-    // PERUBAHAN DIMULAI DARI SINI
-    // ====================================================================
-
-    // 1. Ambil SEMUA pelanggan aktif terlebih dahulu, jangan difilter dulu.
     $semua_pelanggan = Pelanggan::where('status_pelanggan', 'Aktif')->orderBy('nama')->get();
     $semua_pelanggan_ids = $semua_pelanggan->pluck('id');
 
@@ -46,42 +42,48 @@ public function index(Request $request)
                                        ->get()->keyBy('pelanggan_id');
 
     // 4. Buat data tabel mentah dari semua pelanggan.
-    $data_tabel_mentah = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang) {
-        $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
-        $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
+    $data_tabel_mentah = $semua_pelanggan->map(function ($pelanggan) use ($tagihan_periode_lalu, $tagihan_periode_sekarang, $periode_sekarang) {
+    $tagihan_lalu = $tagihan_periode_lalu->get($pelanggan->id);
+    $tagihan_sekarang = $tagihan_periode_sekarang->get($pelanggan->id);
 
-        // Logika ini sekarang akan berjalan dengan benar karena $tagihan_lalu akan ditemukan
-        $meter_awal = $tagihan_lalu->meter_akhir ?? 0;
-        $meter_akhir = $tagihan_sekarang->meter_akhir ?? null; // Ganti ke null agar lebih jelas jika belum ada
-        
-        // Jika meter akhir belum diisi, pemakaian adalah 0
-        $pemakaian = ($meter_akhir !== null) ? max(0, $meter_akhir - $meter_awal) : 0;
+    $meter_awal = $tagihan_lalu?->meter_akhir ?? 0;
+    $meter_akhir = $tagihan_sekarang?->meter_akhir ?? null;
+    $pemakaian = ($meter_akhir !== null) ? max(0, $meter_akhir - $meter_awal) : 0;
 
-        return (object) [
-            'pelanggan'   => $pelanggan,
-            'tagihan'     => $tagihan_sekarang,
-            'meter_awal'  => $meter_awal,
-            'meter_akhir' => $meter_akhir ?? '-', // Tampilkan strip jika null
-            'pemakaian'   => $pemakaian,
-        ];
-    });
+    $denda_otomatis = 0;
+    if (!$tagihan_sekarang || $tagihan_sekarang->status_pembayaran == 'Belum Lunas') {
+        $tarif_denda = \App\Models\Tarif::where('jenis_tarif', 'denda')->first();
+        $denda_per_bulan = $tarif_denda->harga ?? 5000;
 
-    // 5. BARU LAKUKAN FILTER jika petugas dipilih.
-    // Filter ini dilakukan pada data yang sudah jadi, bukan pada query awal.
-    if ($petugas_terpilih) {
-        // Jika petugas dipilih, tampilkan pelanggan yang SUDAH punya tagihan dengan petugas tsb,
-        // ATAU yang BELUM punya tagihan sama sekali (agar bisa diinput baru).
-        $data_tabel = $data_tabel_mentah->filter(function ($baris) use ($petugas_terpilih) {
-            return !$baris->tagihan || ($baris->tagihan && $baris->tagihan->petugas_id == $petugas_terpilih);
-        });
-    } else {
-        $data_tabel = $data_tabel_mentah;
+        $bulanTagihan = $periode_sekarang->copy()->startOfMonth();
+        $bulanSekarang = \Carbon\Carbon::now()->startOfMonth();
+        $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang);
+
+        if ($selisihBulan > 0) {
+            $denda_otomatis = $selisihBulan * $denda_per_bulan;
+        }
     }
-    
-    // ====================================================================
-    // AKHIR DARI PERUBAHAN
-    // ====================================================================
 
+
+    return (object) [
+        'pelanggan'   => $pelanggan,
+        'tagihan'     => $tagihan_sekarang,
+        'meter_awal'  => $meter_awal,
+        'meter_akhir' => $meter_akhir ?? '-',
+        'pemakaian'   => $pemakaian,
+        // Kirim denda otomatis ke view
+        'denda_otomatis' => $tagihan_sekarang?->denda ?? $denda_otomatis,
+    ];
+});
+
+  if ($petugas_terpilih) {
+    $data_tabel = $data_tabel_mentah->filter(function ($baris) use ($petugas_terpilih) {
+        // Hanya proses baris yang punya tagihan DAN petugas_id nya cocok
+        return $baris->tagihan && $baris->tagihan->petugas_id == $petugas_terpilih;
+    });
+} else {
+    $data_tabel = $data_tabel_mentah;
+}
     return view('usaha.tagihan.index', [
         'data_tabel' => $data_tabel,
         'semua_petugas' => $semua_petugas,
@@ -90,14 +92,18 @@ public function index(Request $request)
         'tahun_terpilih' => $tahun_terpilih,
     ]);
 }
+// GANTI SELURUH METHOD INI DI TagihanController.php
 
-    public function simpanSemuaMassal(Request $request)
+// DI FILE: TagihanController.php
+
+public function simpanSemuaMassal(Request $request)
 {
     $request->validate([
-        'periode_tagihan' => 'required|date',
+  'periode_tagihan' => 'required|date',
         'tagihan' => 'required|array',
-        'tagihan.*.meter_awal' => 'required|numeric|min:0',
-        'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',
+        'tagihan.*.meter_awal' => 'required|numeric|min:0',     // <-- Ganti ke numeric
+        'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',    // <-- Ganti ke numeric
+        'tagihan.*.denda' => 'nullable|numeric|min:0',          // <-- Ganti ke numeric
         'petugas_massal_id' => 'required|numeric|exists:petugas,id',
     ]);
 
@@ -107,43 +113,74 @@ public function index(Request $request)
     DB::beginTransaction();
     try {
         foreach ($request->tagihan as $pelanggan_id => $data) {
-            if (isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '') {
-                if ($data['meter_akhir'] < $data['meter_awal']) {
-                    $pelanggan = Pelanggan::find($pelanggan_id);
-                    throw new \Exception('Meter akhir untuk pelanggan ' . ($pelanggan->nama ?? '#' . $pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
+            $tagihan_sebelumnya = \App\Models\Tagihan::where('pelanggan_id', $pelanggan_id)
+                                                    ->where('periode_tagihan', $periode)
+                                                    ->first();
+
+            $meter_akhir_diisi = isset($data['meter_akhir']) && $data['meter_akhir'] !== null && $data['meter_akhir'] !== '';
+
+            if ($meter_akhir_diisi || $tagihan_sebelumnya) {
+                $meter_awal_int = (int) $data['meter_awal'];
+                $meter_akhir_int = $meter_akhir_diisi ? (int) $data['meter_akhir'] : ($tagihan_sebelumnya->meter_akhir ?? 0);
+
+                if ($meter_akhir_int < $meter_awal_int) {
+                    $pelanggan = \App\Models\Pelanggan::find($pelanggan_id);
+                    throw new \Exception('Meter akhir untuk ' . ($pelanggan->nama ?? '#' . $pelanggan_id) . ' tidak boleh lebih kecil dari meter awal.');
                 }
 
-                // Ambil tunggakan dari tagihan bulan lalu yang belum lunas
-                $periode_sekarang = Carbon::parse($periode)->startOfMonth();
+                $periode_sekarang = Carbon::parse($periode);
                 $periode_lalu = $periode_sekarang->copy()->subMonth();
-                $tagihan_lalu = Tagihan::where('pelanggan_id', $pelanggan_id)
-                                      ->where('periode_tagihan', $periode_lalu)
-                                      ->where('status_pembayaran', 'Belum Lunas')
-                                      ->first();
+                $tagihan_lalu = \App\Models\Tagihan::where('pelanggan_id', $pelanggan_id)
+                                                  ->where('periode_tagihan', $periode_lalu)
+                                                  ->whereIn('status_pembayaran', ['Belum Lunas', 'Cicil'])
+                                                  ->first();
 
-                // Dapatkan nilai tunggakan, jika tagihan bulan lalu ada
-                $tunggakan_bulan_lalu = $tagihan_lalu->total_harus_dibayar ?? 0;
-                $total_pemakaian_real = max(0, $data['meter_akhir'] - $data['meter_awal']);
+                $tunggakan_bulan_lalu = $tagihan_lalu?->total_harus_dibayar - ($tagihan_lalu?->jumlah_dibayar ?? 0);
+                $total_pemakaian_real = max(0, $meter_akhir_int - $meter_awal_int);
+                $denda_dari_input = isset($data['denda']) && $data['denda'] !== '' ? (int)$data['denda'] : null;
 
                 $hasil_kalkulasi = $this->kalkulasiTagihanData(
                     $total_pemakaian_real,
-                    $tunggakan_bulan_lalu, // Kirimkan nilai tunggakan yang sudah diambil
-                    Carbon::parse($periode_sekarang)
+                    $tunggakan_bulan_lalu,
+                    $periode_sekarang,
+                    $denda_dari_input
                 );
+
+                //--- LOGIKA PERBAIKAN UTAMA ADA DI SINI ---
 
                 $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
                     'pelanggan_id' => $pelanggan_id,
                     'periode_tagihan' => $periode,
                     'petugas_id' => $petugas_id_massal,
-                    'meter_awal' => $data['meter_awal'],
-                    'meter_akhir' => $data['meter_akhir'],
-                    'tanggal_cetak' => now(),
-                    'tunggakan' => $tunggakan_bulan_lalu, // Simpan nilai tunggakan ke kolom baru
-                    'status_pembayaran' => ($hasil_kalkulasi['total_harus_dibayar'] == 0) ? 'Lunas' : 'Belum Lunas',
+                    'meter_awal' => $meter_awal_int,
+                    'meter_akhir' => $meter_akhir_int,
+                    'tunggakan' => $tunggakan_bulan_lalu,
                 ]);
                 unset($data_untuk_disimpan['rincian_dihitung']);
 
-                $tagihan = Tagihan::updateOrCreate(
+                if ($tagihan_sebelumnya) {
+                    // JIKA TAGIHAN SUDAH ADA (UPDATE), PERTAHANKAN STATUS & JUMLAH BAYAR
+                    $data_untuk_disimpan['status_pembayaran'] = $tagihan_sebelumnya->status_pembayaran;
+                    $data_untuk_disimpan['jumlah_dibayar'] = $tagihan_sebelumnya->jumlah_dibayar;
+                } else {
+                    // JIKA TAGIHAN BARU, SET DEFAULT
+                    $data_untuk_disimpan['status_pembayaran'] = 'Belum Lunas';
+                    $data_untuk_disimpan['jumlah_dibayar'] = 0;
+                }
+
+                if ($hasil_kalkulasi['total_harus_dibayar'] <= ($data_untuk_disimpan['jumlah_dibayar'] ?? 0) && $total_pemakaian_real > 0) {
+                    $data_untuk_disimpan['status_pembayaran'] = 'Lunas';
+                }
+
+
+                    Log::info('--- DEBUG SIMPAN MASSAL ---', [
+                'pelanggan_id' => $pelanggan_id,
+                '1_data_dari_form' => $data,
+                '2_tagihan_sebelumnya_dari_db' => $tagihan_sebelumnya ? $tagihan_sebelumnya->toArray() : 'TIDAK ADA (BARU)',
+                '3_data_final_akan_disimpan' => $data_untuk_disimpan,
+            ]);
+
+                $tagihan = \App\Models\Tagihan::updateOrCreate(
                     ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
                     $data_untuk_disimpan
                 );
@@ -159,7 +196,6 @@ public function index(Request $request)
     }
     return redirect()->back()->with('success', 'Semua perubahan tagihan berhasil disimpan!');
 }
-
     public function updateMeterAkhirLalu(Request $request)
     {
         $request->validate([
@@ -198,7 +234,9 @@ public function index(Request $request)
     public function tandaiLunasSelektif(Request $request)
     {
         $request->validate(['tagihan_ids' => 'required|array']);
-        Tagihan::whereIn('id', $request->tagihan_ids)->update(['status_pembayaran' => 'Lunas']);
+        Tagihan::whereIn('id', $request->tagihan_ids)->update(['status_pembayaran' => 'Lunas',
+    'tanggal_pembayaran' => now()
+    ]);
         return back()->with('success', 'Tagihan terpilih berhasil ditandai lunas.');
     }
 
@@ -216,15 +254,21 @@ public function index(Request $request)
                                 ->get();
         return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
     }
+public function cetakSelektif(Request $request)
+{
+    $validated = $request->validate(['tagihan_ids' => 'required|array']);
+    $tagihan_ids = $validated['tagihan_ids'];
 
-    public function cetakSelektif(Request $request)
-    {
-        $request->validate(['tagihan_ids' => 'required|array']);
-        $semua_tagihan = Tagihan::whereIn('id', $request->tagihan_ids)
-                                ->with('pelanggan', 'petugas', 'rincian')
-                                ->get();
-        return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
-    }
+    // LANGKAH 1: Update kolom tanggal_cetak di database dengan tanggal sekarang
+    Tagihan::whereIn('id', $tagihan_ids)->update(['tanggal_cetak' => now()]);
+
+    // LANGKAH 2: Ambil data yang sudah ter-update untuk ditampilkan
+    $semua_tagihan = Tagihan::whereIn('id', $tagihan_ids)
+                            ->with('pelanggan', 'petugas', 'rincian')
+                            ->get();
+
+    return view('usaha.tagihan.cetak-massal', compact('semua_tagihan'));
+}
 
     public function destroy(Tagihan $tagihan)
     {
@@ -232,72 +276,64 @@ public function index(Request $request)
         return back()->with('success', 'Tagihan berhasil dihapus.');
     }
 
-private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, $periode_tagihan)
+private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, $periode_tagihan, $denda_override = null)
 {
-    $semua_tarif = Tarif::all();
+    $semua_tarif = \App\Models\Tarif::all();
     $rincian_dihitung = [];
     $subtotal_pemakaian = 0;
 
-    // Ambil data tarif pemakaian
+    // --- Tarif pemakaian berdasarkan blok ---
     $tarif_pemakaian = $semua_tarif->where('jenis_tarif', 'pemakaian')->sortBy('batas_bawah');
-
-    // ====================================================================
-    // --- PENAMBAHAN LOGIKA BIAYA MINIMUM ---
-    // ====================================================================
     $pemakaian_untuk_dihitung = $total_pemakaian_real;
     $tarif_blok_pertama = $tarif_pemakaian->first();
 
-    // Pastikan ada data tarif blok pertama
     if ($tarif_blok_pertama) {
-        $batas_minimum = $tarif_blok_pertama->batas_atas; // Mengambil batas atas dari blok pertama, yaitu 5
 
-        // Jika pemakaian lebih dari 0 dan kurang dari batas minimum, maka bulatkan ke atas
+        $batas_minimum = 5;
         if ($pemakaian_untuk_dihitung > 0 && $pemakaian_untuk_dihitung < $batas_minimum) {
             $pemakaian_untuk_dihitung = $batas_minimum;
         }
-    }
-    // ====================================================================
-    // --- AKHIR DARI LOGIKA BIAYA MINIMUM ---
-    // ====================================================================
 
-    // Gunakan $pemakaian_untuk_dihitung untuk sisa proses kalkulasi
-    $sisa_pemakaian = $pemakaian_untuk_dihitung;
+        $sisa_pemakaian = $pemakaian_untuk_dihitung;
 
-    foreach ($tarif_pemakaian as $tarif) {
-        if ($sisa_pemakaian <= 0) {
-            break;
-        }
+        foreach ($tarif_pemakaian as $index => $tarif) {
+            if ($sisa_pemakaian <= 0) break;
 
-        $batas_bawah = (int)$tarif->batas_bawah;
-        $batas_atas = $tarif->batas_atas;
+            $batas_bawah = (int) $tarif->batas_bawah;
+            $batas_atas = $tarif->batas_atas;
 
-        if (is_null($batas_atas)) {
-            $kapasitas_blok = $sisa_pemakaian;
-        } else {
-            if ($batas_bawah == 0) {
-                $kapasitas_blok = $batas_atas;
+            // Hitung kapasitas blok (inklusif: 0–5 = 5, 6–15 = 10, dst)
+            if (is_null($batas_atas)) {
+                $kapasitas_blok = $sisa_pemakaian; // blok terakhir tak terbatas
             } else {
                 $kapasitas_blok = $batas_atas - $batas_bawah + 1;
             }
-        }
-        
-        $kuantitas_blok_ini = min($sisa_pemakaian, $kapasitas_blok);
-        
-        if ($kuantitas_blok_ini > 0) {
-            $subtotal = $kuantitas_blok_ini * $tarif->harga;
-            $rincian_dihitung[] = [
-                'deskripsi'    => $tarif->deskripsi,
-                'kuantitas'    => $kuantitas_blok_ini,
-                'harga_satuan' => $tarif->harga,
-                'subtotal'     => $subtotal,
-            ];
-            $subtotal_pemakaian += $subtotal;
-        }
 
-        $sisa_pemakaian -= $kuantitas_blok_ini;
+            // --- Blok pertama wajib minimal 5 ---
+           if ($index === 0) {
+    // Blok pertama selalu maksimal 5 m³
+    $kuantitas_blok_ini = min($sisa_pemakaian, $batas_minimum);
+} else {
+    $kuantitas_blok_ini = min($sisa_pemakaian, $kapasitas_blok);
+}
+
+            // Tambah ke rincian kalau ada pemakaian di blok ini
+            if ($kuantitas_blok_ini > 0) {
+                $subtotal = $kuantitas_blok_ini * $tarif->harga;
+                $rincian_dihitung[] = [
+                    'deskripsi'    => $tarif->deskripsi,
+                    'kuantitas'    => $kuantitas_blok_ini,
+                    'harga_satuan' => $tarif->harga,
+                    'subtotal'     => $subtotal,
+                ];
+                $subtotal_pemakaian += $subtotal;
+            }
+
+            $sisa_pemakaian -= $kuantitas_blok_ini;
+        }
     }
 
-    // ===== Biaya tetap =====
+    // --- Biaya tetap ---
     $biaya_lainnya = 0;
     $tarif_biaya_tetap = $semua_tarif->where('jenis_tarif', 'biaya_tetap');
     foreach ($tarif_biaya_tetap as $biaya) {
@@ -310,24 +346,22 @@ private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, 
         ];
     }
 
-    // ===== Hitung denda dinamis =====
+    // --- Denda otomatis / manual ---
+    $denda_otomatis = 0;
     $tarif_denda = $semua_tarif->where('jenis_tarif', 'denda')->first();
     $denda_per_bulan = $tarif_denda->harga ?? 5000;
-    $denda = 0;
+
     $bulanTagihan = $periode_tagihan->startOfMonth();
-    $bulanSekarang = Carbon::now()->startOfMonth();
+    $bulanSekarang = \Carbon\Carbon::now()->startOfMonth();
     $selisihBulan = $bulanTagihan->diffInMonths($bulanSekarang);
+
     if ($selisihBulan > 0) {
-        $denda = $selisihBulan * $denda_per_bulan;
-        $rincian_dihitung[] = [
-            'deskripsi'    => $tarif_denda->deskripsi ?? 'Denda Keterlambatan',
-            'kuantitas'    => $selisihBulan,
-            'harga_satuan' => $denda_per_bulan,
-            'subtotal'     => $denda,
-        ];
+        $denda_otomatis = $selisihBulan * $denda_per_bulan;
     }
 
-    // ===== Tambahkan tunggakan manual =====
+    $denda_final = $denda_override ?? $denda_otomatis;
+
+    // --- Tunggakan ---
     if ($tunggakan_manual > 0) {
         $rincian_dihitung[] = [
             'deskripsi'    => 'Tunggakan Bulan Sebelumnya',
@@ -337,19 +371,33 @@ private function kalkulasiTagihanData($total_pemakaian_real, $tunggakan_manual, 
         ];
     }
 
-    // ===== Total =====
-    $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda;
+    // --- Denda ---
+    if ($denda_final > 0) {
+        $deskripsi_denda = is_null($denda_override)
+            ? ($tarif_denda->deskripsi ?? 'Denda Keterlambatan')
+            : 'Denda (Manual)';
+        $rincian_dihitung[] = [
+            'deskripsi'    => $deskripsi_denda,
+            'kuantitas'    => 1,
+            'harga_satuan' => $denda_final,
+            'subtotal'     => $denda_final,
+        ];
+    }
+
+    // --- Total akhir ---
+    $total_harus_dibayar = $subtotal_pemakaian + $biaya_lainnya + $tunggakan_manual + $denda_final;
 
     return [
-        'total_pemakaian_m3' => $total_pemakaian_real, // Tetap laporkan pemakaian asli
+        'total_pemakaian_m3' => $total_pemakaian_real,
         'subtotal_pemakaian' => $subtotal_pemakaian,
         'biaya_lainnya'      => $biaya_lainnya,
-        'denda'              => $denda,
+        'denda'              => $denda_final,
         'tunggakan'          => $tunggakan_manual,
         'total_harus_dibayar'=> $total_harus_dibayar,
         'rincian_dihitung'   => $rincian_dihitung,
     ];
 }
+
 
     public function batalkanTagihan(Tagihan $tagihan)
     {
@@ -433,7 +481,7 @@ public function batalkanMassal(Request $request)
 {
     $request->validate([
         'tagihan_ids' => 'required|array',
-        'tagihan_ids.*' => 'exists:tagihan,id', // Memastikan setiap ID ada di tabel
+        'tagihan_ids.*' => 'exists:tagihan,id',
     ]);
 
     try {
@@ -442,5 +490,49 @@ public function batalkanMassal(Request $request)
     } catch (\Exception $e) {
         return back()->with('error', 'Gagal membatalkan tagihan: ' . $e->getMessage());
     }
+}
+
+public function batalkanLunas(Tagihan $tagihan)
+{
+    if ($tagihan->status_pembayaran !== 'Lunas') {
+        return back()->with('error', 'Tagihan ini tidak berstatus Lunas.');
+    }
+    $newStatus = ($tagihan->jumlah_dibayar > 0) ? 'Cicil' : 'Belum Lunas';
+
+    $tagihan->update([
+        'status_pembayaran' => $newStatus,
+        'tanggal_pembayaran' => null
+    ]);
+
+    return back()->with('success', 'Status Lunas berhasil dibatalkan.');
+}
+
+public function prosesPembayaran(Request $request, Tagihan $tagihan)
+{
+    $sisa_tagihan = $tagihan->total_harus_dibayar - $tagihan->jumlah_dibayar;
+
+     $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        'jumlah_bayar' => 'required|numeric|min:1|max:' . $sisa_tagihan,
+    ], [
+        'jumlah_bayar.max' => 'Jumlah bayar tidak boleh melebihi sisa tagihan.',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+    }
+
+    $tagihan->jumlah_dibayar += $request->jumlah_bayar;
+    if (bccomp((string)$tagihan->jumlah_dibayar, (string)$tagihan->total_harus_dibayar, 2) >= 0) {
+        $tagihan->status_pembayaran = 'Lunas';
+        $tagihan->tanggal_pembayaran = now();
+    } else {
+        $tagihan->status_pembayaran = 'Cicil';
+    }
+    $tagihan->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Pembayaran berhasil dicatat!',
+    ]);
 }
 }

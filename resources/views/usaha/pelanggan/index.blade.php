@@ -2,6 +2,9 @@
 
 @section('title', 'Daftar Pelanggan')
 
+{{-- TAMBAHAN: Mengaktifkan plugin DataTables dari AdminLTE --}}
+@section('plugins.DataTables', true)
+
 @section('content_header')
     <h1 class="m-0 text-dark">Daftar Pelanggan</h1>
 @stop
@@ -21,10 +24,11 @@
             @if(session('error')) <div class="alert alert-danger alert-dismissible fade show" role="alert"><i class="fa fa-exclamation-circle"></i> {{ session('error') }}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div> @endif
 
             <div class="table-responsive">
-                <table class="table table-hover table-striped">
+                {{-- DIUBAH: Menambahkan id="pelanggan-table" agar bisa ditarget oleh JavaScript --}}
+                <table class="table table-hover table-striped" id="pelanggan-table">
                     <thead class="thead-primary">
                         <tr>
-                            <th>#</th>
+                            <th>No.</th>
                             <th>Nama Pelanggan</th>
                             <th>Alamat</th>
                             <th>Kontak</th>
@@ -35,7 +39,8 @@
                     <tbody>
                         @forelse ($semua_pelanggan as $pelanggan)
                         <tr>
-                            <td>{{ $loop->iteration + $semua_pelanggan->firstItem() - 1 }}</td>
+                            {{-- DIUBAH: Cukup gunakan $loop->iteration karena DataTables mengelola semua data --}}
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $pelanggan->nama }}</td>
                             <td>{{ $pelanggan->alamat }}</td>
                             <td>{{$pelanggan->kontak}}</td>
@@ -45,26 +50,41 @@
                                 </span>
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('usaha.pelanggan.edit', $pelanggan) }}" class="btn btn-sm btn-warning" title="Edit"><i class="fa fa-edit"></i></a>
-                                <button type="button" class="btn btn-sm btn-danger" onclick="if(confirm('Apakah Anda yakin? Pelanggan yang memiliki tagihan tidak dapat dihapus.')) { document.getElementById('delete-form-{{$pelanggan->id}}').submit(); }" title="Hapus"><i class="fa fa-trash"></i></button>
-                                <form id="delete-form-{{$pelanggan->id}}" action="{{ route('usaha.pelanggan.destroy', $pelanggan) }}" method="POST" style="display: none;">
-                                    @csrf @method('DELETE')
-                                </form>
+                                <div class="btn-group">
+                                    <a href="{{ route('usaha.pelanggan.edit', $pelanggan) }}" class="btn btn-sm btn-warning" title="Edit"><i class="fa fa-edit"></i></a>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="if(confirm('Apakah Anda yakin? Pelanggan yang memiliki tagihan tidak dapat dihapus.')) { document.getElementById('delete-form-{{$pelanggan->id}}').submit(); }" title="Hapus"><i class="fa fa-trash"></i></button>
+                                    <form id="delete-form-{{$pelanggan->id}}" action="{{ route('usaha.pelanggan.destroy', $pelanggan) }}" method="POST" style="display: none;">
+                                        @csrf @method('DELETE')
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center">Tidak ada data pelanggan.</td>
+                            <td colspan="6" class="text-center">Tidak ada data pelanggan.</td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-        @if ($semua_pelanggan->hasPages())
-        <div class="card-footer clearfix">
-            {{ $semua_pelanggan->links() }}
-        </div>
-        @endif
     </div>
+@stop
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        $('#pelanggan-table').DataTable({
+            "responsive": true, // Agar tabel responsif di perangkat mobile
+            "lengthChange": true, // Menampilkan opsi untuk mengubah jumlah data per halaman
+            "autoWidth": false, // Menonaktifkan penyesuaian lebar otomatis
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" // Menggunakan bahasa Indonesia
+            },
+            "columnDefs": [
+                { "orderable": false, "targets": 5 } // Menonaktifkan sorting untuk kolom 'Aksi' (indeks ke-5)
+            ]
+        });
+    });
+</script>
 @stop

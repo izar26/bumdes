@@ -411,7 +411,7 @@ return [
             'can'    => ['manajer_unit_usaha', 'admin_unit_usaha'],
         ],
         [
-            'text' => 'Kelola PAM',
+            'text' => 'SPAMDes',
             'icon' => 'fas fa-fw fa-water',
             'can' => ['admin_unit_usaha'], // Gate dinamis Anda
             'submenu' => [

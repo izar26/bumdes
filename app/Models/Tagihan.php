@@ -15,22 +15,33 @@ class Tagihan extends Model
 
 
     // Sesuaikan nama foreign key di $fillable
-    protected $fillable = [
-        'pelanggan_id', // <-- BERUBAH
-        'petugas_id', // <-- BERUBAH
-        'periode_tagihan',
-        'tanggal_cetak',
-        'meter_awal',
-        'meter_akhir',
-        'total_pemakaian_m3',
-        'total_harus_dibayar',
-        'status_pembayaran',
-    ];
+ protected $fillable = [
+    'pelanggan_id',
+    'petugas_id',
+    'periode_tagihan',
+    'meter_awal',
+    'meter_akhir',
+    'total_pemakaian_m3',
+    'subtotal_pemakaian',
+    'biaya_lainnya',
+    'denda',
+    'tunggakan',
+    'total_harus_dibayar',
+    'jumlah_dibayar',
+    'status_pembayaran',
+    'tanggal_cetak',
+    'tanggal_pembayaran',
+];
 
-    protected $casts = [
-        'periode_tagihan' => 'date',
-        'tanggal_cetak' => 'date',
-    ];
+   protected $casts = [
+    'tanggal_cetak' => 'datetime',
+    'tanggal_pembayaran' => 'datetime',
+    'meter_awal' => 'integer',
+    'meter_akhir' => 'integer',
+    'periode_tagihan' => 'date',
+    'total_harus_dibayar' => 'float',
+    'jumlah_dibayar' => 'float',
+];
 
    public function pelanggan(): BelongsTo
 {
