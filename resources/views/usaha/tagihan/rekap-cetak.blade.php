@@ -32,10 +32,10 @@
                 <th>NOMOR ID</th>
                 <th>NAMA</th>
                 <th>LOKASI</th>
-                <th>KET</th>
-                <th>AGTS</th>
-                <th>SEP</th>
-                <th>JML</th>
+                {{-- <th>KET</th> --}}
+                <th>{{Carbon\Carbon::now()->subMonth()->locale('id')->isoFormat('MMM')}}</th>
+                <th>{{ Carbon\Carbon::now()->locale('id')->isoFormat('MMM') }}</th>
+                <th>JML PMKN</th>
                 <th>ADM</th>
                 <th>PML</th>
                 <th>TAGIHAN</th>
@@ -43,47 +43,84 @@
                 <th>DENDA</th>
                 <th>JML DENDA</th>
                 <th>TOTAL</th>
+                <th>STATUS</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($semua_tagihan as $index => $tagihan)
-                @php
-                    $adm = $tagihan->rincian->where('deskripsi', 'Biaya Administrasi')->sum('subtotal');
-                    $pml = $tagihan->rincian->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal');
-                    $jml_denda = $tagihan->tunggakan + $tagihan->denda;
-                @endphp
-                <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td>
-                    <td>{{ $tagihan->pelanggan->nama ?? 'N/A' }}</td>
-                    <td>{{ $tagihan->pelanggan->alamat ?? '' }}</td>
-                    <td class="text-center">{{ $tagihan->pelanggan->golongan ?? 'R' }}</td>
-                    <td class="text-right">{{ number_format($tagihan->meter_awal) }}</td>
-                    <td class="text-right">{{ number_format($tagihan->meter_akhir) }}</td>
-                    <td class="text-right">{{ $tagihan->total_pemakaian_m3 }}</td>
-                    <td class="text-right">{{ number_format($adm) }}</td>
-                    <td class="text-right">{{ number_format($pml) }}</td>
-                    <td class="text-right">{{ number_format($tagihan->subtotal_pemakaian) }}</td>
-                    <td class="text-right">{{ number_format($tagihan->tunggakan) }}</td>
-                    <td class="text-right">{{ number_format($tagihan->denda) }}</td>
-                    <td class="text-right">{{ number_format($jml_denda) }}</td>
-                    <td class="text-right font-weight-bold">{{ number_format($tagihan->total_harus_dibayar) }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="7" class="text-center">TOTAL</td>
-                <td class="text-right">{{ number_format($semua_tagihan->sum('total_pemakaian_m3')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Administrasi')->sum('subtotal')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->sum('subtotal_pemakaian')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->sum('denda')) }}</td>
-                <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan') + $semua_tagihan->sum('denda')) }}</td>
-                <td class="text-right" style="color:red;">{{ number_format($semua_tagihan->sum('total_harus_dibayar')) }}</td>
-            </tr>
-        </tfoot>
+    @forelse ($semua_tagihan as $index => $tagihan)
+        @php
+            // Kalkulasi ini sudah benar, kita hanya merapikan tampilannya
+            $adm = $tagihan->rincian->where('deskripsi', 'Biaya Administrasi')->sum('subtotal');
+            $pml = $tagihan->rincian->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal');
+            $jml_denda = $tagihan->tunggakan + $tagihan->denda;
+        @endphp
+        <tr>
+            <td class="text-center">{{ $index + 1 }}</td>
+            {{-- PERBAIKAN: Menggunakan id_pelanggan dari relasi, bukan pelanggan_id --}}
+            <td class="text-center">{{ $tagihan->pelanggan->id_pelanggan ?? '' }}</td>
+            <td>{{ $tagihan->pelanggan->nama ?? 'N/A' }}</td>
+            <td>{{ $tagihan->pelanggan->alamat ?? '' }}</td>
+            {{-- Kolom 'Ket' dihilangkan sesuai kode Anda --}}
+
+            {{-- PERBAIKAN: Meteran dibuat rata tengah agar lebih rapi dan konsisten --}}
+            <td class="text-center">{{ number_format($tagihan->meter_awal) }}</td>
+            <td class="text-center">{{ number_format($tagihan->meter_akhir) }}</td>
+            <td class="text-center">{{ number_format($tagihan->total_pemakaian_m3) }}</td>
+
+            {{-- Kolom keuangan (rata kanan) sudah benar --}}
+            <td class="text-right">{{ number_format($adm) }}</td>
+            <td class="text-right">{{ number_format($pml) }}</td>
+            <td class="text-right">{{ number_format($tagihan->subtotal_pemakaian) }}</td>
+            <td class="text-right">{{ number_format($tagihan->tunggakan) }}</td>
+            <td class="text-right">{{ number_format($tagihan->denda) }}</td>
+            <td class="text-right">{{ number_format($jml_denda) }}</td>
+            <td class="text-right font-weight-bold">{{ number_format($tagihan->total_harus_dibayar) }}</td>
+
+            {{-- PERBAIKAN: Menambahkan kembali kolom STATUS agar jumlah kolom sesuai --}}
+            <td class="text-center">
+                 @if($tagihan->status_pembayaran == 'Lunas')
+                    <span class="badge badge-success">Lunas</span>
+                 @elseif($tagihan->status_pembayaran == 'Batal')
+                    <span class="badge badge-secondary">Batal</span>
+                 @elseif($tagihan->status_pembayaran == 'Cicil')
+                    <span class="badge badge-info">Cicil</span>
+                 @else
+                    <span class="badge badge-warning">Belum Lunas</span>
+                 @endif
+            </td>
+        </tr>
+    @empty
+        <tr>
+            {{-- PERBAIKAN: colspan disesuaikan dengan jumlah kolom (15) --}}
+            <td colspan="15" class="text-center">Tidak ada data untuk periode ini.</td>
+        </tr>
+    @endforelse
+</tbody>
+ @if($semua_tagihan->isNotEmpty())
+<tfoot class="bg-light font-weight-bold">
+    <tr>
+        {{-- PERBAIKAN: Colspan diubah menjadi 4 agar sejajar --}}
+        <td colspan="4" class="text-center">TOTAL</td>
+
+        {{-- Kolom total untuk METER LALU --}}
+        <td class="text-right">{{ number_format($semua_tagihan->sum('meter_awal')) }}</td>
+
+        {{-- Kolom total untuk METER KINI --}}
+        <td class="text-right">{{ number_format($semua_tagihan->sum('meter_akhir')) }}</td>
+
+        <td class="text-right">{{ number_format($semua_tagihan->sum('total_pemakaian_m3')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Administrasi')->sum('subtotal')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('subtotal_pemakaian')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('denda')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan') + $semua_tagihan->sum('denda')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('total_harus_dibayar')) }}</td>
+
+        {{-- PERBAIKAN: Kolom terakhir yang kosong untuk STATUS dihapus --}}
+    </tr>
+</tfoot>
+@endif
     </table>
 
     <br><br>

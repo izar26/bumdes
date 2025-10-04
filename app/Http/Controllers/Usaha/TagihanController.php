@@ -409,27 +409,35 @@ if ($denda_override !== null) {
         return back()->with('success', 'Tagihan berhasil dibatalkan dan tidak akan masuk dalam perhitungan rekap.');
     }
 
-    // DI FILE: app/Http/Controllers/Usaha/TagihanController.php
-
-public function rekap(Request $request)
+  public function rekap(Request $request)
 {
+    // --- TAMBAHAN: Ambil input petugas ---
+    $petugas_terpilih = $request->input('petugas_id');
+
     $bulan_terpilih = $request->input('periode_bulan', date('n'));
     $tahun_terpilih = $request->input('periode_tahun', date('Y'));
     $nama_bulan = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
 
     $periode = \Carbon\Carbon::create($tahun_terpilih, $bulan_terpilih, 1);
 
-    // Ambil SEMUA tagihan pada periode yang dipilih (termasuk yang dibatalkan untuk data lengkap)
-    // Eager load relasi untuk optimasi query
-    $semua_tagihan = Tagihan::with(['pelanggan', 'rincian'])
-                            ->whereYear('periode_tagihan', $tahun_terpilih)
-                            ->whereMonth('periode_tagihan', $bulan_terpilih)
-                            ->get()
-                            ->sortBy('pelanggan.nama'); // Urutkan berdasarkan nama pelanggan
+    // --- TAMBAHAN: Ambil daftar semua petugas ---
+    $semua_petugas = \App\Models\Petugas::orderBy('nama_petugas')->get();
 
-    // Hitung total hanya dari tagihan yang tidak dibatalkan
+    // Mulai query, jangan langsung ->get()
+    $query = Tagihan::with(['pelanggan', 'rincian'])
+                    ->whereYear('periode_tagihan', $tahun_terpilih)
+                    ->whereMonth('periode_tagihan', $bulan_terpilih);
+
+    // --- TAMBAHAN: Terapkan filter jika petugas dipilih ---
+    if ($petugas_terpilih) {
+        $query->where('petugas_id', $petugas_terpilih);
+    }
+
+    // Eksekusi query setelah filter diterapkan
+    $semua_tagihan = $query->get()->sortBy('pelanggan.nama');
+
+    // (Sisa kode untuk menghitung total tidak berubah)
     $tagihan_aktif = $semua_tagihan->where('status_pembayaran', '!=', 'Batal');
-
     $total_pemasukan = $tagihan_aktif->whereIn('status_pembayaran', ['Lunas', 'Cicil'])->sum('jumlah_dibayar');
     $total_belum_lunas = $tagihan_aktif->whereIn('status_pembayaran', ['Belum Lunas', 'Cicil'])
                                     ->sum(function ($tagihan) {
@@ -437,13 +445,15 @@ public function rekap(Request $request)
                                     });
 
     return view('usaha.tagihan.rekap', [
-        'semua_tagihan' => $semua_tagihan, // Kirim semua data tagihan ke view
+        'semua_tagihan' => $semua_tagihan,
         'bulan_terpilih' => $bulan_terpilih,
         'tahun_terpilih' => $tahun_terpilih,
         'nama_bulan' => $nama_bulan,
         'total_pemasukan' => $total_pemasukan,
         'total_belum_lunas' => $total_belum_lunas,
         'periode' => $periode,
+        'semua_petugas' => $semua_petugas,       // <-- Kirim data petugas ke view
+        'petugas_terpilih' => $petugas_terpilih, // <-- Kirim petugas yang dipilih
     ]);
 }
     public function quickSave(Request $request)

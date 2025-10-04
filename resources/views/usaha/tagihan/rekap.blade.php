@@ -8,11 +8,15 @@
     <h1 class="m-0 text-dark">Rekapitulasi Tagihan</h1>
 @stop
 
-@
+
 @section('content')
     <div class="card">
         <div class="card-body">
             {{-- FORM FILTER PERIODE --}}
+            <div class="text-center mb-4">
+                <h4>REKAPITULASI TAGIHAN SPAMDes</h4>
+                <h5>PERIODE: {{ strtoupper($nama_bulan[$bulan_terpilih]) }} {{ $tahun_terpilih }}</h5>
+            </div>
             <form action="{{ route('usaha.tagihan.rekap') }}" method="GET" class="form-inline mb-4">
                 <div class="form-group">
                     <label for="periode_bulan" class="mr-2">Periode:</label>
@@ -29,6 +33,15 @@
                         @endfor
                     </select>
                 </div>
+                <div class="form-group mr-2">
+            <label for="petugas_id" class="mr-2">Petugas:</label>
+            <select name="petugas_id" id="petugas_id" class="form-control">
+                <option value="">-- Semua Petugas --</option>
+                @foreach ($semua_petugas as $petugas)
+                    <option value="{{ $petugas->id }}" {{ $petugas_terpilih == $petugas->id ? 'selected' : '' }}>{{ $petugas->nama_petugas }}</option>
+                @endforeach
+            </select>
+        </div>
                 <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Tampilkan</button>
 
                 {{-- TOMBOL CETAK MANUAL BARU --}}
@@ -37,10 +50,7 @@
                 </a>
             </form>
 
-            <div class="text-center mb-4">
-                <h4>REKAPITULASI TAGIHAN SPAMDes</h4>
-                <h5>PERIODE: {{ strtoupper($nama_bulan[$bulan_terpilih]) }} {{ $tahun_terpilih }}</h5>
-            </div>
+
 
             {{-- RINGKASAN TOTAL --}}
             <div class="row">
@@ -67,7 +77,7 @@
 
             {{-- TABEL DETAIL (TANPA DATATABLES) --}}
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                  <table class="table table-bordered table-striped" id="rekap-table">
                     <thead class="thead-light text-center">
                         <tr>
                             <th>NO</th>
@@ -97,7 +107,7 @@
                             @endphp
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
-                                <td class="text-center">{{ $tagihan->pelanggan->id_pelanggan ?? '' }}</td>
+                                <td class="text-center">00{{  $tagihan->pelanggan_id ?? '' }}</td>
                                 <td>{{ $tagihan->pelanggan->nama ?? 'N/A' }}</td>
                                 <td>{{ $tagihan->pelanggan->alamat ?? '' }}</td>
                                 <td class="text-center">{{ $tagihan->pelanggan->golongan ?? 'R' }}</td>
@@ -119,22 +129,32 @@
                             </tr>
                         @endforelse
                     </tbody>
-                    @if($semua_tagihan->isNotEmpty())
-                    <tfoot class="bg-light font-weight-bold">
-                        <tr>
-                            <td colspan="7" class="text-center">TOTAL</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('total_pemakaian_m3')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Administrasi')->sum('subtotal')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('subtotal_pemakaian')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('denda')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan') + $semua_tagihan->sum('denda')) }}</td>
-                            <td class="text-right">{{ number_format($semua_tagihan->sum('total_harus_dibayar')) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                    @endif
+@if($semua_tagihan->isNotEmpty())
+<tfoot class="bg-light font-weight-bold">
+    <tr>
+        {{-- PERBAIKAN: Colspan diubah dari 7 menjadi 5 agar sejajar --}}
+        <td colspan="5" class="text-center">TOTAL</td>
+
+        {{-- Kolom total untuk METER LALU --}}
+        <td class="text-right">{{ number_format($semua_tagihan->sum('meter_awal')) }}</td>
+
+        {{-- Kolom total untuk METER KINI --}}
+        <td class="text-right">{{ number_format($semua_tagihan->sum('meter_akhir')) }}</td>
+
+        {{-- (Sisa kolom total lainnya tidak berubah, posisinya sekarang sudah benar) --}}
+        <td class="text-right">{{ number_format($semua_tagihan->sum('total_pemakaian_m3')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Administrasi')->sum('subtotal')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->pluck('rincian')->flatten()->where('deskripsi', 'Biaya Pemeliharaan')->sum('subtotal')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('subtotal_pemakaian')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('denda')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('tunggakan') + $semua_tagihan->sum('denda')) }}</td>
+        <td class="text-right">{{ number_format($semua_tagihan->sum('total_harus_dibayar')) }}</td>
+        <td></td>
+    </tr>
+</tfoot>
+@endif
+
                 </table>
             </div>
         </div>
@@ -145,19 +165,20 @@
     $(document).ready(function() {
         $('#rekap-table').DataTable({
             "responsive": true,
-            "lengthChange": false,
+            "lengthChange": true,
             "autoWidth": false,
-            "paging": false, // Matikan paginasi agar semua data tampil untuk dicetak
+            "paging": true,
             "searching": true,
             "ordering": true,
             "info": true,
             "language": { "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" },
-            // Tambahkan tombol ekspor & print
-            "buttons": ["copy", "csv", "excel", "pdf", "print"],
-            "dom": "<'row'<'col-md-6'l><'col-md-6'f>>" +
-                   "<'row'<'col-sm-12'tr>>" +
-                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-        }).buttons().container().appendTo('#rekap-table_wrapper .col-md-6:eq(0)');
+
+            // PERBAIKAN: Hapus 'B' untuk menghilangkan tombol
+            "dom": 'lfrtip',
+
+            // Hapus atau komentari seluruh array "buttons"
+            // "buttons": ["copy", "csv", "excel", "pdf", "print"]
+        });
     });
 </script>
 @stop
