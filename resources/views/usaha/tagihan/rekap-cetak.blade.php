@@ -54,7 +54,7 @@
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ $tagihan->pelanggan->id_pelanggan ?? '' }}</td>
+                    <td class="text-center">000{{ $tagihan->pelanggan_id ?? 'N/A' }}</td>
                     <td>{{ $tagihan->pelanggan->nama ?? 'N/A' }}</td>
                     <td>{{ $tagihan->pelanggan->alamat ?? '' }}</td>
                     <td class="text-center">{{ $tagihan->pelanggan->golongan ?? 'R' }}</td>
@@ -88,9 +88,9 @@
 
     <br><br>
     <table style="border:none; width:40%; font-size:9px;">
-        <tr><td>R itu keterangan</td><td>: Rumahan</td></tr>
+        {{-- <tr><td>R itu keterangan</td><td>: Rumahan</td></tr>
         <tr><td>U itu keterangan</td><td>: Usaha</td></tr>
-        <tr><td>S itu keterangan</td><td>: Sosial</td></tr>
+        <tr><td>S itu keterangan</td><td>: Sosial</td></tr> --}}
         <tr><td>adm</td><td>: administrasi</td></tr>
         <tr><td>pml</td><td>: pemeliharaan</td></tr>
     </table>
