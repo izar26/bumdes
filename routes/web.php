@@ -127,7 +127,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/simpan-semua-massal', 'simpanSemuaMassal')->name('simpanSemuaMassal'); // INI RUTE ANDA YANG ERROR
 
         Route::get('/rekap', 'rekap')->name('rekap');
-
+  Route::get('/rekap/cetak', 'cetakRekap')->name('rekap-cetak');
         Route::post('/cetak-selektif', 'cetakSelektif')->name('cetak-selektif');
         Route::post('/tandai-lunas-selektif', 'tandaiLunasSelektif')->name('tandaiLunasSelektif');
         Route::post('/batalkan-massal', 'batalkanMassal')->name('batalkan-massal');

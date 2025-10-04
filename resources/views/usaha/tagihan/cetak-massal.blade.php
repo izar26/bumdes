@@ -148,7 +148,7 @@
             .struk-container:last-child {
                 page-break-after: avoid;
             }
-            .struk-container:nth-of-type(3n) {
+            .struk-container:nth-of-type(4n) {
         page-break-after: always;
     }
             body {
