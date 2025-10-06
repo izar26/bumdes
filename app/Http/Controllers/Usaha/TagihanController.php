@@ -568,24 +568,43 @@ public function prosesPembayaran(Request $request, Tagihan $tagihan)
 
 public function cetakRekap(Request $request)
 {
-    // Logika pengambilan data sama persis dengan method rekap
     $bulan_terpilih = $request->input('periode_bulan', date('n'));
     $tahun_terpilih = $request->input('periode_tahun', date('Y'));
-    $nama_bulan = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+    $petugas_terpilih = $request->input('petugas_id'); // <-- tambahkan ini
 
-    $semua_tagihan = Tagihan::with(['pelanggan', 'rincian'])
-                            ->whereYear('periode_tagihan', $tahun_terpilih)
-                            ->whereMonth('periode_tagihan', $bulan_terpilih)
-                            ->get()
-                            ->sortBy('pelanggan.nama');
+    $nama_bulan = [
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+        7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+    ];
 
-    // Kirim data ke view cetak yang baru
+    // Mulai query
+    $query = Tagihan::with(['pelanggan', 'rincian'])
+                    ->whereYear('periode_tagihan', $tahun_terpilih)
+                    ->whereMonth('periode_tagihan', $bulan_terpilih);
+
+    // Terapkan filter petugas kalau ada
+    if ($petugas_terpilih) {
+        $query->where('petugas_id', $petugas_terpilih);
+    }
+
+    // Eksekusi query
+    $semua_tagihan = $query->get()->sortBy('pelanggan.nama');
+
+    // Tambahan: ambil nama petugas untuk ditampilkan di header cetak
+    $petugas_nama = null;
+    if ($petugas_terpilih) {
+        $petugas_nama = \App\Models\Petugas::find($petugas_terpilih)?->nama_petugas;
+    }
+
+    // Kirim semua data ke view cetak
     return view('usaha.tagihan.rekap-cetak', [
         'semua_tagihan' => $semua_tagihan,
         'bulan_terpilih' => $bulan_terpilih,
         'tahun_terpilih' => $tahun_terpilih,
         'nama_bulan' => $nama_bulan,
+        'petugas_nama' => $petugas_nama,
     ]);
 }
+
 
 }

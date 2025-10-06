@@ -130,6 +130,8 @@
         <tr><td>S itu keterangan</td><td>: Sosial</td></tr> --}}
         <tr><td>adm</td><td>: administrasi</td></tr>
         <tr><td>pml</td><td>: pemeliharaan</td></tr>
+        <tr><td>jml</td><td>: jumlah</td></tr>
+        <tr><td>petugas</td><td>: {{ strtoupper($petugas_nama) }}</td></tr>
     </table>
 </body>
 </html>
