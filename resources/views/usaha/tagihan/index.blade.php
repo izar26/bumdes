@@ -85,7 +85,7 @@
             </div>
             <div class="card-body">
                 {{-- Dropdown untuk Petugas Massal --}}
-                <div id="mass-edit-petugas-container" style="display: none;" class="mb-3">
+                {{-- <div id="mass-edit-petugas-container" style="display: none;" class="mb-3">
                     <div class="form-group row mb-0">
                         <label for="petugas_massal_id" class="col-form-label col-sm-2">Petugas Pengisi:</label>
                         <div class="col-sm-4">
@@ -97,7 +97,7 @@
                             </select>
                         </div>
                     </div>
-                </div>
+                </div> --}}
                 {{-- Akhir Dropdown untuk Petugas Massal --}}
 
                 <div class="table-responsive">
@@ -114,7 +114,7 @@
                             <th>Denda</th>
                             <th>Total Tagihan</th>
                             <th>Status</th>
-                            <th style="width: 150px;">Aksi</th>
+                            <th style="width: 9.375rem;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -133,11 +133,13 @@
                                 <td class="text-center">@if($baris->tagihan && $baris->tagihan->status_pembayaran != 'Batal')<input type="checkbox" class="tagihan-checkbox" value="{{ $baris->tagihan->id }}">@endif</td>
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>{{ $baris->pelanggan->nama }}</td>
-                                <td class="petugas-cell">
-                                    <span class="cell-text">
-                                        {{ $baris->tagihan && $baris->tagihan->petugas ? $baris->tagihan->petugas->nama_petugas : '-' }}
-                                    </span>
-                                </td>
+                                @php
+    $petugasNama = $baris->tagihan && $baris->tagihan->petugas ? $baris->tagihan->petugas->nama_petugas : '-';
+    $petugasId = $baris->tagihan->petugas_id ?? '';
+@endphp
+<td class="petugas-cell" data-petugas-id="{{ $petugasId }}" data-original-text="{{ $petugasNama }}">
+    <span class="cell-text">{{ $petugasNama }}</span>
+</td>
                                 <td class="text-center meter-awal-cell" data-original-value="{{ $baris->meter_awal }}">
                                     <span class="cell-text">{{ number_format($baris->meter_awal, 0, ',', '.') }}</span>
                                 </td>
@@ -336,24 +338,100 @@
     </div>
 @stop
 
-
 @section('js')
 <script>
     $(document).ready(function() {
         // ## Inisialisasi DataTables ##
         const dataTable = $('#tagihan-table').DataTable({
-            "paging": true,
-            "lengthChange": true,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            "autoWidth": false,
-            "responsive": true,
+            "paging": true, "lengthChange": true, "searching": true, "ordering": true,
+            "info": true, "autoWidth": false, "responsive": true,
             "language": { "url": "https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" },
-
             "columnDefs": [ { "orderable": false, "targets": [0, 10] } ],
             "stateSave": true
         });
+
+        // ================================================================= //
+        // ## BAGIAN YANG DIPERBAIKI ##
+        // ================================================================= //
+
+        // **PERBAIKAN 1:** Variabel ini didefinisikan SATU KALI di sini.
+        const semuaPetugas = @json($semua_petugas);
+
+        // ## Logika untuk Mode Edit Massal ##
+        $('#edit-semua-btn').on('click', function() {
+            // Sembunyikan dan Tampilkan Tombol
+            $(this).hide();
+            $('.btn-group').hide();
+            $('#simpan-semua-btn, #batal-btn').show(); // Container petugas massal sudah dihapus
+
+            // Ubah sel menjadi input field
+            dataTable.rows().every(function() {
+                const row = this;
+                const $rowNode = $(row.node());
+                const pelangganId = $rowNode.data('pelanggan-id');
+
+                // Ambil data original dari setiap sel
+                const originalDenda = $rowNode.find('.denda-cell').data('original-value');
+                const originalValueAwal = $rowNode.find('.meter-awal-cell').data('original-value');
+                const originalValueAkhir = $rowNode.find('.meter-akhir-cell').data('original-value');
+                const petugasCell = $rowNode.find('.petugas-cell');
+                const originalPetugasId = petugasCell.data('petugas-id');
+
+                // **PERBAIKAN 2:** Logika untuk membuat dropdown petugas ada DI SINI.
+                let petugasSelectHtml = `<select name="tagihan[${pelangganId}][petugas_id]" class="form-control form-control-sm" required>`;
+                petugasSelectHtml += `<option value="">-- Pilih --</option>`;
+                semuaPetugas.forEach(function(petugas) {
+                    const isSelected = petugas.id == originalPetugasId ? 'selected' : '';
+                    petugasSelectHtml += `<option value="${petugas.id}" ${isSelected}>${petugas.nama_petugas}</option>`;
+                });
+                petugasSelectHtml += `</select>`;
+
+                // Ganti konten sel dengan input field dan select
+                $rowNode.find('.meter-awal-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][meter_awal]" class="form-control form-control-sm text-center" value="${originalValueAwal}" required>`);
+                $rowNode.find('.meter-akhir-cell').html(`<input type="number" step="1" min="${originalValueAwal}" name="tagihan[${pelangganId}][meter_akhir]" class="form-control form-control-sm text-center" value="${originalValueAkhir}">`);
+                $rowNode.find('.denda-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][denda]" class="form-control form-control-sm text-right" value="${originalDenda}">`);
+                petugasCell.html(petugasSelectHtml); // Ganti sel petugas dengan dropdown
+            });
+        });
+
+        $('#batal-btn').on('click', function() {
+            // Sembunyikan dan Tampilkan Tombol
+            $(this).hide();
+            $('#simpan-semua-btn').hide();
+            $('#edit-semua-btn, .btn-group').show();
+
+            // Kembalikan input field menjadi teks
+            dataTable.rows().every(function() {
+                const row = this;
+                const $rowNode = $(row.node());
+
+                const meterAwalCell = $rowNode.find('.meter-awal-cell');
+                const meterAkhirCell = $rowNode.find('.meter-akhir-cell');
+                const dendaCell = $rowNode.find('.denda-cell');
+                const petugasCell = $rowNode.find('.petugas-cell');
+
+                // Ambil nilai original dari atribut data
+                const originalValueAwal = meterAwalCell.data('original-value');
+                const originalValueAkhir = meterAkhirCell.data('original-value');
+                const originalDenda = dendaCell.data('original-value');
+                const originalPetugasText = petugasCell.data('original-text');
+
+                // Format untuk ditampilkan
+                const formattedAwal = new Intl.NumberFormat('id-ID').format(originalValueAwal);
+                const formattedAkhir = originalValueAkhir ? new Intl.NumberFormat('id-ID').format(originalValueAkhir) : '-';
+                const formattedDenda = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalDenda);
+
+                // **PERBAIKAN 3:** Logika untuk mengembalikan teks asli DI SINI.
+                meterAwalCell.html(`<span class="cell-text">${formattedAwal}</span>`);
+                meterAkhirCell.html(`<span class="cell-text">${formattedAkhir}</span>`);
+                dendaCell.html(`<span class="cell-text">${formattedDenda}</span>`);
+                petugasCell.html(`<span class="cell-text">${originalPetugasText}</span>`);
+            });
+        });
+
+        // ================================================================= //
+        // ## KODE LAINNYA DI BAWAH INI TIDAK BERUBAH ##
+        // ================================================================= //
 
         // ## Logika untuk Modal Konfirmasi (Hapus, Lunas, dan Batal) ##
         $('#confirmModal').on('show.bs.modal', function(event) {
@@ -383,70 +461,6 @@
                 $form.submit();
             });
         });
-
-        // ## Logika untuk Mode Edit Massal ##
-        $('#edit-semua-btn').on('click', function() {
-            // Sembunyikan dan Tampilkan Tombol
-            $(this).hide();
-            $('.btn-group').hide();
-            $('#simpan-semua-btn, #batal-btn, #mass-edit-petugas-container').show();
-
-            // Ubah sel menjadi input field
-            dataTable.rows().every(function() {
-                const row = this;
-                const $rowNode = $(row.node());
-                const pelangganId = $rowNode.data('pelanggan-id');
-
-                 const originalDenda = $rowNode.find('.denda-cell').data('original-value');
-                const originalValueAwal = $rowNode.find('.meter-awal-cell').data('original-value');
-                const originalValueAkhir = $rowNode.find('.meter-akhir-cell').data('original-value');
-
-                // Ganti konten sel dengan input field
-                $rowNode.find('.meter-awal-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][meter_awal]" class="form-control form-control-sm text-center" value="${originalValueAwal}" required>`);
-                $rowNode.find('.meter-akhir-cell').html(`<input type="number" step="1" min="${originalValueAwal}" name="tagihan[${pelangganId}][meter_akhir]" class="form-control form-control-sm text-center" value="${originalValueAkhir}">`);
-                $rowNode.find('.denda-cell').html(`<input type="number" step="1" name="tagihan[${pelangganId}][denda]" class="form-control form-control-sm text-right" value="${originalDenda}">`);
-                $rowNode.find('.petugas-cell').hide(); // Sembunyikan sel petugas
-            });
-
-            // Sembunyikan header "Petugas"
-            $('th.petugas-header').hide();
-        });
-
-        $('#batal-btn').on('click', function() {
-            // Sembunyikan dan Tampilkan Tombol
-            $(this).hide();
-            $('#simpan-semua-btn, #mass-edit-petugas-container').hide();
-            $('#edit-semua-btn, .btn-group').show();
-
-            // Kembalikan input field menjadi teks
-           dataTable.rows().every(function() {
-        const row = this;
-        const $rowNode = $(row.node());
-
-        // Find the cell elements
-        const meterAwalCell = $rowNode.find('.meter-awal-cell');
-        const meterAkhirCell = $rowNode.find('.meter-akhir-cell');
-        const dendaCell = $rowNode.find('.denda-cell');
-
-        // Get the TRUE original values from the data attributes
-        const originalValueAwal = meterAwalCell.data('original-value');
-        const originalValueAkhir = meterAkhirCell.data('original-value');
-        const originalDenda = dendaCell.data('original-value');
-
-        // Format for display
-        const formattedAwal = new Intl.NumberFormat('id-ID').format(originalValueAwal);
-        const formattedAkhir = new Intl.NumberFormat('id-ID').format(originalValueAkhir);
-        const formattedDenda = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalDenda);
-
-        // Revert the cell's HTML content using the original values
-        meterAwalCell.html(`<span class="cell-text">${formattedAwal}</span>`);
-        meterAkhirCell.html(`<span class="cell-text">${formattedAkhir}</span>`);
-        dendaCell.html(`<span class="cell-text">${formattedDenda}</span>`); // Also revert the fine
-        $rowNode.find('.petugas-cell').show();
-    });
-
-    $('th.petugas-header').show();
-});
 
         // ## Logika untuk Cetak Selektif ##
         function submitPrintForm(ids) {
@@ -494,29 +508,28 @@
                 document.body.removeChild(form);
             }
         });
+
         // ## Logika untuk Batalkan Tagihan Selektif ##
-$('#batal-pilihan-btn').on('click', function() {
-    const selectedIds = [];
-    $('.tagihan-checkbox:checked').each(function() { selectedIds.push($(this).val()); });
+        $('#batal-pilihan-btn').on('click', function() {
+            const selectedIds = [];
+            $('.tagihan-checkbox:checked').each(function() { selectedIds.push($(this).val()); });
+            if (selectedIds.length === 0) {
+                toastr.error('Tidak ada tagihan yang dipilih.');
+                return;
+            }
+            if (confirm(`Apakah Anda yakin ingin membatalkan ${selectedIds.length} tagihan yang dipilih?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("usaha.tagihan.batalkan-massal") }}';
+                form.innerHTML = `@csrf ${selectedIds.map(id => `<input type="hidden" name="tagihan_ids[]" value="${id}">`).join('')}`;
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
 
-    if (selectedIds.length === 0) {
-        toastr.error('Tidak ada tagihan yang dipilih.');
-        return;
-    }
-
-    if (confirm(`Apakah Anda yakin ingin membatalkan ${selectedIds.length} tagihan yang dipilih?`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route("usaha.tagihan.batalkan-massal") }}'; // Pastikan rute ini sudah ada
-        form.innerHTML = `@csrf ${selectedIds.map(id => `<input type="hidden" name="tagihan_ids[]" value="${id}">`).join('')}`;
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
-    }
-});
-
-
-$('#pembayaranModal').on('show.bs.modal', function(event) {
+        // ## Logika untuk Modal Pembayaran
+        $('#pembayaranModal').on('show.bs.modal', function(event) {
             const button = $(event.relatedTarget);
             const modal = $(this);
             const actionUrl = button.data('action');
@@ -524,30 +537,24 @@ $('#pembayaranModal').on('show.bs.modal', function(event) {
             const totalTagihan = parseFloat(button.data('total-tagihan'));
             const sudahDibayar = parseFloat(button.data('sudah-dibayar'));
             const sisaTagihan = totalTagihan - sudahDibayar;
-
             const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
-
             modal.find('#form-pembayaran').attr('action', actionUrl);
             modal.find('#nama-pelanggan').text(namaPelanggan);
             modal.find('#total-tagihan-text').text(formatRupiah(totalTagihan));
             modal.find('#sudah-dibayar-text').text(formatRupiah(sudahDibayar));
             modal.find('#sisa-tagihan-text').text(formatRupiah(sisaTagihan));
-
             const jumlahBayarInput = modal.find('#jumlah_bayar');
             jumlahBayarInput.attr('max', sisaTagihan);
             jumlahBayarInput.val('');
-
             setTimeout(() => jumlahBayarInput.focus(), 500);
         });
 
         // ## Logika untuk mengirim pembayaran
         $('#form-pembayaran').on('submit', function(e) {
             e.preventDefault();
-
             const form = $(this);
             const actionUrl = form.attr('action');
             const formData = form.serialize();
-
             $.ajax({
                 type: 'POST',
                 url: actionUrl,
@@ -555,11 +562,9 @@ $('#pembayaranModal').on('show.bs.modal', function(event) {
                 success: function(response) {
                     $('#pembayaranModal').modal('hide');
                     toastr.success(response.message);
-
-
                    setTimeout(function(){
-       window.location.href = window.location.href;
-    }, 1000);
+                       window.location.reload();
+                    }, 1000);
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;

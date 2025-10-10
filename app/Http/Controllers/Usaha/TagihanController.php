@@ -95,20 +95,20 @@ public function index(Request $request)
 // GANTI SELURUH METHOD INI DI TagihanController.php
 
 // DI FILE: TagihanController.php
-
+// GANTI SELURUH METHOD INI DI TagihanController.php
 public function simpanSemuaMassal(Request $request)
 {
     $request->validate([
-  'periode_tagihan' => 'required|date',
+        'periode_tagihan' => 'required|date',
         'tagihan' => 'required|array',
-        'tagihan.*.meter_awal' => 'required|numeric|min:0',     // <-- Ganti ke numeric
-        'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',    // <-- Ganti ke numeric
-        'tagihan.*.denda' => 'nullable|numeric|min:0',          // <-- Ganti ke numeric
-        'petugas_massal_id' => 'required|numeric|exists:petugas,id',
+        'tagihan.*.meter_awal' => 'required|numeric|min:0',
+        'tagihan.*.meter_akhir' => 'nullable|numeric|min:0',
+        'tagihan.*.denda' => 'nullable|numeric|min:0',
+        'tagihan.*.petugas_id' => 'required|numeric|exists:petugas,id', // <-- DIUBAH: Validasi petugas per baris
     ]);
 
     $periode = $request->periode_tagihan;
-    $petugas_id_massal = $request->petugas_massal_id;
+    // $petugas_id_massal = $request->petugas_massal_id; // <-- DIHAPUS: Tidak dipakai lagi
 
     DB::beginTransaction();
     try {
@@ -146,12 +146,10 @@ public function simpanSemuaMassal(Request $request)
                     $denda_dari_input
                 );
 
-                //--- LOGIKA PERBAIKAN UTAMA ADA DI SINI ---
-
                 $data_untuk_disimpan = array_merge($hasil_kalkulasi, [
                     'pelanggan_id' => $pelanggan_id,
                     'periode_tagihan' => $periode,
-                    'petugas_id' => $petugas_id_massal,
+                    'petugas_id' => $data['petugas_id'], // <-- DIUBAH: Ambil petugas_id dari data baris ini
                     'meter_awal' => $meter_awal_int,
                     'meter_akhir' => $meter_akhir_int,
                     'tunggakan' => $tunggakan_bulan_lalu,
@@ -159,11 +157,9 @@ public function simpanSemuaMassal(Request $request)
                 unset($data_untuk_disimpan['rincian_dihitung']);
 
                 if ($tagihan_sebelumnya) {
-                    // JIKA TAGIHAN SUDAH ADA (UPDATE), PERTAHANKAN STATUS & JUMLAH BAYAR
                     $data_untuk_disimpan['status_pembayaran'] = $tagihan_sebelumnya->status_pembayaran;
                     $data_untuk_disimpan['jumlah_dibayar'] = $tagihan_sebelumnya->jumlah_dibayar;
                 } else {
-                    // JIKA TAGIHAN BARU, SET DEFAULT
                     $data_untuk_disimpan['status_pembayaran'] = 'Belum Lunas';
                     $data_untuk_disimpan['jumlah_dibayar'] = 0;
                 }
@@ -171,14 +167,6 @@ public function simpanSemuaMassal(Request $request)
                 if ($hasil_kalkulasi['total_harus_dibayar'] <= ($data_untuk_disimpan['jumlah_dibayar'] ?? 0) && $total_pemakaian_real > 0) {
                     $data_untuk_disimpan['status_pembayaran'] = 'Lunas';
                 }
-
-
-                    Log::info('--- DEBUG SIMPAN MASSAL ---', [
-                'pelanggan_id' => $pelanggan_id,
-                '1_data_dari_form' => $data,
-                '2_tagihan_sebelumnya_dari_db' => $tagihan_sebelumnya ? $tagihan_sebelumnya->toArray() : 'TIDAK ADA (BARU)',
-                '3_data_final_akan_disimpan' => $data_untuk_disimpan,
-            ]);
 
                 $tagihan = \App\Models\Tagihan::updateOrCreate(
                     ['pelanggan_id' => $pelanggan_id, 'periode_tagihan' => $periode],
