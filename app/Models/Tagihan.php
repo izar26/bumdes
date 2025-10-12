@@ -55,6 +55,6 @@ public function petugas(): BelongsTo
 
     public function rincian(): HasMany
     {
-        return $this->hasMany(RincianTagihan::class); // <-- LEBIH RINGKAS
+        return $this->hasMany(RincianTagihan::class);
     }
 }

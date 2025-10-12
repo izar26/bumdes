@@ -416,17 +416,22 @@ if ($denda_override !== null) {
                     ->whereYear('periode_tagihan', $tahun_terpilih)
                     ->whereMonth('periode_tagihan', $bulan_terpilih);
 
-    // --- TAMBAHAN: Terapkan filter jika petugas dipilih ---
     if ($petugas_terpilih) {
         $query->where('petugas_id', $petugas_terpilih);
     }
 
     // Eksekusi query setelah filter diterapkan
-    $semua_tagihan = $query->get()->sortBy('pelanggan.nama');
+$semua_tagihan = $query->orderBy(Pelanggan::select('nama')->whereColumn('pelanggan.id', 'tagihan.pelanggan_id'))->get();
+
 
     // (Sisa kode untuk menghitung total tidak berubah)
     $tagihan_aktif = $semua_tagihan->where('status_pembayaran', '!=', 'Batal');
-    $total_pemasukan = $tagihan_aktif->whereIn('status_pembayaran', ['Lunas', 'Cicil'])->sum('jumlah_dibayar');
+  $total_pemasukan = $tagihan_aktif->sum(function ($t) {
+    if ($t->status_pembayaran === 'Lunas') {
+        return $t->total_harus_dibayar;
+    }
+    return $t->jumlah_dibayar;
+});
     $total_belum_lunas = $tagihan_aktif->whereIn('status_pembayaran', ['Belum Lunas', 'Cicil'])
                                     ->sum(function ($tagihan) {
                                         return $tagihan->total_harus_dibayar - $tagihan->jumlah_dibayar;
