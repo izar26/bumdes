@@ -46,7 +46,7 @@
                         @endforeach
                     </select>
                 </div>
-
+ 
                 <div class="col-md-2">
                     <label class="form-label">Status Jurnal</label>
                     <select name="approval_status" class="form-control">
@@ -164,78 +164,110 @@
 @section('js')
 <script>
 $(function () {
-    // Kode untuk modal delete
-    $('[data-toggle="tooltip"]').tooltip();
-    $('#deleteModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget);
-        var jurnalId = button.data('id');
-        var form = $(this).find('#deleteForm');
-        var actionUrl = '{{ route("jurnal-umum.destroy", ":jurnal_id") }}';
-        actionUrl = actionUrl.replace(':jurnal_id', jurnalId);
-        form.attr('action', actionUrl);
-    });
+    // Kode untuk modal delete
+    $('[data-toggle="tooltip"]').tooltip();
+    $('#deleteModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var jurnalId = button.data('id');
+        var form = $(this).find('#deleteForm');
+        var actionUrl = '{{ route("jurnal-umum.destroy", ":jurnal_id") }}';
+        actionUrl = actionUrl.replace(':jurnal_id', jurnalId);
+        form.attr('action', actionUrl);
+    });
 
-    // --- KODE AJAX UNTUK FILTER REAL-TIME ---
+    // --- KODE AJAX UNTUK FILTER REAL-TIME ---
 
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
 
-    function fetchJurnal(page = 1) {
-        let formData = $('#filterForm').serialize();
-        formData = formData.replace(/&?page=\d+/, '');
-        
-        let url = '{{ route("jurnal-umum.index") }}';
-        let fullUrl = url + '?page=' + page + '&' + formData;
+    function fetchJurnal(page = 1) {
+        let formData = $('#filterForm').serialize();
+        formData = formData.replace(/&?page=\d+/, '');
+        
+        let url = '{{ route("jurnal-umum.index") }}';
+        let fullUrl = url + '?page=' + page + '&' + formData;
 
-        $('#jurnalTableContainer').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Memuat data...</p></div>');
+        $('#jurnalTableContainer').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Memuat data...</p></div>');
 
-        $.ajax({
-            url: url,
-            type: 'GET',
-            data: 'page=' + page + '&' + formData,
-            dataType: 'html',
-            success: function(response) {
-                $('#jurnalTableContainer').html(response);
-                
-                let headerInfo = $(response).filter('.small').clone();
-                let headerBadge = $(response).filter('#statusBadge').clone();
-                
-                $('#jurnalHeader .small, #jurnalHeader .badge').remove();
-                $('#jurnalHeader').append(headerInfo).append(headerBadge);
+        $.ajax({
+            url: url,
+            type: 'GET',
+            data: 'page=' + page + '&' + formData,
+            dataType: 'html',
+            success: function(response) {
+                $('#jurnalTableContainer').html(response);
+                
+                let headerInfo = $(response).filter('.small').clone();
+                let headerBadge = $(response).filter('#statusBadge').clone();
+                
+                $('#jurnalHeader .small, #jurnalHeader .badge').remove();
+                $('#jurnalHeader').append(headerInfo).append(headerBadge);
 
-                history.pushState(null, '', fullUrl);
-            },
-            error: function(xhr) {
-                $('#jurnalTableContainer').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
-                console.log(xhr.responseText);
-            }
-        });
-    }
+                history.pushState(null, '', fullUrl);
+            },
+            error: function(xhr) {
+                $('#jurnalTableContainer').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
+                console.log(xhr.responseText);
+            }
+        });
+    }
 
-    $('#filterForm select, #filterForm input[type=date]').on('change', function() {
-        fetchJurnal();
-    });
+    $('#filterForm select, #filterForm input[type=date]').on('change', function() {
+        fetchJurnal();
+    });
 
-    $('#filterForm input[name=search]').on('keyup', debounce(function() {
-        fetchJurnal();
-    }, 500));
+    $('#filterForm input[name=search]').on('keyup', debounce(function() {
+        fetchJurnal();
+    }, 500));
 
-    $('#filterForm').on('submit', function(e) {
-        e.preventDefault();
-        fetchJurnal();
-    });
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        fetchJurnal();
+    });
 
-    $(document).on('click', '#jurnalTableContainer .pagination a', function(e) {
-        e.preventDefault();
-        let pageUrl = $(this).attr('href');
-        let page = new URL(pageUrl).searchParams.get("page");
-        fetchJurnal(page);
-    });
+    $(document).on('click', '#jurnalTableContainer .pagination a', function(e) {
+        e.preventDefault();
+        let pageUrl = $(this).attr('href');
+        let page = new URL(pageUrl).searchParams.get("page");
+        fetchJurnal(page);
+    });
+
+    // ==========================================================
+    // ===== TAMBAHAN KODE PERBAIKAN UNTUK MODAL PRINT =====
+    // ==========================================================
+    // Event ini berjalan SETIAP KALI modal print akan ditampilkan
+    $('#printModal').on('show.bs.modal', function () {
+        
+        // 1. Ambil nilai TERBARU dari form filter (#filterForm)
+        var search = $('#filterForm input[name="search"]').val();
+        var year = $('#filterForm select[name="year"]').val();
+        var status = $('#filterForm select[name="approval_status"]').val();
+        var startDate = $('#filterForm input[name="start_date"]').val();
+        var endDate = $('#filterForm input[name="end_date"]').val();
+        
+        // Cek apakah elemen unit_usaha_id ada
+        var unitUsahaEl = $('#filterForm select[name="unit_usaha_id"]');
+        var unitUsaha = unitUsahaEl.length ? unitUsahaEl.val() : '';
+
+        // 2. Temukan modal ini
+        var modal = $(this);
+
+        // 3. Masukkan nilai terbaru itu ke hidden input di DALAM MODAL
+        modal.find('input[name="search"]').val(search);
+        modal.find('input[name="year"]').val(year);
+        modal.find('input[name="approval_status"]').val(status);
+        modal.find('input[name="start_date"]').val(startDate);
+        modal.find('input[name="end_date"]').val(endDate);
+        modal.find('input[name="unit_usaha_id"]').val(unitUsaha);
+   });
+    // ==========================================================
+    // ============ BATAS KODE PERBAIKAN ============
+    // ==========================================================
 });
 </script>
 @stop
