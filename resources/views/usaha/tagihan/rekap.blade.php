@@ -94,6 +94,7 @@
                             <th>TUNGGAKAN</th>
                             <th>DENDA</th>
                             <th>JML DENDA</th>
+                            <th>TOTAL DIBAYAR</th>
                             <th>TOTAL</th>
                             <th>STATUS</th>
                         </tr>

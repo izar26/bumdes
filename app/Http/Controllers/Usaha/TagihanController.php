@@ -432,6 +432,7 @@ $semua_tagihan = $query->orderBy(Pelanggan::select('nama')->whereColumn('pelangg
     }
     return $t->jumlah_dibayar;
 });
+$total_dibayar_cicilan = $tagihan_aktif->sum('jumlah_dibayar');
     $total_belum_lunas = $tagihan_aktif->whereIn('status_pembayaran', ['Belum Lunas', 'Cicil'])
                                     ->sum(function ($tagihan) {
                                         return $tagihan->total_harus_dibayar - $tagihan->jumlah_dibayar;
@@ -442,6 +443,7 @@ $semua_tagihan = $query->orderBy(Pelanggan::select('nama')->whereColumn('pelangg
         'bulan_terpilih' => $bulan_terpilih,
         'tahun_terpilih' => $tahun_terpilih,
         'nama_bulan' => $nama_bulan,
+        'total_dibayar_cicilan' => $total_dibayar_cicilan,
         'total_pemasukan' => $total_pemasukan,
         'total_belum_lunas' => $total_belum_lunas,
         'periode' => $periode,
