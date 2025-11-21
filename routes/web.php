@@ -191,7 +191,33 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('akun', AkunController::class);
             Route::resource('kas-bank', KasBankController::class)->names('kas-bank');
             Route::post('kas-bank/{kasBank}/transaksi', [TransaksiKasBankController::class, 'store'])->name('kas-bank.transaksi.store');
+
         });
+
+        Route::prefix('simpanan')->name('simpanan.')->group(function () {
+
+            Route::resource('jenis-simpanan', App\Http\Controllers\Simpanan\JenisSimpananController::class);
+            Route::get('rekening', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'index'])->name('rekening.index');
+            Route::get('rekening/create', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'create'])->name('rekening.create');
+            Route::get('rekening/{anggota_id}/detail', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'show'])->name('rekening.show');
+            Route::prefix('transaksi-simpanan')->group(function () {
+            Route::get('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createSetoran'])->name('setor.create');
+            Route::post('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeSetoran'])->name('setor.store');
+
+            Route::get('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createPenarikan'])->name('tarik.create');
+            Route::post('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storePenarikan'])->name('tarik.store');
+
+            Route::resource('pengajuan-pinjaman', App\Http\Controllers\Simpanan\PengajuanPinjamanController::class)->names('pinjaman');
+
+            Route::post('pinjaman/{pengajuanPinjaman}/approve', [App\Http\Controllers\Simpanan\PengajuanPinjamanController::class, 'approve'])->name('pinjaman.approve');
+            Route::post('pinjaman/{pengajuanPinjaman}/reject', [App\Http\Controllers\Simpanan\PengajuanPinjamanController::class, 'reject'])->name('pinjaman.reject');
+
+// Logika Pembayaran Angsuran
+            Route::get('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar.create');
+            Route::post('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.bayar.store');
+        });
+
+    });
     });
 
 
@@ -223,3 +249,8 @@ Route::middleware(['auth'])->group(function () {
     });
 
 }); // Akhir dari middleware 'auth'
+
+// API Routes (no auth required for search, or can add middleware)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/simpanan/search-rekening', [SimplifyingSearchRekeningController::class, 'search']);
+});

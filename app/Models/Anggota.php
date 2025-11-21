@@ -67,4 +67,19 @@ class Anggota extends Model
     {
         return $this->belongsTo(UnitUsaha::class, 'unit_usaha_id', 'unit_usaha_id');
     }
+
+    public function rekeningSimpanan()
+    {
+        return $this->hasMany(RekeningSimpanan::class, 'anggota_id', 'anggota_id');
+    }
+
+    /**
+     * Anggota punya banyak pengajuan pinjaman.
+     * Foreign Key: 'anggota_id' di tabel 'pengajuan_pinjamans'
+     * Local Key: 'anggota_id' di tabel 'anggotas'
+     */
+    public function pengajuanPinjaman()
+    {
+        return $this->hasMany(PengajuanPinjaman::class, 'anggota_id', 'anggota_id');
+    }
 }

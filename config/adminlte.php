@@ -406,6 +406,74 @@ return [
             ],
         ],
 
+       [
+    'text' => 'MODUL SIMPAN PINJAM',
+    'url' => '#',
+    'icon' => 'fas fa-hand-holding-usd',
+    'can' => 'bendahara_bumdes', // Opsional: Sesuaikan dengan permission role Bendahara Anda
+    'submenu' => [
+        // --- SIMPANAN ---
+        [
+            'text' => 'Manajemen Simpanan',
+            'icon' => 'fas fa-wallet',
+            'submenu' => [
+                [
+                    'text' => 'Jenis Simpanan (Master)',
+                    'route' => 'simpanan.jenis-simpanan.index',
+                    'icon' => 'fas fa-list-alt',
+                ],
+                [
+                    'text' => 'Daftar Rekening Anggota',
+                    'route' => 'simpanan.rekening.index',
+                    'icon' => 'fas fa-users',
+                ],
+                [
+                    'text' => 'Setor Tunai',
+                    'route' => 'simpanan.setor.create',
+                    'icon' => 'fas fa-arrow-down',
+                ],
+                [
+                    'text' => 'Tarik Tunai',
+                    'route' => 'simpanan.tarik.create',
+                    'icon' => 'fas fa-arrow-up',
+                ],
+            ],
+        ],
+        // --- PINJAMAN ---
+        [
+            'text' => 'Manajemen Pinjaman',
+            'icon' => 'fas fa-donate',
+            'submenu' => [
+                [
+                    'text' => 'Pengajuan Pinjaman',
+                    'route' => 'simpanan.pinjaman.index',
+                    'icon' => 'fas fa-file-invoice-dollar',
+                ],
+              [
+    'text' => 'Pengajuan & Pembayaran Pinjaman', // Ganti teksnya
+    'route' => 'simpanan.pinjaman.index', // <-- Arahkan ke daftar pinjaman
+    'icon' => 'fas fa-file-invoice-dollar',
+],
+            ],
+        ],
+        // --- LAPORAN ---
+        // [
+        //     'text' => 'Laporan Keuangan',
+        //     'icon' => 'fas fa-chart-line',
+        //     'submenu' => [
+        //         [
+        //             'text' => 'Laporan Simpanan',
+        //             'route' => 'laporan.simpanan',
+        //         ],
+        //         [
+        //             'text' => 'Laporan Pinjaman',
+        //             'route' => 'laporan.pinjaman',
+        //         ],
+        //     ],
+        // ],
+    ],
+],
+
         [
             'header' => 'MANAJEMEN UNIT USAHA',
             'can'    => ['manajer_unit_usaha', 'admin_unit_usaha'],
