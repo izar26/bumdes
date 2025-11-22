@@ -42,7 +42,8 @@ use App\Http\Controllers\Usaha\TagihanController;
 use App\Http\Controllers\Usaha\PelangganController;
 use App\Http\Controllers\Usaha\TarifController;
 use App\Http\Controllers\Usaha\PetugasController;
-
+use App\Http\Controllers\Simpanan\AngsuranPinjamanController;
+use App\Http\Controllers\Api\SimplifyingSearchRekeningController;
 
 
 
@@ -197,15 +198,17 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('simpanan')->name('simpanan.')->group(function () {
 
             Route::resource('jenis-simpanan', App\Http\Controllers\Simpanan\JenisSimpananController::class);
+            Route::post('rekening', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'store'])->name('rekening.store');
             Route::get('rekening', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'index'])->name('rekening.index');
+            Route::get('rekening/{rekening}', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'show'])->name('rekening.show');
             Route::get('rekening/create', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'create'])->name('rekening.create');
             Route::get('rekening/{anggota_id}/detail', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'show'])->name('rekening.show');
             Route::prefix('transaksi-simpanan')->group(function () {
-            Route::get('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createSetoran'])->name('setor.create');
-            Route::post('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeSetoran'])->name('setor.store');
+            Route::get('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createSetor'])->name('setor.create');
+            Route::post('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeSetor'])->name('setor.store');
 
-            Route::get('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createPenarikan'])->name('tarik.create');
-            Route::post('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storePenarikan'])->name('tarik.store');
+            Route::get('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createTarik'])->name('tarik.create');
+            Route::post('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeTarik'])->name('tarik.store');
 
             Route::resource('pengajuan-pinjaman', App\Http\Controllers\Simpanan\PengajuanPinjamanController::class)->names('pinjaman');
 
@@ -215,6 +218,8 @@ Route::middleware(['auth'])->group(function () {
 // Logika Pembayaran Angsuran
             Route::get('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar.create');
             Route::post('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.bayar.store');
+            Route::get('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar');
+Route::post('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.store');
         });
 
     });

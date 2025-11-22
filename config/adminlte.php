@@ -449,11 +449,7 @@ return [
                     'route' => 'simpanan.pinjaman.index',
                     'icon' => 'fas fa-file-invoice-dollar',
                 ],
-              [
-    'text' => 'Pengajuan & Pembayaran Pinjaman', // Ganti teksnya
-    'route' => 'simpanan.pinjaman.index', // <-- Arahkan ke daftar pinjaman
-    'icon' => 'fas fa-file-invoice-dollar',
-],
+             
             ],
         ],
         // --- LAPORAN ---

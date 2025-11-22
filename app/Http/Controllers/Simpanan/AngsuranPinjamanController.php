@@ -15,10 +15,13 @@ class AngsuranPinjamanController extends Controller
     public function createPembayaran(AngsuranPinjaman $angsuran)
     {
         if ($angsuran->status === 'lunas') {
-            return back()->with('error', 'Angsuran ini sudah lunas.');
+            return back()->with('error', 'Angsuran ini sudah lunas sebelumnya.');
         }
+
+        // Load relasi pinjaman dan anggota agar nama anggota muncul di View
         $angsuran->load('pinjaman.anggota');
-        return view('simpanan.pinjaman.angsuran.bayar', compact('angsuran'));
+
+        return view('pinjaman.angsuran.bayar', compact('angsuran'));
     }
 
     /**
@@ -30,45 +33,56 @@ class AngsuranPinjamanController extends Controller
             return back()->with('error', 'Angsuran ini sudah lunas.');
         }
 
+        // 1. Validasi Input (Termasuk nominal_bayar)
         $request->validate([
+            'nominal_bayar' => 'required|numeric|min:100', // PENTING: Wajib ada agar input fleksibel terbaca
             'tanggal_bayar' => 'required|date',
-            // Kita asumsikan jumlah bayar harus sesuai dengan yang seharusnya (jumlah_bayar di tabel).
-            // Bisa ditambahkan validasi untuk pembayaran parsial jika dibutuhkan.
+            'keterangan'    => 'nullable|string|max:255',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // 1. Catat Angsuran
+            // Ambil ID User yang sedang login
+            $adminId = auth()->user()->user_id ?? auth()->id();
+
+            // 2. Update Data Angsuran
+            // Kita timpa 'jumlah_bayar' dengan nominal yang diinput admin (nominal_bayar)
             $angsuran->update([
+                'jumlah_bayar' => $request->nominal_bayar, // Simpan nominal realisasi
                 'tanggal_bayar' => $request->tanggal_bayar,
                 'status' => 'lunas',
-                'user_id_admin_terima' => auth()->id(),
+                'user_id_admin_terima' => $adminId,
                 'keterangan' => $request->input('keterangan'),
             ]);
 
-            // 2. Cek apakah semua angsuran pinjaman ini sudah lunas
+            // 3. Cek Pelunasan Pinjaman Induk
             $pinjaman = $angsuran->pinjaman;
+
+            // Hitung sisa angsuran yang belum lunas
             $sisaAngsuran = $pinjaman->angsuran()->where('status', '!=', 'lunas')->count();
 
-            if ($sisaAngsuran === 0) {
-                // Jika sudah lunas semua, update status pinjaman induk
-                $pinjaman->update(['status' => 'lunas']);
-                $message = 'Pembayaran angsuran ke-' . $angsuran->angsuran_ke . ' berhasil dicatat, dan Pinjaman dinyatakan LUNAS.';
-            } else {
-                $message = 'Pembayaran angsuran ke-' . $angsuran->angsuran_ke . ' berhasil dicatat. Sisa ' . $sisaAngsuran . ' angsuran lagi.';
-            }
+            // Format angka untuk pesan sukses
+            $nominalFormat = number_format($request->nominal_bayar, 0, ',', '.');
 
-            // *OPSIONAL: Di sini bisa ditambahkan logika Jurnal/Kas untuk mencatat Uang Masuk (Angsuran)*
+            if ($sisaAngsuran === 0) {
+                // Jika tidak ada sisa, tandai pinjaman induk LUNAS
+                $pinjaman->update(['status' => 'lunas']);
+                $message = "Pembayaran Rp {$nominalFormat} berhasil. Seluruh pinjaman kini LUNAS.";
+            } else {
+                $message = "Pembayaran Rp {$nominalFormat} berhasil dicatat. Sisa {$sisaAngsuran} angsuran lagi.";
+            }
 
             DB::commit();
 
-            return redirect()->route('pinjaman.show', $pinjaman->pinjaman_id)->with('success', $message);
+            // --- REVISI: REDIRECT KE INDEX, BUKAN SHOW ---
+            return redirect()->route('simpanan.pinjaman.index')
+                             ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error("Pembayaran Angsuran Gagal: " . $e->getMessage());
-            return back()->withInput()->with('error', 'Pencatatan pembayaran gagal diproses.');
+            return back()->withInput()->with('error', 'Pencatatan pembayaran gagal diproses: ' . $e->getMessage());
         }
     }
 }

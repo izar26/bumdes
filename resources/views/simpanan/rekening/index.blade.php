@@ -46,7 +46,7 @@
                             <td><strong>Rp {{ number_format($rekening->saldo) }}</strong></td>
                             <td>
                                 {{-- Rute ini diarahkan ke detail anggota --}}
-                                <a href="{{ route('rekening.show', $rekening->anggota_id) }}" class="btn btn-xs btn-info" title="Lihat Detail">
+                                <a href="{{ route('simpanan.rekening.show', $rekening->anggota_id) }}" class="btn btn-xs btn-info" title="Lihat Detail">
                                     <i class="fas fa-search"></i> Detail
                                 </a>
                             </td>

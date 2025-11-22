@@ -41,7 +41,7 @@ class RekeningSimpananController extends Controller
     {
         $request->validate([
             'anggota_id' => 'required|exists:anggotas,anggota_id',
-            'jenis_simpanan_id' => 'required|exists:jenis_simpanan,jenis_simpanan_id', // Sesuaikan nama tabel jika 'jenis_simpanans'
+            'jenis_simpanan_id' => 'required|exists:jenis_simpanans,jenis_simpanan_id', // Sesuaikan nama tabel jika 'jenis_simpanans'
         ]);
 
         // 1. Cek Duplikasi (Opsional)

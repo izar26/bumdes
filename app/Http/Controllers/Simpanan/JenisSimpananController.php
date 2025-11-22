@@ -70,7 +70,7 @@ class JenisSimpananController extends Controller
 
         $jenisSimpanan->update($request->all());
 
-        return redirect()->route('jenis-simpanan.index')->with('success', 'Jenis Simpanan berhasil diperbarui.');
+        return redirect()->route('simpanan.jenis-simpanan.index')->with('success', 'Jenis Simpanan berhasil diperbarui.');
     }
 
     /**
@@ -85,6 +85,6 @@ class JenisSimpananController extends Controller
 
         $jenisSimpanan->delete();
 
-        return redirect()->route('jenis-simpanan.index')->with('success', 'Jenis Simpanan berhasil dihapus.');
+        return redirect()->route('simpanan.jenis-simpanan.index')->with('success', 'Jenis Simpanan berhasil dihapus.');
     }
 }

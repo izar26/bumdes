@@ -9,6 +9,8 @@ class AngsuranPinjaman extends Model
 {
     use HasFactory;
 
+        protected $table = 'angsuran_pinjaman';
+
     protected $primaryKey = 'angsuran_id';
     protected $guarded = [];
 
@@ -17,6 +19,7 @@ class AngsuranPinjaman extends Model
         'tanggal_bayar' => 'date',
         'jumlah_bayar' => 'integer',
     ];
+
 
     /**
      * Angsuran ini bagian dari pinjaman mana.

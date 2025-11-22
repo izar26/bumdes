@@ -1,60 +1,127 @@
 @extends('adminlte::page')
 
-@section('title', 'Daftar Pinjaman')
+@section('title', 'Data Pinjaman')
 
 @section('content_header')
-    <h1><i class="fas fa-money-check-alt"></i> Daftar Pinjaman</h1>
+    <h1><i class="fas fa-book"></i> Data Pinjaman Anggota</h1>
 @stop
 
 @section('content')
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Histori Pengajuan Pinjaman</h3>
+            <h3 class="card-title">Daftar Semua Pinjaman</h3>
             <div class="card-tools">
-                <a href="{{ route('simpanan.pinjaman.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Buat Pengajuan Baru</a>
+                <a href="{{ route('simpanan.pinjaman.create') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus-circle"></i> Catat Pinjaman Baru
+                </a>
             </div>
         </div>
         <div class="card-body">
+            {{-- Alert Messages --}}
             @if (session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
+                <div class="alert alert-success alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <i class="icon fas fa-check"></i> {{ session('success') }}
+                </div>
             @endif
             @if (session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
+                <div class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <i class="icon fas fa-ban"></i> {{ session('error') }}
+                </div>
             @endif
 
-            <table class="table table-bordered table-striped dataTable">
-                <thead>
-                    <tr>
-                        <th>No Pinjaman</th>
-                        <th>Anggota</th>
-                        <th>Tgl Pengajuan</th>
-                        <th>Jumlah Pinjam</th>
-                        <th>Tenor</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($pinjamans as $pinjaman)
+            <div class="table-responsive">
+                <table class="table table-hover dataTable">
+                    <thead>
                         <tr>
-                            <td>{{ $pinjaman->no_pinjaman }}</td>
-                            <td>**{{ $pinjaman->anggota->nama_lengkap ?? 'N/A' }}**</td>
-                            <td>{{ $pinjaman->tanggal_pengajuan->format('d/m/Y') }}</td>
-                            <td>Rp {{ number_format($pinjaman->jumlah_pinjaman) }}</td>
-                            <td>{{ $pinjaman->tenor }} bulan</td>
-                            <td>
-                                @php
-                                    $badge = ['pending' => 'warning', 'approved' => 'info', 'rejected' => 'danger', 'lunas' => 'success'];
-                                @endphp
-                                <span class="badge badge-{{ $badge[$pinjaman->status] ?? 'secondary' }}">{{ strtoupper($pinjaman->status) }}</span>
-                            </td>
-                            <td>
-                                <a href="{{ route('simpanan.pinjaman.show', $pinjaman->pinjaman_id) }}" class="btn btn-xs btn-primary"><i class="fas fa-eye"></i> Detail</a>
-                            </td>
+                            <th>No Pinjaman</th>
+                            <th>Anggota</th>
+                            <th>Pokok Pinjaman</th>
+                            {{-- KOLOM BARU: Sisa Tagihan (Rp) --}}
+                            <th>Sisa Tagihan (Rp)</th>
+                            <th>Status</th>
+                            <th class="text-center" width="150px">Aksi</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($pinjamans as $pinjaman)
+                            @php
+                                // 1. Cari angsuran berikutnya utk tombol bayar (Logika Lama)
+                                $nextAngsuran = $pinjaman->angsuran
+                                    ->where('status', 'belum_bayar')
+                                    ->sortBy('angsuran_ke')
+                                    ->first();
+
+                                // 2. Hitung Total Sisa Rupiah (Logika Baru)
+                                // Menjumlahkan kolom 'jumlah_bayar' dari semua angsuran yg statusnya belum lunas
+                                $sisaRupiah = $pinjaman->angsuran
+                                    ->where('status', 'belum_bayar')
+                                    ->sum('jumlah_bayar');
+
+                                // 3. Hitung Sisa Kali Bayar (Logika Lama)
+                                $sisaKali = $pinjaman->angsuran
+                                    ->where('status', 'belum_bayar')
+                                    ->count();
+                            @endphp
+
+                            <tr>
+                                <td><span class="text-bold text-primary">{{ $pinjaman->no_pinjaman }}</span></td>
+                                <td>
+                                    <div>{{ $pinjaman->anggota->nama_lengkap ?? 'Anggota Terhapus' }}</div>
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($pinjaman->tanggal_pencairan)->format('d M Y') }}</small>
+                                </td>
+                                <td>Rp {{ number_format($pinjaman->jumlah_pinjaman, 0, ',', '.') }}</td>
+
+                                {{-- TAMPILKAN SISA RUPIAH --}}
+                                <td>
+                                    @if($pinjaman->status == 'lunas')
+                                        <span class="text-success text-bold">Rp 0</span>
+                                    @else
+                                        {{-- Tampilkan merah agar terlihat sebagai tunggakan --}}
+                                        <span class="text-danger text-bold">Rp {{ number_format($sisaRupiah, 0, ',', '.') }}</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($pinjaman->status == 'lunas')
+                                        <span class="badge badge-success">LUNAS</span>
+                                    @else
+                                        <span class="badge badge-info">AKTIF</span>
+                                        <br>
+                                        {{-- Tetap tampilkan sisa kali bayar sebagai info tambahan --}}
+                                        <small>Kurang: {{ $sisaKali }}x Bayar</small>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        {{-- Tombol Detail --}}
+                                        <a href="{{ route('simpanan.pinjaman.show', $pinjaman->pinjaman_id) }}" class="btn btn-sm btn-default" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+
+                                        {{-- Tombol Bayar (Muncul jika ada tagihan) --}}
+                                        @if($nextAngsuran)
+                                            <a href="{{ route('simpanan.angsuran.bayar', $nextAngsuran->angsuran_id) }}" class="btn btn-sm btn-success" title="Bayar Angsuran Ke-{{ $nextAngsuran->angsuran_ke }}">
+                                                <i class="fas fa-hand-holding-usd"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Tombol Hapus --}}
+                                        <form action="{{ route('simpanan.pinjaman.destroy', $pinjaman->pinjaman_id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 @stop
@@ -62,7 +129,8 @@
 @section('js')
     <script>
         $(document).ready(function() {
-            $('.dataTable').DataTable();
+            // Urutkan berdasarkan No Pinjaman (index 0) secara descending agar data terbaru diatas
+            $('.dataTable').DataTable({ "order": [[ 0, "desc" ]] });
         });
     </script>
 @endsection

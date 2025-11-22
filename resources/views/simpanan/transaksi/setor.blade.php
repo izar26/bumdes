@@ -9,54 +9,67 @@
 @section('content')
     <div class="row">
         <div class="col-md-8">
+            {{-- Alert Error / Success --}}
             @if (session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            @endif
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
             @endif
 
-            {{-- CARD 1: PILIH REKENING (DROPDOWN) --}}
-            <div class="card">
+            {{-- CARD 1: PILIH REKENING (SEARCHABLE DROPDOWN) --}}
+            <div class="card card-info">
                 <div class="card-header">
-                    <h3 class="card-title">1. Pilih Rekening Anggota</h3>
+                    <h3 class="card-title">1. Cari & Pilih Rekening</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-group">
                         <label>Cari Anggota / Rekening</label>
-                        {{--
-                             Dropdown Select2
-                             Pastikan variabel $rekenings dikirim dari Controller
-                        --}}
+                        {{-- Dropdown Select2 --}}
                         <select id="pilih_rekening" class="form-control select2" style="width: 100%;">
                             <option value="">-- Ketik Nama / NIK / No Rekening --</option>
-                            @foreach($rekenings as $rek)
+                            @forelse($rekenings as $rek)
                                 <option value="{{ $rek->rekening_id }}"
                                         data-saldo="{{ $rek->saldo }}"
-                                        data-nama="{{ $rek->anggota->nama_lengkap ?? 'Tanpa Nama' }} - {{ $rek->no_rekening }}">
+                                        data-nama="{{ $rek->anggota->nama_lengkap ?? 'Tanpa Nama' }} - {{ $rek->no_rekening }}"
+                                        {{ old('rekening_id') == $rek->rekening_id ? 'selected' : '' }}>
                                     {{ $rek->no_rekening }} - {{ $rek->anggota->nama_lengkap ?? 'Tanpa Nama' }} (Saldo: Rp {{ number_format($rek->saldo, 0, ',', '.') }})
                                 </option>
-                            @endforeach
+                            @empty
+                                <option disabled>Data Rekening Kosong</option>
+                            @endforelse
                         </select>
-                        <small class="text-muted">Pilih rekening tujuan untuk menampilkan form setoran.</small>
+                        <small class="text-muted">Ketik nama anggota atau nomor rekening pada kotak di atas untuk mencari.</small>
                     </div>
                 </div>
             </div>
 
-            {{-- CARD 2: FORM TRANSAKSI SETORAN (Tersembunyi sampai rekening dipilih) --}}
-            <div id="transaction_form_card" class="card" style="display: none;">
+            {{-- CARD 2: FORM TRANSAKSI SETORAN --}}
+            <div id="transaction_form_card" class="card card-success" style="display: none;">
                 <div class="card-header">
-                    <h3 class="card-title">2. Form Setoran</h3>
+                    <h3 class="card-title">2. Detail Setoran</h3>
                 </div>
                 <form action="{{ route('simpanan.setor.store') }}" method="POST">
                     @csrf
                     <div class="card-body">
 
-                        <div class="alert alert-info">
-                           <i class="fas fa-user-check"></i> Rekening: <strong><span id="rekening_name_display">-</span></strong>
-                           <br>
-                           <i class="fas fa-wallet"></i> Saldo Saat Ini: <strong>Rp <span id="current_saldo_display">0</span></strong>
+                        <div class="callout callout-info">
+                           <h5><i class="fas fa-user"></i> <span id="rekening_name_display">-</span></h5>
+                           <p>Saldo Saat Ini: <strong>Rp <span id="current_saldo_display">0</span></strong></p>
                         </div>
 
-                        {{-- Hidden input yang nilainya akan diisi oleh JavaScript dari Dropdown di atas --}}
-                        <input type="hidden" name="rekening_id" id="rekening_id_input">
+                        {{-- Hidden input yang menyimpan ID Rekening terpilih --}}
+                        <input type="hidden" name="rekening_id" id="rekening_id_input" value="{{ old('rekening_id') }}">
 
                         <div class="form-group">
                             <label for="jumlah">Jumlah Setoran (Rp)</label>
@@ -66,7 +79,7 @@
                                 </div>
                                 <input type="number" name="jumlah" class="form-control @error('jumlah') is-invalid @enderror" id="jumlah" placeholder="Contoh: 100000" value="{{ old('jumlah') }}" required>
                             </div>
-                            @error('jumlah') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            @error('jumlah') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="form-group">
@@ -75,7 +88,7 @@
                         </div>
                     </div>
 
-                    <div class="card-footer">
+                    <div class="card-footer text-right">
                         <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Simpan Setoran</button>
                     </div>
                 </form>
@@ -84,10 +97,18 @@
     </div>
 @stop
 
+{{-- PERBAIKAN LINK CSS --}}
 @section('css')
-    {{-- CSS Select2 --}}
+    {{-- CSS Select2 Utama --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    {{-- CSS Tema Bootstrap 4 (VERSI FIXED: 1.5.2) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+    <style>
+        /* Fix opsional agar dropdown pas dengan AdminLTE */
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: calc(2.25rem + 2px) !important;
+        }
+    </style>
 @stop
 
 @section('js')
@@ -99,31 +120,37 @@
             $('.select2').select2({
                 theme: 'bootstrap4',
                 placeholder: "-- Ketik Nama / NIK / No Rekening --",
-                allowClear: true
+                allowClear: true,
+                width: '100%' // Pastikan lebar 100%
             });
 
-            // 2. Logika ketika Dropdown berubah
-            $('#pilih_rekening').on('change', function() {
-                // Ambil data dari option yang dipilih
-                let selectedOption = $(this).find(':selected');
-                let rekeningId = $(this).val();
+            // Fungsi Update UI
+            function updateUI(element) {
+                let selectedOption = element.find(':selected');
+                let rekeningId = element.val();
                 let saldo = selectedOption.data('saldo');
                 let namaRekening = selectedOption.data('nama');
 
                 if (rekeningId) {
-                    // Isi data ke Form di Card bawah
                     $('#rekening_id_input').val(rekeningId);
                     $('#rekening_name_display').text(namaRekening);
                     $('#current_saldo_display').text(new Intl.NumberFormat('id-ID').format(saldo));
-
-                    // Tampilkan Card Form dengan animasi
                     $('#transaction_form_card').slideDown();
                 } else {
-                    // Sembunyikan jika di-clear
                     $('#transaction_form_card').slideUp();
                     $('#rekening_id_input').val('');
                 }
+            }
+
+            // 2. Event Listener Change
+            $('#pilih_rekening').on('change', function() {
+                updateUI($(this));
             });
+
+            // 3. Auto Trigger saat reload (Old Input Persistence)
+            if ($('#pilih_rekening').val()) {
+                updateUI($('#pilih_rekening'));
+            }
         });
     </script>
 @stop

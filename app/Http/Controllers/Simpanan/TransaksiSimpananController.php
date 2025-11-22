@@ -3,123 +3,143 @@
 namespace App\Http\Controllers\Simpanan;
 
 use App\Models\RekeningSimpanan;
-use App\Models\TransaksiSimpanan;
+use App\Models\TransaksiSimpanan; // Pastikan Model ini ada
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 
 class TransaksiSimpananController extends Controller
 {
-    // --- Setoran Tunai (Deposit) ---
+    // =========================================================================
+    // FITUR SETOR TUNAI
+    // =========================================================================
 
-    public function createSetoran()
+    /**
+     * Menampilkan Form Setor Tunai
+     */
+    public function createSetor()
     {
-        // Tampilkan form untuk Setoran.
-        return view('simpanan.setor.create');
+        // 1. Ambil data rekening untuk Dropdown Select2
+        // Kita load relasi 'anggota' agar bisa menampilkan nama anggota di dropdown
+        $rekenings = RekeningSimpanan::with('anggota')
+            ->where('status', 'aktif') // Hanya tampilkan rekening aktif
+            ->get();
+
+        // 2. Kirim variabel $rekenings ke view
+        // Pastikan path view sesuai dengan lokasi file setor.blade.php Anda
+        return view('simpanan.transaksi.setor', compact('rekenings'));
     }
 
-    public function storeSetoran(Request $request)
+    /**
+     * Menyimpan Transaksi Setor Tunai
+     */
+    public function storeSetor(Request $request)
     {
         $request->validate([
             'rekening_id' => 'required|exists:rekening_simpanans,rekening_id',
-            'jumlah' => 'required|integer|min:1000',
-            'keterangan' => 'nullable|string|max:500',
+            'jumlah'      => 'required|numeric|min:1000',
+            'keterangan'  => 'nullable|string',
         ]);
-
-        $rekening = RekeningSimpanan::find($request->rekening_id);
-
-        // **PENTING: Gunakan Database Transaction**
-        try {
-            DB::beginTransaction();
-
-            // 1. Hitung Saldo Baru
-            $saldo_baru = $rekening->saldo + $request->jumlah;
-
-            // 2. Catat Transaksi (LEDGER)
-            $transaksi = TransaksiSimpanan::create([
-                'rekening_id' => $rekening->rekening_id,
-                'tanggal_transaksi' => now(),
-                'jenis_transaksi' => 'setor',
-                'jumlah' => $request->jumlah,
-                'saldo_setelah_transaksi' => $saldo_baru,
-                'keterangan' => $request->keterangan,
-                'user_id_admin' => auth()->id(),
-            ]);
-
-            // 3. Update Saldo Rekening
-            $rekening->saldo = $saldo_baru;
-            $rekening->save();
-
-            DB::commit();
-
-            return redirect()->route('rekening.show', $rekening->anggota_id)
-                             ->with('success', 'Setoran sebesar Rp. ' . number_format($request->jumlah) . ' berhasil dicatat.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // Log the error for debugging
-            \Log::error("Setoran Gagal: " . $e->getMessage());
-
-            return back()->withInput()->with('error', 'Setoran gagal diproses. Silakan coba lagi.');
-        }
-    }
-
-    // --- Penarikan Tunai (Withdrawal) ---
-
-    public function createPenarikan()
-    {
-        return view('simpanan.tarik.create');
-    }
-
-    public function storePenarikan(Request $request)
-    {
-        $request->validate([
-            'rekening_id' => 'required|exists:rekening_simpanans,rekening_id',
-            'jumlah' => 'required|integer|min:1000',
-            'keterangan' => 'nullable|string|max:500',
-        ]);
-
-        $rekening = RekeningSimpanan::find($request->rekening_id);
-
-        // **Validasi Saldo: Cek apakah saldo mencukupi sebelum ditarik**
-        if ($rekening->saldo < $request->jumlah) {
-            throw ValidationException::withMessages([
-                'jumlah' => ['Saldo tidak mencukupi untuk penarikan ini. Saldo saat ini: Rp. ' . number_format($rekening->saldo)],
-            ]);
-        }
 
         try {
             DB::beginTransaction();
 
-            // 1. Hitung Saldo Baru
-            $saldo_baru = $rekening->saldo - $request->jumlah;
+            // 1. Ambil Rekening
+            $rekening = RekeningSimpanan::lockForUpdate()->find($request->rekening_id);
 
-            // 2. Catat Transaksi (LEDGER)
+            // 2. Buat Kode Transaksi Unik
+            $kodeTrans = 'TRX-' . time() . mt_rand(100, 999);
+
+            // 3. Simpan Riwayat Transaksi
             TransaksiSimpanan::create([
-                'rekening_id' => $rekening->rekening_id,
+                'rekening_id'       => $rekening->rekening_id,
+                'jenis_transaksi'   => 'setor_tunai',
+                'kode_transaksi'    => $kodeTrans,
+                'jumlah'            => $request->jumlah,
                 'tanggal_transaksi' => now(),
-                'jenis_transaksi' => 'tarik',
-                'jumlah' => $request->jumlah,
-                'saldo_setelah_transaksi' => $saldo_baru,
-                'keterangan' => $request->keterangan,
-                'user_id_admin' => auth()->id(),
+                'keterangan'        => $request->keterangan ?? 'Setoran Tunai',
+                'user_id'           => auth()->id(), // Admin yang input
             ]);
 
-            // 3. Update Saldo Rekening
-            $rekening->saldo = $saldo_baru;
+            // 4. Update Saldo Rekening (Bertambah)
+            $rekening->saldo += $request->jumlah;
             $rekening->save();
 
             DB::commit();
 
-            return redirect()->route('rekening.show', $rekening->anggota_id)
-                             ->with('success', 'Penarikan sebesar Rp. ' . number_format($request->jumlah) . ' berhasil dicatat.');
+            return redirect()->route('simpanan.setor.create')
+                ->with('success', 'Setoran Rp ' . number_format($request->jumlah) . ' berhasil disimpan ke rekening ' . $rekening->no_rekening);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error("Penarikan Gagal: " . $e->getMessage());
+            return back()->with('error', 'Gagal memproses setoran: ' . $e->getMessage());
+        }
+    }
 
-            return back()->withInput()->with('error', 'Penarikan gagal diproses. Silakan coba lagi.');
+
+    // =========================================================================
+    // FITUR TARIK TUNAI
+    // =========================================================================
+
+    /**
+     * Menampilkan Form Tarik Tunai
+     */
+    public function createTarik()
+    {
+        // Ambil data rekening untuk Dropdown Select2
+        $rekenings = RekeningSimpanan::with('anggota')
+            ->where('status', 'aktif')
+            ->get();
+
+        return view('simpanan.transaksi.tarik', compact('rekenings'));
+    }
+
+    /**
+     * Menyimpan Transaksi Tarik Tunai
+     */
+    public function storeTarik(Request $request)
+    {
+        $request->validate([
+            'rekening_id' => 'required|exists:rekening_simpanans,rekening_id',
+            'jumlah'      => 'required|numeric|min:1000',
+            'keterangan'  => 'nullable|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $rekening = RekeningSimpanan::lockForUpdate()->find($request->rekening_id);
+
+            // Validasi Saldo Cukup
+            if ($rekening->saldo < $request->jumlah) {
+                return back()->with('error', 'Saldo tidak mencukupi untuk penarikan ini. Saldo: Rp ' . number_format($rekening->saldo));
+            }
+
+            $kodeTrans = 'TRX-' . time() . mt_rand(100, 999);
+
+            // Simpan Riwayat
+            TransaksiSimpanan::create([
+                'rekening_id'       => $rekening->rekening_id,
+                'jenis_transaksi'   => 'tarik_tunai',
+                'kode_transaksi'    => $kodeTrans,
+                'jumlah'            => $request->jumlah,
+                'tanggal_transaksi' => now(),
+                'keterangan'        => $request->keterangan ?? 'Penarikan Tunai',
+                'user_id'           => auth()->id(),
+            ]);
+
+            // Update Saldo (Berkurang)
+            $rekening->saldo -= $request->jumlah;
+            $rekening->save();
+
+            DB::commit();
+
+            return redirect()->route('simpanan.tarik.create')
+                ->with('success', 'Penarikan Rp ' . number_format($request->jumlah) . ' berhasil. Sisa saldo: Rp ' . number_format($rekening->saldo));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memproses penarikan: ' . $e->getMessage());
         }
     }
 }
