@@ -24,7 +24,7 @@
                         <div class="card-header">
                             <h3 class="card-title">{{ $potensi_edit->exists ? 'Edit Potensi' : 'Tambah Potensi' }}</h3>
                         </div>
-                        
+
                         <form action="{{ $potensi_edit->exists ? route('admin.potensi.update', $potensi_edit->id) : route('admin.potensi.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @if($potensi_edit->exists)
@@ -46,7 +46,7 @@
                                     <label for="gambar">Gambar</label>
                                     <input type="file" class="form-control-file @error('gambar') is-invalid @enderror" id="gambar" name="gambar">
                                     @error('gambar') <span class="text-danger">{{ $message }}</span> @enderror
-                                    
+
                                     @if($potensi_edit->gambar)
                                         <div class="mt-2">
                                             <small>Gambar saat ini:</small><br>
@@ -97,11 +97,17 @@
                                             <td>{{ Str::limit($item->deskripsi, 50) }}</td>
                                             <td>
                                                 <a href="{{ route('admin.potensi.index', ['edit' => $item->id]) }}" class="btn btn-sm btn-primary">Edit</a>
-                                                
-                                                <form action="{{ route('admin.potensi.destroy', $item->id) }}" method="POST" class="d-inline">
+
+                                                <form id="delete-potensi-{{ $item->id }}" action="{{ route('admin.potensi.destroy', $item->id) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data ini?')">Hapus</button>
+                                                    <button type="button" class="btn btn-sm btn-danger"
+                                                        data-toggle="modal" data-target="#confirmModal"
+                                                        data-form-id="delete-potensi-{{ $item->id }}"
+                                                        data-title="Konfirmasi Hapus"
+                                                        data-body="Yakin ingin menghapus data ini?"
+                                                        data-button-text="Hapus"
+                                                        data-button-class="btn-danger">Hapus</button>
                                                 </form>
                                             </td>
                                         </tr>

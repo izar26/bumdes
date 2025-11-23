@@ -52,8 +52,14 @@
                             <td class="text-center">
                                 <div class="btn-group">
                                     <a href="{{ route('usaha.pelanggan.edit', $pelanggan) }}" class="btn btn-sm btn-warning" title="Edit"><i class="fa fa-edit"></i></a>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="if(confirm('Apakah Anda yakin? Pelanggan yang memiliki tagihan tidak dapat dihapus.')) { document.getElementById('delete-form-{{$pelanggan->id}}').submit(); }" title="Hapus"><i class="fa fa-trash"></i></button>
-                                    <form id="delete-form-{{$pelanggan->id}}" action="{{ route('usaha.pelanggan.destroy', $pelanggan) }}" method="POST" style="display: none;">
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                        data-toggle="modal" data-target="#confirmModal"
+                                        data-form-id="delete-pelanggan-{{ $pelanggan->id }}"
+                                        data-title="Konfirmasi Hapus"
+                                        data-body="Apakah Anda yakin? Pelanggan yang memiliki tagihan tidak dapat dihapus."
+                                        data-button-text="Hapus"
+                                        data-button-class="btn-danger" title="Hapus"><i class="fa fa-trash"></i></button>
+                                    <form id="delete-pelanggan-{{ $pelanggan->id }}" action="{{ route('usaha.pelanggan.destroy', $pelanggan) }}" method="POST" style="display: none;">
                                         @csrf @method('DELETE')
                                     </form>
                                 </div>

@@ -53,7 +53,7 @@
                 </div>
 
                 {{-- Gunakan angsuran_id pada parameter route --}}
-                <form action="{{ route('simpanan.angsuran.store', $angsuran->angsuran_id) }}" method="POST">
+                <form action="{{ route('simpanan.angsuran.bayar.store', $angsuran->angsuran_id) }}" method="POST">
                     @csrf
                     <div class="card-body">
 

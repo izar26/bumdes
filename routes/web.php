@@ -42,7 +42,13 @@ use App\Http\Controllers\Usaha\TagihanController;
 use App\Http\Controllers\Usaha\PelangganController;
 use App\Http\Controllers\Usaha\TarifController;
 use App\Http\Controllers\Usaha\PetugasController;
+
 use App\Http\Controllers\Simpanan\AngsuranPinjamanController;
+use App\Http\Controllers\Simpanan\PengajuanPinjamanController;
+use App\Http\Controllers\Simpanan\RekeningSimpananController;
+use App\Http\Controllers\Simpanan\TransaksiSimpananController;
+use App\Http\Controllers\Simpanan\JenisSimpananController;
+
 use App\Http\Controllers\Api\SimplifyingSearchRekeningController;
 
 
@@ -195,34 +201,52 @@ Route::middleware(['auth'])->group(function () {
 
         });
 
-        Route::prefix('simpanan')->name('simpanan.')->group(function () {
+       Route::prefix('simpanan')->name('simpanan.')->group(function () {
 
-            Route::resource('jenis-simpanan', App\Http\Controllers\Simpanan\JenisSimpananController::class);
-            Route::post('rekening', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'store'])->name('rekening.store');
-            Route::get('rekening', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'index'])->name('rekening.index');
-            Route::get('rekening/{rekening}', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'show'])->name('rekening.show');
-            Route::get('rekening/create', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'create'])->name('rekening.create');
-            Route::get('rekening/{anggota_id}/detail', [App\Http\Controllers\Simpanan\RekeningSimpananController::class, 'show'])->name('rekening.show');
-            Route::prefix('transaksi-simpanan')->group(function () {
-            Route::get('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createSetor'])->name('setor.create');
-            Route::post('/setor', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeSetor'])->name('setor.store');
+    // 1. JENIS SIMPANAN
+    Route::resource('jenis-simpanan', JenisSimpananController::class);
 
-            Route::get('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'createTarik'])->name('tarik.create');
-            Route::post('/tarik', [App\Http\Controllers\Simpanan\TransaksiSimpananController::class, 'storeTarik'])->name('tarik.store');
+    // 2. REKENING SIMPANAN (Fixing Ambiguity pada rute SHOW)
+    Route::post('rekening', [RekeningSimpananController::class, 'store'])->name('rekening.store');
+    Route::get('rekening', [RekeningSimpananController::class, 'index'])->name('rekening.index');
+    Route::get('rekening/create', [RekeningSimpananController::class, 'create'])->name('rekening.create');
 
-            Route::resource('pengajuan-pinjaman', App\Http\Controllers\Simpanan\PengajuanPinjamanController::class)->names('pinjaman');
+    // Rute SHOW utama (menggunakan ID rekening)
+    Route::get('rekening/{rekening}', [RekeningSimpananController::class, 'show'])->name('rekening.show');
 
-            Route::post('pinjaman/{pengajuanPinjaman}/approve', [App\Http\Controllers\Simpanan\PengajuanPinjamanController::class, 'approve'])->name('pinjaman.approve');
-            Route::post('pinjaman/{pengajuanPinjaman}/reject', [App\Http\Controllers\Simpanan\PengajuanPinjamanController::class, 'reject'])->name('pinjaman.reject');
+    // Rute SHOW detail anggota (gunakan nama yang berbeda)
+    // Saya asumsikan Anda ingin mempertahankan ini untuk kebutuhan spesifik.
+    Route::get('rekening/{anggota_id}/detail', [RekeningSimpananController::class, 'show'])->name('rekening.detail');
 
-// Logika Pembayaran Angsuran
-            Route::get('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar.create');
-            Route::post('angsuran/{angsuran}/bayar', [App\Http\Controllers\Simpanan\AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.bayar.store');
-            Route::get('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar');
-Route::post('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.store');
-        });
 
+    Route::prefix('transaksi-simpanan')->group(function () {
+
+        // TRANSAKSI SETOR/TARIK
+        Route::get('/setor', [TransaksiSimpananController::class, 'createSetor'])->name('setor.create');
+        Route::post('/setor', [TransaksiSimpananController::class, 'storeSetor'])->name('setor.store');
+
+        Route::get('/tarik', [TransaksiSimpananController::class, 'createTarik'])->name('tarik.create');
+        Route::post('/tarik', [TransaksiSimpananController::class, 'storeTarik'])->name('tarik.store');
+
+        // PINJAMAN RESOURCE (Menciptakan simpanan.pinjaman.show, index, create, dll.)
+        Route::resource('pengajuan-pinjaman', PengajuanPinjamanController::class)->names('pinjaman');
+
+        // PINJAMAN CUSTOM ACTIONS
+        Route::post('pinjaman/{pengajuanPinjaman}/approve', [PengajuanPinjamanController::class, 'approve'])->name('pinjaman.approve');
+        Route::post('pinjaman/{pengajuanPinjaman}/reject', [PengajuanPinjamanController::class, 'reject'])->name('pinjaman.reject');
+
+        // LOGIKA PEMBAYARAN ANGSURAN (HANYA PERTAHANKAN 2 RUTE YANG BERBEDA METHOD)
+
+        // Rute 1: Menampilkan Form Pembayaran (GET: simpanan.angsuran.bayar)
+        Route::get('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'createPembayaran'])->name('angsuran.bayar');
+
+        // Rute 2: Memproses Pembayaran (POST: simpanan.angsuran.bayar.store)
+        Route::post('angsuran/{angsuran}/bayar', [AngsuranPinjamanController::class, 'storePembayaran'])->name('angsuran.bayar.store');
+
+        // Rute duplikat 'angsuran.store' yang berpotensi konflik TIDAK dimasukkan di sini.
     });
+
+});
     });
 
 

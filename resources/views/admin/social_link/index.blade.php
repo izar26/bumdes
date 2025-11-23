@@ -70,9 +70,15 @@
                                             <td>{{ $link->url }}</td>
                                             <td>
                                                 <a href="{{ route('admin.social_link.index', ['edit' => $link->id]) }}" class="btn btn-sm btn-primary">Edit</a>
-                                                <form action="{{ route('admin.social_link.destroy', $link->id) }}" method="POST" class="d-inline">
+                                                <form id="delete-social-link-{{ $link->id }}" action="{{ route('admin.social_link.destroy', $link->id) }}" method="POST" class="d-inline">
                                                     @csrf @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus link ini?')">Hapus</button>
+                                                    <button type="button" class="btn btn-sm btn-danger"
+                                                        data-toggle="modal" data-target="#confirmModal"
+                                                        data-form-id="delete-social-link-{{ $link->id }}"
+                                                        data-title="Konfirmasi Hapus"
+                                                        data-body="Hapus link ini?"
+                                                        data-button-text="Hapus"
+                                                        data-button-class="btn-danger">Hapus</button>
                                                 </form>
                                             </td>
                                         </tr>

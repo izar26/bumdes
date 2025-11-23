@@ -49,10 +49,16 @@
                         </td>
                         <td>
                             <a href="{{ route('usaha.pembelian.show', $pembelian->pembelian_id) }}" class="btn btn-info btn-xs">Detail</a>
-                            <form action="{{ route('usaha.pembelian.destroy', $pembelian->pembelian_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Anda yakin ingin menghapus transaksi ini?');">
+                            <form id="delete-pembelian-{{ $pembelian->pembelian_id }}" action="{{ route('usaha.pembelian.destroy', $pembelian->pembelian_id) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-xs">Hapus</button>
+                                <button type="button" class="btn btn-danger btn-xs"
+                                    data-toggle="modal" data-target="#confirmModal"
+                                    data-form-id="delete-pembelian-{{ $pembelian->pembelian_id }}"
+                                    data-title="Konfirmasi Hapus"
+                                    data-body="Anda yakin ingin menghapus transaksi ini?"
+                                    data-button-text="Hapus"
+                                    data-button-class="btn-danger">Hapus</button>
                             </form>
                         </td>
                     </tr>

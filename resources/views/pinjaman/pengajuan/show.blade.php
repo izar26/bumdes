@@ -7,7 +7,25 @@
 @stop
 
 @section('content')
-    <div class="row">
+    <div class="row justify-content-center">
+        {{-- Alert Messages (Tambahkan agar jika redirect dari bayar.blade berhasil ada notifikasi) --}}
+        @if (session('success'))
+            <div class="col-md-12">
+                <div class="alert alert-success alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <i class="icon fas fa-check"></i> {{ session('success') }}
+                </div>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="col-md-12">
+                <div class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <i class="icon fas fa-ban"></i> {{ session('error') }}
+                </div>
+            </div>
+        @endif
+
         <div class="col-md-4">
             {{-- CARD DETAIL PINJAMAN --}}
             <div class="card card-primary card-outline">
@@ -25,16 +43,16 @@
                     <p><strong>Tgl Pengajuan:</strong> {{ $pengajuanPinjaman->tanggal_pengajuan->format('d M Y') }}</p>
                 </div>
 
+                {{-- Hapus tombol Approve/Reject karena di PengajuanPinjamanController@store sudah auto-approved --}}
+                {{--
                 @if ($pengajuanPinjaman->status === 'pending')
                 <div class="card-footer text-center">
-                    {{-- TOMBOL APPROVAL --}}
                     <form action="{{ route('simpanan.pinjaman.approve', $pengajuanPinjaman->pinjaman_id) }}" method="POST" style="display:inline-block;">
                         @csrf
                         <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Setuju? Jadwal Angsuran akan dibuat.')">
                             <i class="fas fa-check"></i> Setujui
                         </button>
                     </form>
-                    {{-- TOMBOL REJECT --}}
                     <form action="{{ route('simpanan.pinjaman.reject', $pengajuanPinjaman->pinjaman_id) }}" method="POST" style="display:inline-block;">
                         @csrf
                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tolak pengajuan ini?')">
@@ -43,6 +61,7 @@
                     </form>
                 </div>
                 @endif
+                --}}
             </div>
         </div>
 
@@ -66,14 +85,16 @@
                             @forelse ($pengajuanPinjaman->angsuran as $angsuran)
                                 <tr>
                                     <td>{{ $angsuran->angsuran_ke }}</td>
-                                    <td>{{ $angsuran->tanggal_jatuh_tempo->format('d M Y') }}</td>
+                                    {{-- Gunakan Carbon untuk memastikan format yang benar --}}
+                                    <td>{{ \Carbon\Carbon::parse($angsuran->tanggal_jatuh_tempo)->format('d M Y') }}</td>
                                     <td>Rp {{ number_format($angsuran->jumlah_bayar) }}</td>
                                     <td>
-                                        <span class="badge badge-{{ $angsuran->status === 'lunas' ? 'success' : 'warning' }}">{{ strtoupper($angsuran->status) }}</span>
+                                        <span class="badge badge-{{ $angsuran->status === 'lunas' ? 'success' : 'warning' }}">{{ strtoupper(str_replace('_', ' ', $angsuran->status)) }}</span>
                                     </td>
-                                    <td>{{ $angsuran->tanggal_bayar ? $angsuran->tanggal_bayar->format('d M Y') : '-' }}</td>
+                                    <td>{{ $angsuran->tanggal_bayar ? \Carbon\Carbon::parse($angsuran->tanggal_bayar)->format('d M Y') : '-' }}</td>
                                     <td>
                                         @if ($angsuran->status !== 'lunas')
+                                            {{-- Tombol untuk memicu MODAL --}}
                                             <button type="button" class="btn btn-xs btn-success" data-toggle="modal" data-target="#bayarModal{{ $angsuran->angsuran_id }}">
                                                 <i class="fas fa-hand-holding-usd"></i> Bayar
                                             </button>
@@ -92,9 +113,20 @@
         </div>
     </div>
 
-    {{-- MODAL PEMBAYARAN ANGSURAN: Harus disertakan di halaman ini --}}
+    {{-- MODAL PEMBAYARAN ANGSURAN: Gunakan partial modal yang baru. --}}
     @foreach ($pengajuanPinjaman->angsuran as $angsuran)
-        @include('pinjaman.angsuran.bayar', ['angsuran' => $angsuran])
+        @include('pinjaman.angsuran.modal-bayar', ['angsuran' => $angsuran])
     @endforeach
 
 @stop
+{{-- Tambahkan script jika ada yang diperlukan --}}
+@section('js')
+    <script>
+        // Logika untuk menampilkan modal setelah submit form gagal (jika ada error validasi)
+        $(document).ready(function() {
+            @if ($errors->any())
+                // Saat ini, kita biarkan saja dan mengandalkan notifikasi error.
+            @endif
+        });
+    </script>
+@endsection

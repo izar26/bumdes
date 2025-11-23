@@ -72,10 +72,16 @@
                                         <a href="{{ route('bumdes.aset.edit', $item->aset_id) }}" class="btn btn-xs btn-info" title="Edit Aset">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
-                                        <form action="{{ route('bumdes.aset.destroy', $item->aset_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aset ini?');">
+                                        <form id="delete-aset-{{ $item->aset_id }}" action="{{ route('bumdes.aset.destroy', $item->aset_id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-danger" title="Hapus Aset">
+                                            <button type="button" class="btn btn-xs btn-danger" title="Hapus Aset"
+                                                data-toggle="modal" data-target="#confirmModal"
+                                                data-form-id="delete-aset-{{ $item->aset_id }}"
+                                                data-title="Konfirmasi Hapus"
+                                                data-body="Apakah Anda yakin ingin menghapus aset ini?"
+                                                data-button-text="Hapus"
+                                                data-button-class="btn-danger">
                                                 <i class="fas fa-trash"></i> Hapus
                                             </button>
                                         </form>

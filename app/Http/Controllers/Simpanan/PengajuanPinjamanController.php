@@ -117,8 +117,6 @@ class PengajuanPinjamanController extends Controller
         return view('pinjaman.pengajuan.show', compact('pengajuanPinjaman'));
     }
 
-    // --- Method Edit & Destroy (Opsional untuk mode catat-mencatat) ---
-
     public function destroy(PengajuanPinjaman $pengajuanPinjaman)
     {
         // Hapus pinjaman beserta angsurannya (Cascade delete sebaiknya diatur di database,

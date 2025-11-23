@@ -58,8 +58,14 @@
                                         title="Edit">
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-danger" onclick="if(confirm('Apakah Anda yakin?')) { document.getElementById('delete-form-{{$petugas->id}}').submit(); }" title="Hapus"><i class="fa fa-trash"></i></button>
-                                <form id="delete-form-{{$petugas->id}}" action="{{ route('usaha.petugas.destroy', $petugas) }}" method="POST" style="display: none;">
+                                <button type="button" class="btn btn-sm btn-danger"
+                                    data-toggle="modal" data-target="#confirmModal"
+                                    data-form-id="delete-petugas-{{ $petugas->id }}"
+                                    data-title="Konfirmasi Hapus"
+                                    data-body="Apakah Anda yakin?"
+                                    data-button-text="Hapus"
+                                    data-button-class="btn-danger" title="Hapus"><i class="fa fa-trash"></i></button>
+                                <form id="delete-petugas-{{ $petugas->id }}" action="{{ route('usaha.petugas.destroy', $petugas) }}" method="POST" style="display: none;">
                                     @csrf @method('DELETE')
                                 </form>
                             </td>
